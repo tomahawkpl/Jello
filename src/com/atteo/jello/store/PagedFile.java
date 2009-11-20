@@ -1,8 +1,9 @@
-package com.atteo.jello;
+package com.atteo.jello.store;
 
 import java.io.IOException;
 
-interface PagedFile {
+
+public interface PagedFile {
 	Page getPage(int id) throws IOException;
 	int addPage() throws IOException;
 	void removePage();

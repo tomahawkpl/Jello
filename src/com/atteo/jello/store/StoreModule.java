@@ -1,4 +1,4 @@
-package com.atteo.jello;
+package com.atteo.jello.store;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +11,7 @@ import com.google.inject.name.Names;
 public class StoreModule implements Module {
 	private final String bufferSize = "100";
 	private final String pageSize = "4096";
+	private final String pagePoolLimit = "5";
 	private final Map<String, String> properties;
 
 	public StoreModule(Map<String, String> properties) {
@@ -23,16 +24,20 @@ public class StoreModule implements Module {
 		Map<String, String> p = new HashMap<String, String>();
 		p.put("pageSize", pageSize);
 		p.put("bufferSize", bufferSize);
+		p.put("pagePoolLimit", pagePoolLimit);
 		return p;
 	}
 
 	@Override
 	public void configure(Binder binder) {
 		Names.bindProperties(binder, properties);
+//		binder.bind(PagePoolManager.class);
+//		binder.bind(PagePool.class);
 		binder.bind(RawPagedFileFactory.class).toProvider(
 				FactoryProvider.newFactory(RawPagedFileFactory.class,
 						RawPagedFile.class));
 
 	}
+
 
 }

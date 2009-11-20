@@ -1,25 +1,24 @@
-package com.atteo.jello;
+package com.atteo.jello.store;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 
 public class RawPagedFile implements PagedFile {
-	@Inject private Injector injector;
 	private int pages;
 	private File file;
 	private RandomAccessFile raf;
 	private int pageSize;
 	private int fileSizeLimit;
 	private boolean readOnly = false;
-
+	private PagePool pagePool;
+	
 	@Inject
-	public RawPagedFile(@Named("pageSize") int pageSize,
+	public RawPagedFile(PagePool pagePool, @Named("pageSize") int pageSize,
 			@Named("fileSizeLimit") int fileSizeLimit, @Assisted File file, @Assisted boolean readOnly) throws IOException {
 		
 		if (file == null || !file.exists())
@@ -31,6 +30,7 @@ public class RawPagedFile implements PagedFile {
 		if (!readOnly && !file.canWrite())
 			readOnly = true;
 		
+		this.pagePool = pagePool;
 		this.readOnly = readOnly;
 		this.file = file;
 		this.pageSize = pageSize;
@@ -63,11 +63,9 @@ public class RawPagedFile implements PagedFile {
 	@Override
 	public Page getPage(int id) throws IOException {
 		checkPageId(id);
-		byte data[] = new byte[pageSize];
 		raf.seek(pageOffset(id));
-		raf.readFully(data, 0, pageSize);
-		Page page = injector.getInstance(Page.class);
-		page.setData(data);
+		Page page = pagePool.acquire();
+		raf.readFully(page.getData(), 0, pageSize);
 		return page;
 	}
 
@@ -101,7 +99,6 @@ public class RawPagedFile implements PagedFile {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
 
 	@Override

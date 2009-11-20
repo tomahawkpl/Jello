@@ -24,10 +24,18 @@ echo "New trace files:";
 
 awk '// { print NR,$0}' new.tmp
 
-echo -n "Select trace file: ";
-read line;
+lines=`awk ' END { print NR } ' new.tmp`
+
+if [ $lines -eq 1 ]; then
+	line=1;
+else
+	echo -n "Select trace file: ";
+	read line;
+fi;
+
+
 
 filename=`head -$line new.tmp | tail -1;`
 
 echo "Launching traceview..."
-$TRACEVIEW_BIN $filename &
+$TRACEVIEW_BIN $filename > /dev/null 2>&1 &

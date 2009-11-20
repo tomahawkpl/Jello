@@ -2,6 +2,7 @@ package com.atteo.jello;
 
 import java.io.File;
 
+import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 

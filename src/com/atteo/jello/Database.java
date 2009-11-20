@@ -1,18 +1,14 @@
 package com.atteo.jello;
 
-import java.io.File;
-import java.io.IOException;
-
+import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
 
 class Database {
 	private boolean valid;
-	private PagedFile pagedFile;
-	private TableOfContents tableOfContents;
+
 	
 	@Inject
 	public Database(PagedFile pagedFile) {
-		this.pagedFile = pagedFile;
 		
 		readHeader();
 		readTableOfContents();

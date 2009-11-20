@@ -5,21 +5,21 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.atteo.jello.Page;
-import com.atteo.jello.RawPagedFile;
-import com.atteo.jello.RawPagedFileFactory;
-import com.atteo.jello.StoreModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
-import android.os.Debug;
 import android.test.InstrumentationTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
+
+import com.atteo.jello.store.Page;
+import com.atteo.jello.store.PagePool;
+import com.atteo.jello.store.RawPagedFile;
+import com.atteo.jello.store.RawPagedFileFactory;
+import com.atteo.jello.store.StoreModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 public class RawPagedFileTest extends InstrumentationTestCase {
 	private final String filename = "testfile";
 	private final int pageSize = 4096;
-	private final int fileSizeLimit = 104857600; // 100mb
+	private final int fileSizeLimit = 1024*1024*10; // 10mb
 	private RawPagedFile rpf;
 	private Injector injector;
 	
@@ -102,19 +102,23 @@ public class RawPagedFileTest extends InstrumentationTestCase {
 		int FILESIZE = 100;
 		for (int i=0;i<FILESIZE;i++)
 			assertEquals(i, rpf.addPage());
-		Page page = injector.getInstance(Page.class);
-		page.setData(new byte[pageSize]);
+		PagePool pagePool = injector.getInstance(PagePool.class);
+		Page p = pagePool.acquire();
 		for (int i=0;i<FILESIZE;i++)
-			rpf.writePage(i, page);
+			rpf.writePage(i, p);
+		pagePool.release(p);
 	}
 	
 	public void testGetPage() throws IOException {
-		Page p = injector.getInstance(Page.class);
-		p.setData(new byte[pageSize]);
+		PagePool pagePool = injector.getInstance(PagePool.class);
+		Page p = pagePool.acquire();
+		byte[] saved = p.getData();
 		rpf.addPage();
 		rpf.writePage(0, p);
+		pagePool.release(p);
 		p = rpf.getPage(0);
-		p.equals(new byte[pageSize]);
+		p.equals(saved);
+		pagePool.release(p);
 	}
 
 }

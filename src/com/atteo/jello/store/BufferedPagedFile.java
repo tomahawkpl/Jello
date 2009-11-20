@@ -1,4 +1,4 @@
-package com.atteo.jello;
+package com.atteo.jello.store;
 
 import java.io.IOException;
 
