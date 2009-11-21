@@ -2,7 +2,6 @@ package com.atteo.jello.store;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
@@ -11,14 +10,14 @@ import com.google.inject.name.Named;
 public class RawPagedFile implements PagedFile {
 	private int pages;
 	private File file;
-	private RandomAccessFile raf;
+	private OSFile osFile;
 	private int pageSize;
 	private int fileSizeLimit;
 	private boolean readOnly = false;
 	private PagePool pagePool;
 	
 	@Inject
-	public RawPagedFile(PagePool pagePool, @Named("pageSize") int pageSize,
+	public RawPagedFile(OSFileFactory osFileFactory, PagePool pagePool, @Named("pageSize") int pageSize,
 			@Named("fileSizeLimit") int fileSizeLimit, @Assisted File file, @Assisted boolean readOnly) throws IOException {
 		
 		if (file == null || !file.exists())
@@ -35,9 +34,9 @@ public class RawPagedFile implements PagedFile {
 		this.file = file;
 		this.pageSize = pageSize;
 		this.fileSizeLimit = fileSizeLimit;
-		raf = new RandomAccessFile(file, "rw");
+		osFile = osFileFactory.create(file, "rw");
 		long fileLength;
-		fileLength = raf.length();
+		fileLength = osFile.length();
 		if (fileLength > fileSizeLimit)
 			throw new IOException("Database file " + file.getName()
 					+ " too big, current limit " + fileSizeLimit);
@@ -46,14 +45,13 @@ public class RawPagedFile implements PagedFile {
 		if ((int)fileLength % pageSize > 0)
 			throw new IllegalArgumentException("Database file corrupted or uses different page size");
 
-		raf.seek(0);
 	}
 	
 
 	protected void finalize() {
-		if (raf != null)
+		if (osFile != null)
 			try {
-				raf.close();
+				osFile.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -63,9 +61,8 @@ public class RawPagedFile implements PagedFile {
 	@Override
 	public Page getPage(int id) throws IOException {
 		checkPageId(id);
-		raf.seek(pageOffset(id));
 		Page page = pagePool.acquire();
-		raf.readFully(page.getData(), 0, pageSize);
+		osFile.readFromPosition(page.getData(), pageOffset(id), pageSize);
 		return page;
 	}
 
@@ -81,7 +78,7 @@ public class RawPagedFile implements PagedFile {
 		if ((pages+1) * pageSize > fileSizeLimit)
 			return -1;
 		try {
-			raf.setLength((pages + 1) * pageSize);
+			osFile.setLength((pages + 1) * pageSize);
 		} catch (IOException e) {
 			return -1;
 		}
@@ -95,7 +92,7 @@ public class RawPagedFile implements PagedFile {
 			return;
 		pages--;
 		try {
-			raf.setLength(pages * pageSize);
+			osFile.setLength(pages * pageSize);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -106,8 +103,8 @@ public class RawPagedFile implements PagedFile {
 		checkPageId(id);
 		if (page.getData() == null)
 			throw new IllegalArgumentException("Supplied Page argument containts no data");
-		raf.seek(pageOffset(id));
-		raf.write(page.getData(), 0, pageSize);
+		osFile.writeOnPosition(page.getData(), pageOffset(id), pageSize);
+
 		
 	}
 	
@@ -126,8 +123,8 @@ public class RawPagedFile implements PagedFile {
 	
 	
 	
-	public RandomAccessFile getRaf() {
-		return raf;
+	public OSFile getOSFile() {
+		return osFile;
 	}
 
 

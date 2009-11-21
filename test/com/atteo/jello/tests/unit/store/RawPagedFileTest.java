@@ -44,7 +44,7 @@ public class RawPagedFileTest extends InstrumentationTestCase {
 	@Override
 	protected void tearDown() {
 		try {
-			rpf.getRaf().close();
+			rpf.getOSFile().close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -72,29 +72,29 @@ public class RawPagedFileTest extends InstrumentationTestCase {
 			id = rpf.addPage();
 			assertEquals(i, id);
 			assertEquals(i+1, rpf.getPageCount());
-			assertEquals(pageSize*(i+1), rpf.getRaf().length());
+			assertEquals(pageSize*(i+1), rpf.getOSFile().length());
 		}
 		
 		id = rpf.addPage();
 		assertEquals(-1,id);
-		assertEquals(pageSize*TESTSIZE, rpf.getRaf().length());
+		assertEquals(pageSize*TESTSIZE, rpf.getOSFile().length());
 	}
 	
 	public void testRemovePage() throws IOException {
 		rpf.removePage();
-		assertEquals(0,rpf.getRaf().length());
+		assertEquals(0,rpf.getOSFile().length());
 		assertEquals(0,rpf.getPageCount());
 		
 		assertEquals(0,rpf.addPage());
-		assertEquals(pageSize,rpf.getRaf().length());
+		assertEquals(pageSize,rpf.getOSFile().length());
 		assertEquals(1,rpf.getPageCount());
 	
 		rpf.removePage();
-		assertEquals(0,rpf.getRaf().length());
+		assertEquals(0,rpf.getOSFile().length());
 		assertEquals(0,rpf.getPageCount());
 		
 		rpf.removePage();
-		assertEquals(0,rpf.getRaf().length());
+		assertEquals(0,rpf.getOSFile().length());
 		assertEquals(0,rpf.getPageCount());	
 	}
 	
