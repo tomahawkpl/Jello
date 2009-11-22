@@ -115,9 +115,26 @@ public class RawPagedFileTest extends InstrumentationTestCase {
 		byte[] saved = p.getData();
 		rpf.addPage();
 		rpf.writePage(0, p);
-		pagePool.release(p);
-		p = rpf.getPage(0);
+		rpf.getPage(0,p);
 		p.equals(saved);
+		pagePool.release(p);
+	}
+	
+	public void testWriteGetPage() throws IOException {
+		int FILESIZE = 100;
+		for (int i=0;i<FILESIZE;i++)
+			assertEquals(i, rpf.addPage());
+		PagePool pagePool = injector.getInstance(PagePool.class);
+		Page p = pagePool.acquire();
+		for (int i=0;i<FILESIZE;i++) {
+			p.getData()[i%pageSize] = (byte) (i%255);
+			rpf.writePage(i, p);
+			p.getData()[i%pageSize] = 0;
+		}
+		for (int i=0;i<FILESIZE;i++) {
+			rpf.getPage(i,p);
+			assertEquals((int)(i%255),p.getData()[i%pageSize]);
+		}
 		pagePool.release(p);
 	}
 

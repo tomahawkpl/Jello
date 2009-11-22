@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
 
 /*
@@ -9,8 +11,13 @@
  * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_com_atteo_jello_store_OSFileFast_openNative (JNIEnv *env, jobject dis, jstring fullpath) {
+	int id;
+	jbyte *str;
+	str = (*env)->GetStringUTFChars(env, fullpath, NULL);
+	id = open(str,O_RDWR);
+	(*env)->ReleaseStringUTFChars(env, fullpath, str);
 
-	
+	return id;
 }
 
 /*

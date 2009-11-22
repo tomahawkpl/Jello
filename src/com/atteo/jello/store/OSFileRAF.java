@@ -6,13 +6,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 
 public class OSFileRAF implements OSFile {
 	private RandomAccessFile raf;
 	
 	@Inject
-	OSFileRAF(File file, String mode) throws FileNotFoundException {
-		raf = new RandomAccessFile(file, mode);
+	OSFileRAF(@Assisted File file) throws FileNotFoundException {
+		raf = new RandomAccessFile(file, "rw");
 	}
 	
 	@Override

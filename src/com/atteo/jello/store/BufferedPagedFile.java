@@ -17,8 +17,8 @@ class BufferedPagedFile implements PagedFile {
 	}
 
 	@Override
-	public Page getPage(int id) throws IOException {
-		return pagedFile.getPage(id);
+	public void getPage(int id, Page page) throws IOException {
+		pagedFile.getPage(id, page);
 	}
 
 	@Override

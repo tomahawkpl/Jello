@@ -33,11 +33,10 @@ public class StoreModule implements Module {
 	@Override
 	public void configure(Binder binder) {
 		Names.bindProperties(binder, properties);
-		binder.bind(PagePoolManager.class);
 		binder.bind(PagePool.class);
 		binder.bind(OSFileFactory.class).toProvider(
 				FactoryProvider.newFactory(OSFileFactory.class,
-						OSFileRAF.class));
+						OSFileFast.class));
 		binder.bind(RawPagedFileFactory.class).toProvider(
 				FactoryProvider.newFactory(RawPagedFileFactory.class,
 						RawPagedFile.class));

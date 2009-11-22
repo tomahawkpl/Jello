@@ -20,7 +20,7 @@ import android.test.PerformanceTestCase;
 
 public class RawPagedFileTest extends InstrumentationTestCase implements PerformanceTestCase {
 	private final String filename = "testfile";
-	private final int pageSize = 16384;
+	private final int pageSize = 4096;
 	private final int fileSizeLimit = 104857600; // 100mb
 	private RawPagedFile rpf;
 	private Injector injector;
@@ -45,7 +45,6 @@ public class RawPagedFileTest extends InstrumentationTestCase implements Perform
 	
 	@Override
 	public boolean isPerformanceOnly() {
-
 		return true;
 	}
 
@@ -56,13 +55,14 @@ public class RawPagedFileTest extends InstrumentationTestCase implements Perform
 		for (int i = 0; i < FILESIZE; i++)
 			assertEquals(i, rpf.addPage());
 		PagePool pagePool = injector.getInstance(PagePool.class);
-		Page p;
+		Page p = pagePool.acquire();
 		Debug.startMethodTracing("jello/testGetPage");
 		for (int i = 0; i < TESTSIZE; i++) {
-			p = rpf.getPage(i % FILESIZE);
+			rpf.getPage(i % FILESIZE, p);
 			pagePool.release(p);
 		}
 		Debug.stopMethodTracing();
+		pagePool.release(p);
 	}
 
 	@Override

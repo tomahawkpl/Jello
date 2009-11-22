@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 
 /**
  * @TODO locks
@@ -15,7 +16,7 @@ public class OSFileFast implements OSFile {
 	private int fileDescriptor;
 
 	@Inject
-	OSFileFast(File file) throws IOException {
+	OSFileFast(@Assisted File file) throws IOException {
 		System.loadLibrary("OSFileFast");
 		fileDescriptor = openNative(file.getCanonicalPath());
 

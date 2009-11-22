@@ -1,15 +1,14 @@
 package com.atteo.jello.store;
 
-import com.atteo.jello.pool.Poolable;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 
-public class Page implements Poolable<Page>{
+public class Page {
 	private byte data[] = null;
 	private boolean dirty = false;
 	private int accessCount = 0;
-	private Page nextInPool = null;
+	public Page nextInPool = null;
 	
 	@Inject
 	Page(@Named("pageSize") int pageSize) {
@@ -40,15 +39,5 @@ public class Page implements Poolable<Page>{
 		this.accessCount++;
 	}
 
-	@Override
-	public Page getNextPoolable() {
-		return nextInPool;
-	}
-
-	@Override
-	public void setNextPoolable(Page element) {
-		this.nextInPool = element;
-		
-	}
 
 }

@@ -14,10 +14,9 @@ public class RawPagedFile implements PagedFile {
 	private int pageSize;
 	private int fileSizeLimit;
 	private boolean readOnly = false;
-	private PagePool pagePool;
 	
 	@Inject
-	public RawPagedFile(OSFileFactory osFileFactory, PagePool pagePool, @Named("pageSize") int pageSize,
+	public RawPagedFile(OSFileFactory osFileFactory, @Named("pageSize") int pageSize,
 			@Named("fileSizeLimit") int fileSizeLimit, @Assisted File file, @Assisted boolean readOnly) throws IOException {
 		
 		if (file == null || !file.exists())
@@ -29,12 +28,11 @@ public class RawPagedFile implements PagedFile {
 		if (!readOnly && !file.canWrite())
 			readOnly = true;
 		
-		this.pagePool = pagePool;
 		this.readOnly = readOnly;
 		this.file = file;
 		this.pageSize = pageSize;
 		this.fileSizeLimit = fileSizeLimit;
-		osFile = osFileFactory.create(file, "rw");
+		osFile = osFileFactory.create(file);
 		long fileLength;
 		fileLength = osFile.length();
 		if (fileLength > fileSizeLimit)
@@ -59,11 +57,9 @@ public class RawPagedFile implements PagedFile {
 	}
 
 	@Override
-	public Page getPage(int id) throws IOException {
+	public void getPage(int id, Page page) throws IOException {
 		checkPageId(id);
-		Page page = pagePool.acquire();
 		osFile.readFromPosition(page.getData(), pageOffset(id), pageSize);
-		return page;
 	}
 
 	@Override
