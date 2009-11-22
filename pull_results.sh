@@ -3,10 +3,14 @@
 # Pulls performance test results from the device. Only the results which have changed are downloaded.
 
 PHONE_RESULTS_DIR="jello";
-LOCAL_RESULTS_DIR="test_results";
+LOCAL_RESULTS_DIR=".tests";
 
 if [ ! -d $LOCAL_RESULTS_DIR ]; then
 	mkdir $LOCAL_RESULTS_DIR;
+	if [ $? != 0 ]; then
+		echo "Couldn't create local trace files directory, edit this script and set a writable location";
+		exit 1;
+	fi
 fi
 
 which adb > /dev/null;
@@ -29,8 +33,15 @@ cd $LOCAL_RESULTS_DIR;
 
 echo -n "Getting trace files from the device... ";
 
-echo "cd /sdcard; cd $PHONE_RESULTS_DIR; md5sum *.trace > sums.tmp;exit;" | adb shell > /dev/null;
+echo "cd /sdcard && cd $PHONE_RESULTS_DIR && md5sum *.trace > sums.tmp; exit;" | adb shell > /dev/null;
+
+
 adb pull /sdcard/$PHONE_RESULTS_DIR/sums.tmp phone_sums.tmp > /dev/null 2>&1;
+
+if [ ! -e sums.tmp ]; then
+	echo "FAILED (maybe there are none)";
+	exit 1
+fi
 
 lines=`awk ' END { print NR } ' phone_sums.tmp`
 echo "$lines file(s)";

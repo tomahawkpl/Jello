@@ -3,41 +3,39 @@ package com.atteo.jello.store;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-
 public class Page {
+	public Page nextInPool = null;
+	private int accessCount = 0;
 	private byte data[] = null;
 	private boolean dirty = false;
-	private int accessCount = 0;
-	public Page nextInPool = null;
-	
+
 	@Inject
-	Page(@Named("pageSize") int pageSize) {
+	Page(@Named("pageSize") final int pageSize) {
 		data = new byte[pageSize];
 	}
 
-	public byte[] getData() {
-		return data;
-	}
-
-	public boolean isDirty() {
-		return dirty;
-	}
-
-	public void setDirty(boolean dirty) {
-		this.dirty = dirty;
+	public void decreaseAccessCount() {
+		accessCount++;
 	}
 
 	public int getAccessCount() {
 		return accessCount;
 	}
 
-	public void increaseAccessCount() {
-		this.accessCount++;
-	}
-	
-	public void decreaseAccessCount() {
-		this.accessCount++;
+	public byte[] getData() {
+		return data;
 	}
 
+	public void increaseAccessCount() {
+		accessCount++;
+	}
+
+	public boolean isDirty() {
+		return dirty;
+	}
+
+	public void setDirty(final boolean dirty) {
+		this.dirty = dirty;
+	}
 
 }

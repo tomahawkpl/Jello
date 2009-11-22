@@ -9,40 +9,37 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 
 public class OSFileRAF implements OSFile {
-	private RandomAccessFile raf;
-	
+	private final RandomAccessFile raf;
+
 	@Inject
-	OSFileRAF(@Assisted File file) throws FileNotFoundException {
+	OSFileRAF(@Assisted final File file) throws FileNotFoundException {
 		raf = new RandomAccessFile(file, "rw");
 	}
-	
-	@Override
+
+	public void close() throws IOException {
+		raf.close();
+	}
+
 	public int length() throws IOException {
 		return (int) raf.length();
 
 	}
 
-	@Override
-	public void readFromPosition(byte[] buffer, int position, int length) throws IOException {
+	public void readFromPosition(final byte[] buffer, final int position,
+			final int length) throws IOException {
 		raf.seek(position);
 		raf.readFully(buffer, 0, length);
-		
+
 	}
 
-	@Override
-	public void writeOnPosition(byte[] buffer, int position, int length) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void close() throws IOException {
-		raf.close();
-	}
-
-	@Override
-	public void setLength(int length) throws IOException {
+	public void setLength(final int length) throws IOException {
 		raf.setLength(length);
+	}
+
+	public void writeOnPosition(final byte[] buffer, final int position,
+			final int length) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

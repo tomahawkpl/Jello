@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Jello">
+
+	<property file="local.properties" />
+	<property file="build.properties" />
+	<property file="default.properties" />
+
+	<path id="android.antlibs">
+		<pathelement path="${sdk.dir}/tools/lib/anttasks.jar" />
+		<pathelement path="${sdk.dir}/tools/lib/sdklib.jar" />
+		<pathelement path="${sdk.dir}/tools/lib/androidprefs.jar" />
+		<pathelement path="${sdk.dir}/tools/lib/apkbuilder.jar" />
+		<pathelement path="${sdk.dir}/tools/lib/jarutils.jar" />
+	</path>
+
+	<taskdef name="setup"
+		classname="com.android.ant.SetupTask"
+		classpathref="android.antlibs" />
+
+	<setup import="false"/>
+
+	<taskdef name="aaptexec"
+		classname="com.android.ant.AaptExecLoopTask"
+		classpathref="android.antlibs" />
+
+	<taskdef name="apkbuilder"
+		classname="com.android.ant.ApkBuilderTask"
+		classpathref="android.antlibs" />
+
+	<taskdef name="xpath"
+		classname="com.android.ant.XPathTask"
+		classpathref="android.antlibs" />
+
+	<!-- Properties -->
+
+	<!-- Tells adb which device to target. You can change this from the command line
+	by invoking "ant -Dadb.device.arg=-d" for device "ant -Dadb.device.arg=-e" for
+	the emulator. -->
+	<property name="adb.device.arg" value="" />
+
+	<property name="test.runner" value="android.test.InstrumentationTestRunner" />
+
+	<property name="android.tools.dir" location="${sdk.dir}/tools" />
+	<!-- Name of the application package extracted from manifest file -->
+	<xpath input="AndroidManifest.xml" expression="/manifest/@package"
+		output="manifest.package" />
+
+	<!-- Input directories -->
+	<property name="source.dir" value="src" />
+	<property name="test.dir" value="test" />
+	<property name="gen.dir" value="gen" />
+	<property name="resource.dir" value="res" />
+	<property name="asset.dir" value="assets" />
+
+	<property name="external.libs.dir" value="libs" />
+	<property name="native.libs.dir" value="libs" />
+	<property name="out.dir" value="bin" />
+	<property name="instrumented.dir" value="instrumented" />
+	<property name="out.classes.dir" value="${out.dir}/classes" />
+	<property name="instrumented.classes.dir" value="${instrumented.dir}/classes" />
+	<property name="dex.file.name" value="classes.dex" />
+	<property name="normal.dex.file" location="${out.dir}/${dex.file.name}" />
+	<property name="instrumented.dex.file" location="${instrumented.dir}/${dex.file.name}" />
+	<property name="coverage.dir" value="coverage" />
+
+	<!-- The final package file to generate -->
+	<property name="out.package"
+		location="${out.dir}/${ant.project.name}-testpackage.apk" />
+	<property name="instrumented.package"
+		location="${instrumented.dir}/${ant.project.name}-testpackage.apk" />
+
+	<property name="emma.dump.file" value="/data/data/${application.package}/files/coverage.ec" />
+
+	<!-- Verbosity -->
+	<property name="verbose" value="false" />
+	<!-- This is needed by emma as it uses multilevel verbosity instead of simple 'true' or 'false'
+	The property 'verbosity' is not user configurable and depends exclusively on 'verbose'
+	value.-->
+	<condition property="verbosity" value="verbose" else="quiet">
+		<istrue value="${verbose}" />
+	</condition>
+	<!-- This is needed to switch verbosity of zipalign and aapt. Depends exclusively on 'verbose'
+	-->
+	<condition property="v.option" value="-v" else="">
+		<istrue value="${verbose}" />
+	</condition>
+	<!-- This is needed to switch verbosity of dx. Depends exclusively on 'verbose' -->
+	<condition property="verbose.option" value="--verbose" else="">
+		<istrue value="${verbose}" />
+	</condition>
+
+	<!-- Tools -->
+	<condition property="exe" value=".exe" else=""><os family="windows" /></condition>
+	<property name="adb" location="${android.tools.dir}/adb${exe}" />
+	<property name="zipalign" location="${android.tools.dir}/zipalign${exe}" />
+
+	<!-- Emma configuration -->
+	<property name="emma.dir" value="${sdk.dir}/tools/lib" />
+	<path id="emma.lib">
+		<pathelement location="${emma.dir}/emma.jar" />
+		<pathelement location="${emma.dir}/emma_ant.jar" />
+	</path>
+	<taskdef resource="emma_ant.properties" classpathref="emma.lib" />
+	<!-- End of emma configuration -->
+
+	<!-- Macros -->
+
+	<!-- Configurable macro, which allows to pass as parameters output directory,
+	output dex filename and external libraries to dex (optional) -->
+	<macrodef name="dex-helper">
+		<attribute name="classes.dir" />
+		<attribute name="out.file" />
+		<element name="external-libs" optional="yes" />
+		<element name="extra-parameters" optional="yes" />
+		<sequential>
+			<echo>Converting compiled files and external libraries into @{out.file}...
+			</echo>
+			<apply executable="${dx}" failonerror="true" parallel="true">
+				<arg value="--dex" />
+				<arg value="--output=@{out.file}" />
+				<extra-parameters />
+				<arg line="${verbose.option}" />
+				<arg path="@{classes.dir}" />
+				<fileset dir="${external.libs.dir}" includes="*.jar" />
+				<external-libs />
+			</apply>
+		</sequential>
+	</macrodef>
+
+	<!-- This is macro that enable passing variable list of external jar files to ApkBuilder
+	Example of use:
+	<package-helper>
+		<extra-jars>
+			<jarfolder path="my_jars" />
+			<jarfile path="foo/bar.jar" />
+			<jarfolder path="your_jars" />
+		</extra-jars>
+	</package-helper> -->
+	<macrodef name="package-helper">
+		<attribute name="dex.file" />
+		<attribute name="source.dir" />
+		<attribute name="out.dir" />
+		<attribute name="out.package" />
+		<element name="extra-jars" optional="yes" />
+		<sequential>
+			<apkbuilder
+				outfolder="@{out.dir}"
+				basename="${ant.project.name}"
+				signed="true"
+				verbose="${verbose}">
+				<file path="@{dex.file}" />
+				<sourcefolder path="@{source.dir}" />
+				<nativefolder path="${native.libs.dir}" />
+				<jarfolder path="${external.libs.dir}" />
+				<extra-jars/>
+			</apkbuilder>
+			<move file="@{out.dir}/${ant.project.name}-debug.apk"
+				tofile="@{out.package}" />
+		</sequential>
+	</macrodef>
+
+
+	<!-- This is macro used only for sharing code among two targets, -install and
+	-install-with-emma which do exactly the same but differ in dependencies -->
+	<macrodef name="install-helper">
+		<attribute name="package" />
+		<sequential>
+			<echo>Installing @{package} onto default emulator or device...</echo>
+			<exec executable="${adb}" failonerror="true">
+				<arg line="${adb.device.arg}" />
+				<arg value="install" />
+				<arg value="-r" />
+				<arg path="@{package}" />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="run-tests-helper">
+		<attribute name="emma.enabled" default="false" />
+		<element name="extra-instrument-args" optional="yes" />
+		<sequential>
+			<echo>Running tests ...</echo>
+			<exec executable="${adb}" failonerror="true">
+				<arg value="shell" />
+				<arg value="am" />
+				<arg value="instrument" />
+				<arg value="-w" />
+				<arg value="-e" />
+				<arg value="coverage" />
+				<arg value="@{emma.enabled}" />
+				<extra-instrument-args />
+				<arg value="${application.package}/${test.runner}" />
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<!-- Rules -->
+
+
+	<target name="-init">
+		<tstamp/>
+	</target>
+
+	<!-- Creates the output directories if they don't exist yet. -->
+	<target name="-dirs" depends="-init">
+		<echo>Creating output directories if needed...</echo>
+		<mkdir dir="${resource.dir}" />
+		<mkdir dir="${external.libs.dir}" />
+		<mkdir dir="${gen.dir}" />
+		<mkdir dir="${out.dir}" />
+		<mkdir dir="${out.classes.dir}" />
+		<mkdir dir="${instrumented.dir}" />
+		<mkdir dir="${instrumented.classes.dir}" />
+	</target>
+
+	<target name="clean" description="Removes output files created by other targets.">
+		<delete dir="${out.dir}" verbose="${verbose}" />
+		<delete dir="${instrumented.dir}" verbose="${verbose}" />
+		<delete dir="${gen.dir}" verbose="${verbose}" />
+		<delete dir="${coverage.dir}" verbose="${verbose}" />
+	</target>
+
+	<!-- Compiles this project's .java files into .class files. -->
+	<target name="compile" depends="-dirs"
+		description="Compiles project's .java files into .class files">
+		<!-- If android rules are used for a test project, its classpath should include
+		tested project's location -->
+		<condition property="extensible.classpath"
+			value="${basedir}/bin/classes" else=".">
+			<isset property="application.dir" />
+		</condition>
+		<javac encoding="ascii" target="1.6" debug="true" extdirs=""
+			destdir="${out.classes.dir}"
+			bootclasspathref="android.target.classpath"
+			verbose="${verbose}" classpath="${extensible.classpath}">
+			<src path="${source.dir}" />
+			<src path="${test.dir}" />
+			<src path="${gen.dir}" />
+			<classpath>
+				<fileset dir="${external.libs.dir}" includes="*.jar" />
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- Converts this project's .class files into .dex files -->
+	<target name="-dex" depends="compile">
+		<dex-helper classes.dir="${out.classes.dir}" out.file="${normal.dex.file}"/>
+	</target>
+
+	<!-- Converts this project's instrumented .class files into .dex files -->
+	<target name="-dex-instrumented" depends="-emma-instrument">
+		<dex-helper classes.dir="${instrumented.classes.dir}" out.file="${instrumented.dex.file}"> 
+			<extra-parameters>
+				<arg value="--no-locals" />
+			</extra-parameters>
+			<external-libs>
+				<fileset file="${emma.dir}/emma_device.jar" />
+			</external-libs>
+		</dex-helper>
+
+	</target>
+
+	<!-- Puts the project's resources into the output package file
+	This actually can create multiple resource package in case
+	Some custom apk with specific configuration have been
+	declared in default.properties.
+	-->
+	<target name="-package-resources" depends="-dirs">
+		<echo>Packaging resources</echo>
+		<aaptexec executable="${aapt}"
+			command="package"
+			manifest="AndroidManifest.xml"
+			resources="${resource.dir}"
+			assets="${asset.dir}"
+			androidjar="${android.jar}"
+			outfolder="${out.dir}"
+			basename="${ant.project.name}" />
+	</target>
+
+	<target name="package" depends="-package-resources, -dex">
+		<package-helper dex.file="${normal.dex.file}" source.dir="${source.dir}"
+			out.dir="${out.dir}" out.package="${out.package}"/>
+	</target>
+
+	<target name="package-instrumented" depends="-package-resources, -dex-instrumented">
+		<copy todir="${instrumented.dir}" >
+			<fileset dir="${out.dir}">
+				<include name="*.ap_"/>
+			</fileset>
+		</copy>
+		<package-helper dex.file="${instrumented.dex.file}" source.dir="${source.dir}"
+			out.dir="${instrumented.dir}" out.package="${instrumented.package}"/>
+	</target>
+
+	<target name="dist" depends="compile">
+		<echo>Creating jar file</echo>
+		<jar basedir="${out.classes.dir}" destfile="${out.dir}/${ant.project.name}-${DSTAMP}${TSTAMP}.jar"
+			includes="**" excludes="**/tests/**"/>
+	</target>
+
+	<!-- Emma-instruments tested project classes (compiles the tested project if necessary)
+	and writes instrumented classes to ${instrumentation.absolute.dir}/classes -->
+	<target name="-emma-instrument" depends="compile">
+		<sequential>
+			<echo>Instrumenting classes from ${out.dir}/classes...</echo>
+			<!-- It only instruments class files, not any external libs -->
+			<emma enabled="true">
+				<instr verbosity="${verbosity}" outfile="${coverage.dir}/coverage.em"
+					mode="fullcopy" destdir="${instrumented.dir}"
+					instrpath="${out.classes.dir}">
+					<filter includes="${application.package}.*"
+						excludes="${application.package}.tests.*, ${application.package}.misc.*,
+						${application.package}.guice.*" />
+
+
+
+
+
+				</instr>
+				<!-- TODO: exclusion filters on R*.class and allowing custom exclusion from
+				user defined file -->
+			</emma>
+		</sequential>
+	</target>
+
+	<target name="-install" depends="package">
+		<install-helper package="${out.package}"/>
+	</target>
+
+	<target name="-install-instrumented" depends="package-instrumented">
+		<install-helper package="${instrumented.package}"/>
+	</target>
+
+	<target name="-set-coverage-classpath">
+		<property name="extensible.classpath"
+			location="${instrumentation.classes.dir}" />
+	</target>
+
+	<target name="coverage" depends="-set-coverage-classpath, -install-instrumented"
+		description="Runs the tests against the instrumented code and generates
+		code coverage report">
+		<run-tests-helper emma.enabled="true">
+			<extra-instrument-args>
+				<arg value="-e" />
+				<arg value="coverageFile" />
+				<arg value="${emma.dump.file}" />
+			</extra-instrument-args>
+		</run-tests-helper>
+		<echo>Downloading coverage file into project directory...</echo>
+		<exec executable="${adb}" failonerror="true">
+			<arg value="pull" />
+			<arg value="${emma.dump.file}" />
+			<arg value="${coverage.dir}/coverage.ec" />
+		</exec>
+		<echo>Extracting coverage report...</echo>
+		<emma>
+			<report sourcepath="${source.dir}"
+				verbosity="${verbosity}">
+				<!-- TODO: report.dir or something like should be introduced if necessary -->
+				<infileset dir=".">
+					<include name="${coverage.dir}/coverage.ec" />
+					<include name="${coverage.dir}/coverage.em" />
+				</infileset>
+				<!-- TODO: reports in other, indicated by user formats -->
+				<html outfile="coverage.html" />
+			</report>
+		</emma>
+		<echo>Saving the report file in ${basedir}/${coverage.dir}/coverage.html</echo>
+	</target>
+</project>

@@ -12,13 +12,13 @@ import com.google.inject.grapher.graphviz.GraphvizModule;
 import com.google.inject.grapher.graphviz.GraphvizRenderer;
 
 public class Grapher {
-	public static void graph(String filename, Injector demoInjector)
+	public static void graph(final String filename, final Injector demoInjector)
 			throws IOException {
-		PrintWriter out = new PrintWriter(new File(filename), "UTF-8");
+		final PrintWriter out = new PrintWriter(new File(filename), "UTF-8");
 
-		Injector injector = Guice.createInjector(new GrapherModule(),
+		final Injector injector = Guice.createInjector(new GrapherModule(),
 				new GraphvizModule());
-		GraphvizRenderer renderer = injector
+		final GraphvizRenderer renderer = injector
 				.getInstance(GraphvizRenderer.class);
 		renderer.setOut(out).setRankdir("TB");
 

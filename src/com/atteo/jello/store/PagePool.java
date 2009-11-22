@@ -5,45 +5,43 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
-
 @Singleton
 public class PagePool {
 
-    private final int limit;
-    private Page root;
-    private int poolCount;
-    private Injector injector;
-	
+	private final Injector injector;
+	private final int limit;
+	private int poolCount;
+	private Page root;
+
 	@Inject
-	public PagePool(Injector injector, @Named("pagePoolLimit") int limit) {
+	public PagePool(final Injector injector,
+			@Named("pagePoolLimit") final int limit) {
 		this.limit = limit;
 		this.injector = injector;
 	}
 
+	public Page acquire() {
+		Page element;
 
-    public Page acquire() {
-        Page element;
+		if (root != null) {
+			element = root;
+			root = element.nextInPool;
+			poolCount--;
+		} else
+			element = injector.getInstance(Page.class);
 
-        if (root != null) {
-            element = root;
-            root = element.nextInPool;
-            poolCount--;
-        } else {
-            element = injector.getInstance(Page.class);
-        }
+		if (element != null)
+			element.nextInPool = null;
 
-        if (element != null)
-            element.nextInPool = null;
+		return element;
+	}
 
-        return element;
-    }
-
-    public void release(Page element) {
-        if (poolCount < limit) {
-            poolCount++;
-            element.nextInPool = root;
-            root = element;
-        }
-    }
+	public void release(final Page element) {
+		if (poolCount < limit) {
+			poolCount++;
+			element.nextInPool = root;
+			root = element;
+		}
+	}
 
 }

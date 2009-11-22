@@ -3,7 +3,7 @@
 # Opens traceview for the selected trace files since last change (see pull_results.sh)
 
 
-LOCAL_RESULTS_DIR="test_results";
+LOCAL_RESULTS_DIR=".tests";
 
 if [ ! -d $LOCAL_RESULTS_DIR ] || [ ! -e $LOCAL_RESULTS_DIR/new.tmp ]; then
 	echo "No trace files";

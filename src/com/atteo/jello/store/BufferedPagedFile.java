@@ -6,42 +6,41 @@ import com.atteo.jello.guice.BufferedPagedFileBase;
 import com.google.inject.name.Named;
 
 class BufferedPagedFile implements PagedFile {
-	private PagedFile pagedFile;
-	private int bufferSize;
+	private final int bufferSize;
+	private final PagedFile pagedFile;
 
-	BufferedPagedFile(@BufferedPagedFileBase PagedFile pagedFile,
-			@Named("bufferSize") int bufferSize) {
+	BufferedPagedFile(@BufferedPagedFileBase final PagedFile pagedFile,
+			@Named("bufferSize") final int bufferSize) {
 		this.pagedFile = pagedFile;
 		this.bufferSize = bufferSize;
-		
+
 	}
 
-	@Override
-	public void getPage(int id, Page page) throws IOException {
-		pagedFile.getPage(id, page);
-	}
-
-	@Override
-	public int getPageCount() {
-		return pagedFile.getPageCount();
-	}
-
-	@Override
+	
 	public int addPage() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
 
-	@Override
-	public void removePage() {
-		// TODO Auto-generated method stub
-		
+	
+	public void getPage(final int id, final Page page) throws IOException {
+		pagedFile.getPage(id, page);
 	}
 
-	@Override
-	public void writePage(int id, Page page) throws IOException {
+	
+	public int getPageCount() {
+		return pagedFile.getPageCount();
+	}
+
+	
+	public void removePage() {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	
+	public void writePage(final int id, final Page page) throws IOException {
+		// TODO Auto-generated method stub
 	}
 
 }
