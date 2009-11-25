@@ -63,6 +63,11 @@
 	<property name="instrumented.dex.file" location="${instrumented.dir}/${dex.file.name}" />
 	<property name="coverage.dir" value="coverage" />
 
+	<!-- Trace directories -->
+	<property name="scripts.dir" value="scripts" />
+	<property name="trace.phone.dir" value="jello" />
+	<property name="trace.local.dir" value=".tests" />
+
 	<!-- The final package file to generate -->
 	<property name="out.package"
 		location="${out.dir}/${ant.project.name}-testpackage.apk" />
@@ -344,6 +349,9 @@
 				<arg value="-e" />
 				<arg value="coverageFile" />
 				<arg value="${emma.dump.file}" />
+				<arg value="-e" />
+				<arg value="class" />
+				<arg value="${application.package}.tests.unit.UnitTests" />
 			</extra-instrument-args>
 		</run-tests-helper>
 		<echo>Downloading coverage file into project directory...</echo>
@@ -366,5 +374,18 @@
 			</report>
 		</emma>
 		<echo>Saving the report file in ${basedir}/${coverage.dir}/coverage.html</echo>
+	</target>
+
+	<target name="pulltraces">
+		<exec executable="${scripts.dir}/pull_results.sh">
+			<arg value="${trace.phone.dir}"/>
+			<arg value="${trace.local.dir}"/>
+		</exec>
+	</target>
+
+	<target name="viewtraces">
+		<exec executable="${scripts.dir}/view_results.sh">
+			<arg value="${trace.local.dir}"/>
+		</exec>
 	</target>
 </project>

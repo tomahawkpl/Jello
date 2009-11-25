@@ -16,7 +16,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := OSFileFast
-LOCAL_SRC_FILES := com_atteo_jello_store_OSFileFast.c
+LOCAL_MODULE    := PagedFile
+LOCAL_SRC_FILES := com_atteo_jello_store_PagedFile.c
 
 include $(BUILD_SHARED_LIBRARY)

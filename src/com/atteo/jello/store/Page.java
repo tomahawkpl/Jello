@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class Page {
-	public Page nextInPool = null;
+	public Page nextInPool = null; // public for performance reasons
 	private int accessCount = 0;
 	private byte data[] = null;
 	private boolean dirty = false;

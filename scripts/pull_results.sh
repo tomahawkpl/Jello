@@ -1,9 +1,10 @@
 #!/bin/bash
 
 # Pulls performance test results from the device. Only the results which have changed are downloaded.
+# Names of the directories containing trace files on the phone and locally are required
 
-PHONE_RESULTS_DIR="jello";
-LOCAL_RESULTS_DIR=".tests";
+PHONE_RESULTS_DIR=$1;
+LOCAL_RESULTS_DIR=$2;
 
 if [ ! -d $LOCAL_RESULTS_DIR ]; then
 	mkdir $LOCAL_RESULTS_DIR;
@@ -38,7 +39,7 @@ echo "cd /sdcard && cd $PHONE_RESULTS_DIR && md5sum *.trace > sums.tmp; exit;" |
 
 adb pull /sdcard/$PHONE_RESULTS_DIR/sums.tmp phone_sums.tmp > /dev/null 2>&1;
 
-if [ ! -e sums.tmp ]; then
+if [ ! -e phone_sums.tmp ]; then
 	echo "FAILED (maybe there are none)";
 	exit 1
 fi
@@ -74,13 +75,9 @@ if [ $lines != "0" ]; then
 		echo -n "Downloading file $file... "
 		adb pull /sdcard/$PHONE_RESULTS_DIR/$file . > /dev/null 2>&1;
 		if [ $? -eq 0 ]; then
-			echo -en "\\033[1;32m";
 			echo "OK";
-			echo -en "\\033[0;37m";
 		else
-			echo -en "\\033[1;31m";
 			echo "FAILED";
-			echo -en "\\033[0;37m";
 		fi;
 	done;
 fi;

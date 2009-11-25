@@ -1,0 +1,1 @@
+This Application.mk goes to your NDK's apps directory. Remember to set the APP_PROJECT_PATH variable.
