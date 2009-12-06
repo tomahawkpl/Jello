@@ -56,7 +56,7 @@ echo "$lines local trace file(s) found";
 
 # Save the list of changed files
 
-cat local_sums.tmp phone_sums.tmp | uniq -u | uniq -f 1 > changed.tmp
+cat local_sums.tmp phone_sums.tmp | sort -k 2.1 | uniq -u | uniq -f 1 > changed.tmp
 
 lines=`awk ' END { print NR } ' changed.tmp`
 echo "$lines file(s) changed";

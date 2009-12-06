@@ -14,9 +14,12 @@
 #
 LOCAL_PATH := $(call my-dir)
 
+# --- PagedFile
+
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := PagedFile
-LOCAL_SRC_FILES := com_atteo_jello_store_PagedFile.c
+LOCAL_SRC_FILES := PagedFile.c
 
 include $(BUILD_SHARED_LIBRARY)
+

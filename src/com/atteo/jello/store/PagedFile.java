@@ -4,13 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import android.util.Log;
-
-/**
- * @TODO fileSizeLimit, locks
- * @author tomahawk
- * 
- */
 public class PagedFile {
 	private static int fileDescriptor;
 	private static boolean readOnly = false;
@@ -21,6 +14,7 @@ public class PagedFile {
 
 	static {
 		System.loadLibrary("PagedFile");
+		PagedFile.pageSize = getPageSizeNative();
 	}
 	
 	public static void open(final File file, boolean readOnly)
@@ -38,15 +32,15 @@ public class PagedFile {
 		if (!readOnly && !file.canWrite())
 			readOnly = true;
 
-		fileDescriptor = openNative(file.getCanonicalPath());
+		fileDescriptor = openNative(file.getCanonicalPath(), readOnly ? 1 : 0);
 
 		if (fileDescriptor < 0)
 			throw new FileNotFoundException("Unable to open file "
 					+ file.getCanonicalPath());
-		
+
 		PagedFile.readOnly = readOnly;
 		PagedFile.file = file;
-		PagedFile.pageSize = getPageSizeNative();
+		
 		long fileLength;
 		fileLength = PagedFile.length();
 		pages = (int) fileLength / pageSize;
@@ -62,19 +56,17 @@ public class PagedFile {
 		}
 	}
 
-	static public int addPage() throws IOException {
+	static public int addPages(int count) throws IOException {
 		if (readOnly)
 			throw new IOException("File opened in read-only mode");
+		setLength((pages + count) * pageSize);
 
-		setLength((pages + 1) * pageSize);
-
-		pages++;
+		pages += count;
 		return pages - 1;
 	}
 
 	static public void getPage(final int id, final Page page)
 			throws IOException {
-		checkPageId(id);
 		readFromPosition(page.getData(), pageOffset(id), pageSize);
 	}
 
@@ -88,18 +80,7 @@ public class PagedFile {
 
 	static public void writePage(final int id, final Page page)
 			throws IOException {
-		checkPageId(id);
-		if (page.getData() == null)
-			throw new IllegalArgumentException(
-					"Supplied Page argument containts no data");
 		writeOnPosition(page.getData(), pageOffset(id), pageSize);
-
-	}
-
-	static private void checkPageId(final int id) {
-		if (id >= pages || id < 0)
-			throw new IndexOutOfBoundsException(
-					"Page id does not exist within file");
 	}
 
 	public static boolean isOpened() {
@@ -123,9 +104,18 @@ public class PagedFile {
 	}
 
 	static public int getPageSize() {
-		Log.i("t","pageSize " + pageSize);
 		return pageSize;
 	}
+	
+	static public void syncPage(int page) {
+		syncArea(page * pageSize, pageSize);
+	}
+	
+	static public void syncAll() {
+		syncArea(0, length());
+	}
+	
+	native static private void syncArea(int position, int length);
 	
 	native static private int getPageSizeNative();
 
@@ -133,7 +123,7 @@ public class PagedFile {
 
 	native static public int length();
 
-	native static private int openNative(String fullpath);
+	native static private int openNative(String fullpath, int ro) throws IOException;
 
 	native static private void readFromPosition(byte[] buffer, int position,
 			int length);

@@ -17,12 +17,12 @@ public class PagedFileTest extends InstrumentationTestCase {
 	private Injector injector;
 	private int pageSize;
 	
-	public void testAddPage() throws IOException {
+	public void testAddPages() throws IOException {
 		final int TESTSIZE = 10;
 		int id;
 
 		for (int i = 0; i < TESTSIZE; i++) {
-			id = PagedFile.addPage();
+			id = PagedFile.addPages(1);
 			assertEquals(i, id);
 			assertEquals(i + 1, PagedFile.getPageCount());
 			assertEquals(pageSize * (i + 1), PagedFile.length());
@@ -34,7 +34,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		final Page p = pagePool.acquire();
 		final byte[] saved = p.getData();
-		PagedFile.addPage();
+		PagedFile.addPages(1);
 		PagedFile.writePage(0, p);
 		PagedFile.getPage(0, p);
 		p.equals(saved);
@@ -52,7 +52,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 		assertEquals(0, PagedFile.length());
 		assertEquals(0, PagedFile.getPageCount());
 
-		assertEquals(0, PagedFile.addPage());
+		assertEquals(0, PagedFile.addPages(1));
 		assertEquals(pageSize, PagedFile.length());
 		assertEquals(1, PagedFile.getPageCount());
 
@@ -67,8 +67,8 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 	public void testWriteGetPage() throws IOException {
 		final int FILESIZE = 100;
-		for (int i = 0; i < FILESIZE; i++)
-			assertEquals(i, PagedFile.addPage());
+		assertEquals(FILESIZE-1, PagedFile.addPages(FILESIZE));
+
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		final Page p = pagePool.acquire();
 		for (int i = 0; i < FILESIZE; i++) {
@@ -85,8 +85,8 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 	public void testWritePage() throws IOException {
 		final int FILESIZE = 100;
-		for (int i = 0; i < FILESIZE; i++)
-			assertEquals(i, PagedFile.addPage());
+		assertEquals(FILESIZE-1, PagedFile.addPages(FILESIZE));
+
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		final Page p = pagePool.acquire();
 		for (int i = 0; i < FILESIZE; i++)
@@ -100,7 +100,8 @@ public class PagedFileTest extends InstrumentationTestCase {
 		final File f = getInstrumentation().getContext().getDatabasePath(
 				filename);
 		f.getParentFile().mkdirs();
-		f.delete();
+		if (f.exists())
+			f.delete();
 		f.createNewFile();
 		PagedFile.open(f, false);
 		pageSize = PagedFile.getPageSize();

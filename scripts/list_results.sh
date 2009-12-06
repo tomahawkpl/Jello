@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Opens traceview for the selected trace files since last change (see pull_results.sh)
+# Lists new tracefiles (see pull_results.sh)
 # Name of the directory containing trace files is required
 
 
@@ -22,7 +22,7 @@ TRACEVIEW_BIN=`readlink -f \`which traceview\``
 
 cd $LOCAL_RESULTS_DIR;
 
-filename=`head -$2 new.tmp | tail -1;`
+echo "New trace files:";
 
-echo "Launching traceview..."
-$TRACEVIEW_BIN $filename > /dev/null 2>&1 &
+awk '// { print NR,$0}' new.tmp
+

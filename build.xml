@@ -384,8 +384,13 @@
 	</target>
 
 	<target name="viewtraces">
+		<exec executable="${scripts.dir}/list_results.sh">
+			<arg value="${trace.local.dir}"/>
+		</exec>
+		<input message="Select trace file:" addproperty="selected_trace"/>
 		<exec executable="${scripts.dir}/view_results.sh">
 			<arg value="${trace.local.dir}"/>
+			<arg value="${selected_trace}"/>
 		</exec>
 	</target>
 </project>

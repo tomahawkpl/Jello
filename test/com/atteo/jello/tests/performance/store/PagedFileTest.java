@@ -31,22 +31,38 @@ public class PagedFileTest extends InstrumentationTestCase implements
 	public void testGetPage() throws IOException {
 		final int FILESIZE = 200;
 		final int TESTSIZE = 10000;
-		for (int i = 0; i < FILESIZE; i++)
-			assertEquals(i, PagedFile.addPage());
+		assertEquals(FILESIZE-1, PagedFile.addPages(FILESIZE));
 		final PagePool pagePool = injector.getInstance(PagePool.class);
-		final Page p = pagePool.acquire();
+		Page p = pagePool.acquire();
 		int seed = 1112;
 		
-		//Debug.startMethodTracing("jello/testGetPage");
+		Debug.startMethodTracing("jello/testGetPage");
 		for (int i = 0; i < TESTSIZE; i++) {
 			PagedFile.getPage(seed % FILESIZE, p);
-			pagePool.release(p);
 			seed = ((seed*seed)/10)%10000;
 		}
 
-		//Debug.stopMethodTracing();
+		Debug.stopMethodTracing();
 	}
+	
+	public void testWritePage() throws IOException {
+		final int FILESIZE = 200;
+		final int TESTSIZE = 10000;
+		assertEquals(FILESIZE-1, PagedFile.addPages(FILESIZE));
+		final PagePool pagePool = injector.getInstance(PagePool.class);
+		Page p = pagePool.acquire();
+		int seed = 3432;
+		
+		Debug.startMethodTracing("jello/testWritePage");
+		
+		for (int i = 0; i < TESTSIZE; i++) {
+			PagedFile.writePage(seed % FILESIZE, p);
+			seed = ((seed*seed)/10)%10000;
+		}
 
+		Debug.stopMethodTracing();
+	}
+	
 
 	@Override
 	protected void setUp() throws IOException {
@@ -54,7 +70,8 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		final File f = getInstrumentation().getContext().getDatabasePath(
 				filename);
 		f.getParentFile().mkdirs();
-		f.delete();
+		if (f.exists())
+			f.delete();
 		f.createNewFile();
 		PagedFile.open(f, false);
 	}
