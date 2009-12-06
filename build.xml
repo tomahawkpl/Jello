@@ -56,7 +56,7 @@
 	<property name="native.libs.dir" value="libs" />
 	<property name="out.dir" value="bin" />
 	<property name="instrumented.dir" value="instrumented" />
-	<property name="out.classes.dir" value="${out.dir}/classes" />
+	<property name="out.classes.dir" value="${out.dir}" />
 	<property name="instrumented.classes.dir" value="${instrumented.dir}/classes" />
 	<property name="dex.file.name" value="classes.dex" />
 	<property name="normal.dex.file" location="${out.dir}/${dex.file.name}" />
@@ -223,21 +223,16 @@
 		<delete dir="${instrumented.dir}" verbose="${verbose}" />
 		<delete dir="${gen.dir}" verbose="${verbose}" />
 		<delete dir="${coverage.dir}" verbose="${verbose}" />
+		<delete dir="${trace.local.dir}" verbose="${verbose}" />
 	</target>
 
 	<!-- Compiles this project's .java files into .class files. -->
 	<target name="compile" depends="-dirs"
 		description="Compiles project's .java files into .class files">
-		<!-- If android rules are used for a test project, its classpath should include
-		tested project's location -->
-		<condition property="extensible.classpath"
-			value="${basedir}/bin/classes" else=".">
-			<isset property="application.dir" />
-		</condition>
 		<javac encoding="ascii" target="1.6" debug="true" extdirs=""
 			destdir="${out.classes.dir}"
 			bootclasspathref="android.target.classpath"
-			verbose="${verbose}" classpath="${extensible.classpath}">
+			verbose="${verbose}">
 			<src path="${source.dir}" />
 			<src path="${test.dir}" />
 			<src path="${gen.dir}" />

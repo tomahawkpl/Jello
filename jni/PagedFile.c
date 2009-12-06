@@ -39,12 +39,12 @@ void mapFile(JNIEnv *env) {
 
 }
 
-jint JNICALL getPageSizeNative
+jint JNICALL getPageSize
 (JNIEnv *env, jclass dis) {
 	return getpagesize();
 }
 
-int length() {
+int getFileLength() {
 	int cur = lseek(pagedFileFD, 0, SEEK_CUR);
 	int end = lseek(pagedFileFD, 0, SEEK_END);
 	lseek(pagedFileFD, cur, SEEK_SET);
@@ -52,12 +52,12 @@ int length() {
 
 }
 
-jint JNICALL lengthNative
+jint JNICALL length
 (JNIEnv *env, jclass dis) {
-	return length();
+	return getFileLength();
 }
 
-jint JNICALL openNative
+jint JNICALL openFile
 (JNIEnv *env, jclass dis, jstring fullpath, jint ro) {
 	const jbyte *str;
 	pageSize = getpagesize();
@@ -77,7 +77,7 @@ jint JNICALL openNative
 		JNI_ThrowByName(env, "java/io/IOException", "Couldn't open database file");
 	}
 
-	fileLength = length();
+	fileLength = getFileLength();
 
 	if (fileLength > 0 && fileLength % pageSize != 0) {
 		fileLength = ((fileLength / pageSize) + 1) * pageSize;
@@ -99,7 +99,7 @@ jint JNICALL openNative
 }
 
 
-void JNICALL closeNative
+void JNICALL closeFile
 (JNIEnv *env, jclass dis) {
 	jint result;
 
@@ -200,19 +200,19 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 
 	nm[0].name = "getPageSizeNative";
 	nm[0].signature = "()I";
-	nm[0].fnPtr = getPageSizeNative;
+	nm[0].fnPtr = getPageSize;
 
 	nm[1].name = "openNative";
 	nm[1].signature = "(Ljava/lang/String;I)I";
-	nm[1].fnPtr = openNative;
+	nm[1].fnPtr = openFile;
 
 	nm[2].name = "closeNative";
 	nm[2].signature = "()V";
-	nm[2].fnPtr = closeNative;
+	nm[2].fnPtr = closeFile;
 
 	nm[3].name = "length";
 	nm[3].signature = "()I";
-	nm[3].fnPtr = lengthNative;
+	nm[3].fnPtr = length;
 
 	nm[4].name = "syncArea";
 	nm[4].signature = "(II)V";

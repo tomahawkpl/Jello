@@ -1,6 +1,5 @@
 #include <jni.h>
 #include <unistd.h>
-#include "common.h"
 
 
 void JNI_ThrowByName(JNIEnv *env, const char *name, const char *msg)

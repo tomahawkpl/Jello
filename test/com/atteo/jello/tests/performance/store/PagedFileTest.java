@@ -41,8 +41,8 @@ public class PagedFileTest extends InstrumentationTestCase implements
 			PagedFile.getPage(seed % FILESIZE, p);
 			seed = ((seed*seed)/10)%10000;
 		}
-
 		Debug.stopMethodTracing();
+		
 	}
 	
 	public void testWritePage() throws IOException {
