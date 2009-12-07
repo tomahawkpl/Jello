@@ -14,12 +14,20 @@
 #
 LOCAL_PATH := $(call my-dir)
 
-# --- PagedFile
+# --- PagedFileFast
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := PagedFile
-LOCAL_SRC_FILES := PagedFile.c
+LOCAL_MODULE    := PagedFileFast
+LOCAL_SRC_FILES := PagedFileFast.c
 
 include $(BUILD_SHARED_LIBRARY)
 
+# --- OSInfo
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := OSInfo
+LOCAL_SRC_FILES := OSInfo.c
+
+include $(BUILD_SHARED_LIBRARY)

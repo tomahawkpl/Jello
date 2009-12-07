@@ -34,10 +34,10 @@ cd $LOCAL_RESULTS_DIR;
 
 echo -n "Getting trace files from the device... ";
 
-echo "cd /sdcard && cd $PHONE_RESULTS_DIR && md5sum *.trace > sums.tmp; exit;" | adb shell > /dev/null;
+echo "cd $PHONE_RESULTS_DIR && md5sum *.trace > sums.tmp; exit;" | adb shell > /dev/null;
 
 
-adb pull /sdcard/$PHONE_RESULTS_DIR/sums.tmp phone_sums.tmp > /dev/null 2>&1;
+adb pull $PHONE_RESULTS_DIR/sums.tmp phone_sums.tmp > /dev/null 2>&1;
 
 if [ ! -e phone_sums.tmp ]; then
 	echo "FAILED (maybe there are none)";
@@ -73,7 +73,7 @@ rm local_sums.tmp phone_sums.tmp changed.tmp
 if [ $lines != "0" ]; then
 	for file in `cat new.tmp`; do
 		echo -n "Downloading file $file... "
-		adb pull /sdcard/$PHONE_RESULTS_DIR/$file . > /dev/null 2>&1;
+		adb pull $PHONE_RESULTS_DIR/$file . > /dev/null 2>&1;
 		if [ $? -eq 0 ]; then
 			echo "OK";
 		else

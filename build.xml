@@ -51,6 +51,10 @@
 	<property name="gen.dir" value="gen" />
 	<property name="resource.dir" value="res" />
 	<property name="asset.dir" value="assets" />
+	<property name="remote.dir" value="/sdcard/jello" />
+	<property name="tmp.dir" value=".tmp" />
+
+
 
 	<property name="external.libs.dir" value="libs" />
 	<property name="native.libs.dir" value="libs" />
@@ -63,10 +67,16 @@
 	<property name="instrumented.dex.file" location="${instrumented.dir}/${dex.file.name}" />
 	<property name="coverage.dir" value="coverage" />
 
+	<property name="grapher.class" value="${application.package}.tests.GenerateGraph" />
+	<property name="grapher.remote.file" value="${remote.dir}/graph" />
+	<property name="grapher.local.file" value="${tmp.dir}/graph" />
+	<property name="grapher.png.file" value="${tmp.dir}/graph.png" />
+
+
 	<!-- Trace directories -->
 	<property name="scripts.dir" value="scripts" />
-	<property name="trace.phone.dir" value="jello" />
-	<property name="trace.local.dir" value=".tests" />
+	<property name="trace.phone.dir" value="${remote.dir}" />
+	<property name="trace.local.dir" value="${tmp.dir}" />
 
 	<!-- The final package file to generate -->
 	<property name="out.package"
@@ -182,6 +192,7 @@
 
 	<macrodef name="run-tests-helper">
 		<attribute name="emma.enabled" default="false" />
+		<attribute name="package" default="${application.package}" />
 		<element name="extra-instrument-args" optional="yes" />
 		<sequential>
 			<echo>Running tests ...</echo>
@@ -194,7 +205,7 @@
 				<arg value="coverage" />
 				<arg value="@{emma.enabled}" />
 				<extra-instrument-args />
-				<arg value="${application.package}/${test.runner}" />
+				<arg value="@{package}/${test.runner}" />
 			</exec>
 		</sequential>
 	</macrodef>
@@ -223,7 +234,7 @@
 		<delete dir="${instrumented.dir}" verbose="${verbose}" />
 		<delete dir="${gen.dir}" verbose="${verbose}" />
 		<delete dir="${coverage.dir}" verbose="${verbose}" />
-		<delete dir="${trace.local.dir}" verbose="${verbose}" />
+		<delete dir="${tmp.dir}" verbose="${verbose}" />
 	</target>
 
 	<!-- Compiles this project's .java files into .class files. -->
@@ -311,11 +322,6 @@
 					<filter includes="${application.package}.*"
 						excludes="${application.package}.tests.*, ${application.package}.misc.*,
 						${application.package}.guice.*" />
-
-
-
-
-
 				</instr>
 				<!-- TODO: exclusion filters on R*.class and allowing custom exclusion from
 				user defined file -->
@@ -371,6 +377,33 @@
 		<echo>Saving the report file in ${basedir}/${coverage.dir}/coverage.html</echo>
 	</target>
 
+	<target name="gengraph">
+		<run-tests-helper>
+			<extra-instrument-args>
+				<arg value="-e" />
+				<arg value="class" />
+				<arg value="${grapher.class}" />
+			</extra-instrument-args>
+		</run-tests-helper>
+		<exec executable="${adb}" failonerror="true">
+			<arg value="pull" />
+			<arg value="${grapher.remote.file}" />
+			<arg value="${grapher.local.file}" />
+		</exec>
+		<exec executable="dot" output="${grapher.png.file}">
+			<arg line="-T png"/>
+			<arg value="${grapher.local.file}"/>
+		</exec>
+
+	</target>
+
+
+	<target name="showgraph">
+		<exec executable="display" spawn="true">
+			<arg value="${grapher.png.file}"/>
+		</exec>
+	</target>
+
 	<target name="pulltraces">
 		<exec executable="${scripts.dir}/pull_results.sh">
 			<arg value="${trace.phone.dir}"/>
@@ -388,4 +421,5 @@
 			<arg value="${selected_trace}"/>
 		</exec>
 	</target>
+
 </project>

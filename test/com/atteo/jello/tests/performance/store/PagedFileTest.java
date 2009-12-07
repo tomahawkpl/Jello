@@ -10,6 +10,7 @@ import android.test.PerformanceTestCase;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagePool;
 import com.atteo.jello.store.PagedFile;
+import com.atteo.jello.store.PagedFileFactory;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -18,7 +19,9 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		PerformanceTestCase {
 	private final String filename = "testfile";
 	private Injector injector;
-
+	private PagedFile pagedFile;
+	private File f;
+	
 	public boolean isPerformanceOnly() {
 		return true;
 	}
@@ -31,14 +34,14 @@ public class PagedFileTest extends InstrumentationTestCase implements
 	public void testGetPage() throws IOException {
 		final int FILESIZE = 200;
 		final int TESTSIZE = 10000;
-		assertEquals(FILESIZE-1, PagedFile.addPages(FILESIZE));
+		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		Page p = pagePool.acquire();
 		int seed = 1112;
 		
 		Debug.startMethodTracing("jello/testGetPage");
 		for (int i = 0; i < TESTSIZE; i++) {
-			PagedFile.getPage(seed % FILESIZE, p);
+			pagedFile.readPage(seed % FILESIZE, p.getData());
 			seed = ((seed*seed)/10)%10000;
 		}
 		Debug.stopMethodTracing();
@@ -48,7 +51,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 	public void testWritePage() throws IOException {
 		final int FILESIZE = 200;
 		final int TESTSIZE = 10000;
-		assertEquals(FILESIZE-1, PagedFile.addPages(FILESIZE));
+		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		Page p = pagePool.acquire();
 		int seed = 3432;
@@ -56,7 +59,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		Debug.startMethodTracing("jello/testWritePage");
 		
 		for (int i = 0; i < TESTSIZE; i++) {
-			PagedFile.writePage(seed % FILESIZE, p);
+			pagedFile.writePage(seed % FILESIZE, p.getData());
 			seed = ((seed*seed)/10)%10000;
 		}
 
@@ -67,19 +70,25 @@ public class PagedFileTest extends InstrumentationTestCase implements
 	@Override
 	protected void setUp() throws IOException {
 		injector = Guice.createInjector(new StoreModule(null));
-		final File f = getInstrumentation().getContext().getDatabasePath(
+		f = getInstrumentation().getContext().getDatabasePath(
 				filename);
 		f.getParentFile().mkdirs();
 		if (f.exists())
 			f.delete();
 		f.createNewFile();
-		PagedFile.open(f, false);
+		PagedFileFactory pfFactory = injector.getInstance(PagedFileFactory.class);
+		pagedFile = pfFactory.create(f, false);
+		pagedFile.open();
 	}
 	
 	@Override
 	protected void tearDown() {
-		PagedFile.getFile().delete();
-		PagedFile.close();
+		try {
+			pagedFile.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		f.delete();
 	}
 
 }
