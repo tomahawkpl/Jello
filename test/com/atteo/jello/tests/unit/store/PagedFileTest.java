@@ -2,6 +2,7 @@ package com.atteo.jello.tests.unit.store;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import android.test.InstrumentationTestCase;
@@ -16,7 +17,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class PagedFileTest extends InstrumentationTestCase {
-	private final String filename = "testfile";
+	private static final String filename = "testfile";
 	private Injector injector;
 	private PagedFile pagedFile;
 	private int pageSize = OSInfo.getPageSize();
@@ -42,7 +43,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 		pagedFile.addPages(1);
 		pagedFile.writePage(0, p.getData());
 		pagedFile.readPage(0, p.getData());
-		p.equals(saved);
+		assertTrue(Arrays.equals(p.getData(),saved));
 		pagePool.release(p);
 	}
 

@@ -8,7 +8,7 @@ import com.google.inject.assistedinject.FactoryProvider;
 import com.google.inject.name.Names;
 
 public class StoreModule implements Module {
-	private final int pagePoolLimit = 5;
+	private static final int pagePoolLimit = 5;
 	private final int pageSize = OSInfo.getPageSize();
 	private final HashMap<String, String> properties;
 

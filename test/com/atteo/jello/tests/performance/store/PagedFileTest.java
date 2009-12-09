@@ -17,7 +17,7 @@ import com.google.inject.Injector;
 
 public class PagedFileTest extends InstrumentationTestCase implements
 		PerformanceTestCase {
-	private final String filename = "testfile";
+	private static final String filename = "testfile";
 	private Injector injector;
 	private PagedFile pagedFile;
 	private File f;

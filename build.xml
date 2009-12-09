@@ -59,6 +59,8 @@
 	<property name="external.libs.dir" value="libs" />
 	<property name="native.libs.dir" value="libs" />
 	<property name="out.dir" value="bin" />
+	<property name="doc.dir" value="doc" />
+	<property name="doc.api.dir" value="${doc.dir}/api" />
 	<property name="instrumented.dir" value="instrumented" />
 	<property name="out.classes.dir" value="${out.dir}" />
 	<property name="instrumented.classes.dir" value="${instrumented.dir}/classes" />
@@ -235,6 +237,7 @@
 		<delete dir="${gen.dir}" verbose="${verbose}" />
 		<delete dir="${coverage.dir}" verbose="${verbose}" />
 		<delete dir="${tmp.dir}" verbose="${verbose}" />
+		<delete dir="${doc.api.dir}" verbose="${verbose}" />
 	</target>
 
 	<!-- Compiles this project's .java files into .class files. -->
@@ -420,6 +423,17 @@
 			<arg value="${trace.local.dir}"/>
 			<arg value="${selected_trace}"/>
 		</exec>
+	</target>
+
+	<target name="doc">
+		<javadoc sourcepath="${source.dir}" destdir="${doc.api.dir}">
+			<classpath>
+				<fileset dir="${external.libs.dir}">
+					<include name="*.jar"/>
+				</fileset>
+
+			</classpath>
+		</javadoc>
 	</target>
 
 </project>
