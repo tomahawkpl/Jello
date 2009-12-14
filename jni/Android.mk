@@ -20,6 +20,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := PagedFileFast
 LOCAL_SRC_FILES := PagedFileFast.c
+LOCAL_LDLIBS := -llog
 
 include $(BUILD_SHARED_LIBRARY)
 

@@ -1,17 +1,21 @@
 package com.atteo.jello.store;
 
+import java.nio.ByteBuffer;
+
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class Page {
 	public Page nextInPool = null; // public for performance reasons
-	private int accessCount = 0;
-	private byte data[] = null;
-	private boolean dirty = false;
-
+	protected int accessCount = 0;
+	protected byte data[] = null;
+	protected boolean dirty = false;
+	protected ByteBuffer byteBuffer;
+	
 	@Inject
 	Page(@Named("pageSize") final int pageSize) {
 		data = new byte[pageSize];
+		byteBuffer = ByteBuffer.wrap(data);
 	}
 
 	public void decreaseAccessCount() {
@@ -38,4 +42,7 @@ public class Page {
 		this.dirty = dirty;
 	}
 
+	public int getCapacity() {
+		return data.length;
+	}
 }

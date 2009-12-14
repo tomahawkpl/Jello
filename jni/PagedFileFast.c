@@ -6,20 +6,21 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <android/log.h>
 #include "common.c"
 
 int pagedFileFD;
-void *mapping = NULL;
+void *mapping;
 int readOnly;
-int fileLength;
+long fileLength;
 int pageSize;
-int pages;
+long pages;
 int prot;
 int isOpened;
 int openFlags;
 
 void mapFile(JNIEnv *env) {
-	mapping = mmap(mapping, fileLength, prot, MAP_PRIVATE, pagedFileFD, 0);
+	mapping = mmap(NULL, fileLength, prot, MAP_SHARED, pagedFileFD, 0);
 	if (mapping == MAP_FAILED) {
 		close(pagedFileFD);
 		switch(errno) {
@@ -41,9 +42,9 @@ void mapFile(JNIEnv *env) {
 
 }
 
-int getFileLength() {
-	int cur = lseek(pagedFileFD, 0, SEEK_CUR);
-	int end = lseek(pagedFileFD, 0, SEEK_END);
+long getFileLength() {
+	long cur = lseek(pagedFileFD, 0, SEEK_CUR);
+	long end = lseek(pagedFileFD, 0, SEEK_END);
 	lseek(pagedFileFD, cur, SEEK_SET);
 	return end;
 
@@ -54,7 +55,7 @@ jint JNICALL openNative
 	const jbyte *str;
 
 	if (isOpened)
-		JNI_ThrowByName(env, "java/io/IOException", "File already opened, close first");
+		JNI_ThrowByName(env, "java/lang/InternalError", "File already opened, close first");
 
 	pageSize = ps;
 
@@ -76,20 +77,24 @@ jint JNICALL openNative
 
 	if (fileLength > 0 && fileLength % pageSize != 0) {
 		fileLength = ((fileLength / pageSize) + 1) * pageSize;
+
 		ftruncate(pagedFileFD, fileLength);
 	}
 
 	pages = fileLength / pageSize;
 
 	readOnly = ro;
-
-	if (fileLength > 0)
-		mapFile(env);
+	isOpened = 1;
 
 	prot = PROT_READ;
 
-	if (!readOnly)
+	if (readOnly == 0)
 		prot |= PROT_WRITE;
+
+	if (fileLength > 0)
+		mapFile(env);
+	else
+		mapping = NULL;
 
 	return pagedFileFD;
 
@@ -103,14 +108,13 @@ void JNICALL closeNative
 	if (!isOpened)
 		return;
 
-	if (readOnly == 0) {
-		if (mapping != NULL)
-			msync(mapping, fileLength, MS_SYNC);
-		fsync(pagedFileFD);
-	}
-
 	if (mapping != NULL)
-		munmap(mapping, fileLength);
+		if (munmap(mapping, fileLength) == -1)
+			JNI_ThrowByName(env, "java/io/IOException", "munmap() failed (close)");
+
+	if (readOnly == 0)
+		if (fsync(pagedFileFD) == 1)
+			JNI_ThrowByName(env, "java/io/IOException", "fsync() failed (close)");
 
 	for (;;) {
 		result = (jint) close(pagedFileFD);
@@ -119,21 +123,27 @@ void JNICALL closeNative
 			break;
 		}
 	}
+
+	isOpened = 0;
 }
 
-jint JNICALL addPages
-(JNIEnv *env, jclass dis, jint count) {
-	int newLength;
+jlong JNICALL addPages
+(JNIEnv *env, jclass dis, jlong count) {
+	long newLength;
 	if (readOnly)
-		JNI_ThrowByName(env,"java/lang/IllegalAccessException","File opened in read-only mode");
+		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
 
 	newLength = fileLength + count * pageSize;
 
-	ftruncate(pagedFileFD, newLength);
-
 	if (mapping != NULL) {
-		munmap(mapping, fileLength);
+		if (munmap(mapping, fileLength) == -1)
+			JNI_ThrowByName(env, "java/io/IOException", "munmap() failed (addPages)");
 	}
+
+	if (ftruncate(pagedFileFD, newLength) == -1)
+		JNI_ThrowByName(env, "java/io/IOException", "ftruncate() failed (addPages)");
+	lseek(pagedFileFD, 0, SEEK_SET);
+	write(pagedFileFD, "a", 1);
 
 	fileLength = newLength;
 
@@ -144,26 +154,28 @@ jint JNICALL addPages
 	else
 		mapFile(env);
 
+
 	return fileLength/pageSize - 1;
 
 }
 
-jint JNICALL removePages
-(JNIEnv *env, jclass dis, jint count) {
-	int newLength;
+jlong JNICALL removePages
+(JNIEnv *env, jclass dis, jlong count) {
+	long newLength;
 	if (readOnly)
-		JNI_ThrowByName(env,"java/lang/IllegalAccessException","File opened in read-only mode");
+		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
 
 	newLength = fileLength - count * pageSize;
 
 	if (newLength < 0)
 		newLength = 0;
 
-	ftruncate(pagedFileFD, newLength);
+	if (mapping != NULL)
+		if (munmap(mapping, fileLength) == -1)
+			JNI_ThrowByName(env, "java/io/IOException", "munmap() failed (removePages)");
 
-	if (mapping != NULL) {
-		munmap(mapping, fileLength);
-	}
+	if (ftruncate(pagedFileFD, newLength) == -1)
+		JNI_ThrowByName(env, "java/io/IOException", "ftruncate() failed (addPages)");
 
 	fileLength = newLength;
 
@@ -178,12 +190,12 @@ jint JNICALL removePages
 
 }
 
-jint JNICALL getFileLengthNative
+jlong JNICALL getFileLengthNative
 (JNIEnv *env, jclass dis) {
-	return (jint)getFileLength();
+	return (jlong)getFileLength();
 }
 
-jint JNICALL getPageCount
+jlong JNICALL getPageCount
 (JNIEnv *env, jclass dis) {
 	return pages;
 }
@@ -194,24 +206,24 @@ jboolean JNICALL isReadOnly
 }
 
 void JNICALL syncPages
-(JNIEnv *env, jclass dis, jint position, jint count) {
-	if (mapping != NULL)
-		msync((void*) (mapping+position*pageSize), count*pageSize, MS_SYNC | MS_INVALIDATE);
-}
+	(JNIEnv *env, jclass dis, jlong position, jlong count) {
+		if (mapping != NULL)
+			msync((void*) (mapping+position*pageSize), count*pageSize, MS_SYNC | MS_INVALIDATE);
+	}
 
 void JNICALL syncAll
-(JNIEnv *env, jclass dis) {
-	if (mapping != NULL)
-		msync((void*) (mapping), fileLength, MS_SYNC | MS_INVALIDATE);
-}
+	(JNIEnv *env, jclass dis) {
+		if (mapping != NULL)
+			msync((void*) (mapping), fileLength, MS_SYNC | MS_INVALIDATE);
+	}
 
 void JNICALL readPage
-(JNIEnv *env, jclass dis, jint id, jbyteArray buffer) {
+(JNIEnv *env, jclass dis, jlong id, jbyteArray buffer) {
 	jboolean isCopy;
 	jbyte *bytes;
 
 	if (mapping == NULL)
-		JNI_ThrowByName(env,"java/io/IOException","Attempting to read from an empty file");
+		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to read from an empty file");
 
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
@@ -224,19 +236,21 @@ void JNICALL readPage
 
 
 void JNICALL writePage
-(JNIEnv *env, jclass dis, jint id, jbyteArray buffer) {
+(JNIEnv *env, jclass dis, jlong id, jbyteArray buffer) {
 	jboolean isCopy;
 	jbyte *bytes;
 
 	if (readOnly)
-		JNI_ThrowByName(env,"java/lang/IllegalAccessException","File opened in read-only mode");
+		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
 
 	if (mapping == NULL)
-		JNI_ThrowByName(env,"java/io/IOException","Attempting to write to an empty file");
+		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to write to an empty file");
 
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
 	memcpy((void*) (mapping + id * pageSize), (void*) bytes, pageSize);
+	//	if (msync(mapping + id * pageSize, pageSize, MS_SYNC) == -1)
+	//		JNI_ThrowByName(env,"java/lang/InternalError","msync() failed");
 
 	(*env)->ReleaseByteArrayElements(env, buffer, bytes, JNI_ABORT);
 }
@@ -264,19 +278,19 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[1].fnPtr = closeNative;
 
 	nm[2].name = "addPages";
-	nm[2].signature = "(I)I";
+	nm[2].signature = "(J)J";
 	nm[2].fnPtr = addPages;
 
 	nm[3].name = "removePages";
-	nm[3].signature = "(I)V";
+	nm[3].signature = "(J)V";
 	nm[3].fnPtr = removePages;
 
 	nm[4].name = "getPageCount";
-	nm[4].signature = "()I";
+	nm[4].signature = "()J";
 	nm[4].fnPtr = getPageCount;
 
 	nm[5].name = "getFileLength";
-	nm[5].signature = "()I";
+	nm[5].signature = "()J";
 	nm[5].fnPtr = getFileLengthNative;
 
 	nm[6].name = "isReadOnly";
@@ -284,7 +298,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[6].fnPtr = isReadOnly;
 
 	nm[7].name = "syncPages";
-	nm[7].signature = "(II)V";
+	nm[7].signature = "(JJ)V";
 	nm[7].fnPtr = syncPages;
 
 	nm[8].name = "syncAll";
@@ -292,11 +306,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[8].fnPtr = syncAll;
 
 	nm[9].name = "readPage";
-	nm[9].signature = "(I[B)V";
+	nm[9].signature = "(J[B)V";
 	nm[9].fnPtr = readPage;
 
 	nm[10].name = "writePage";
-	nm[10].signature = "(I[B)V";
+	nm[10].signature = "(J[B)V";
 	nm[10].fnPtr = writePage;
 
 

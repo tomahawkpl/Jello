@@ -12,7 +12,7 @@ public class PagedFileRAF implements PagedFile {
 	private File file;
 	private boolean readOnly;
 	private int pageSize;
-	private int pages;
+	private long pages;
 	private RandomAccessFile raf;
 
 	@Inject
@@ -22,17 +22,25 @@ public class PagedFileRAF implements PagedFile {
 		this.readOnly = readOnly;
 	}
 
-	public int addPages(int count) throws IOException {
+	public long addPages(long count) {
 		pages += count;
-		raf.setLength(pages * pageSize);
+		try {
+			raf.setLength(pages * pageSize);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		return pages - 1;
 	}
 
-	public void close() throws IOException {
-		raf.close();
+	public void close() {
+		try {
+			raf.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
-	public int getFileLength() {
+	public long getFileLength() {
 		int len = 0;
 		try {
 			len = (int)raf.length();
@@ -42,7 +50,7 @@ public class PagedFileRAF implements PagedFile {
 		return len;
 	}
 
-	public int getPageCount() {
+	public long getPageCount() {
 		return pages;
 	}
 
@@ -63,17 +71,26 @@ public class PagedFileRAF implements PagedFile {
 		
 	}
 
-	public void readPage(int id, byte[] data) throws IOException {
-		raf.seek(id * pageSize);
-		raf.readFully(data);
+	public void readPage(long id, byte[] data) {
+		try {
+			raf.seek(id * pageSize);
+			raf.readFully(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 
 	}
 
-	public void removePages(int count) throws IOException {
+	public void removePages(long count){
 		pages -= count;
 		if (pages < 0)
 			pages = 0;
-		raf.setLength(pages * pageSize);
+		try {
+			raf.setLength(pages * pageSize);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 	}
 
@@ -81,14 +98,17 @@ public class PagedFileRAF implements PagedFile {
 
 	}
 
-	public void syncPages(int startPage, int count) {
+	public void syncPages(long startPage, long count) {
 
 	}
 
-	public void writePage(int id, byte[] data) throws IOException {
-		raf.seek(id * pageSize);
-		raf.write(data);
-
+	public void writePage(long id, byte[] data) {
+		try {
+			raf.seek(id * pageSize);
+			raf.write(data);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

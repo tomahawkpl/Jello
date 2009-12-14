@@ -21,9 +21,13 @@ public class StoreModule implements Module {
 	public void configure(final Binder binder) {
 		Names.bindProperties(binder, properties);
 		binder.bind(PagePool.class);
-		binder.bind(PagedFileFactory.class).toProvider(
-				FactoryProvider.newFactory(PagedFileFactory.class,
+		binder.bind(HeaderPage.class);
+		binder.bind(PagedFile.Factory.class).toProvider(
+				FactoryProvider.newFactory(PagedFile.Factory.class,
 						PagedFileFast.class));
+		binder.bind(DatabaseFile.Factory.class).toProvider(
+				FactoryProvider.newFactory(DatabaseFile.Factory.class,
+						DatabaseFile.class));
 
 	}
 

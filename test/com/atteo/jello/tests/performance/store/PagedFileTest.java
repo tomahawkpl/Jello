@@ -10,7 +10,6 @@ import android.test.PerformanceTestCase;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagePool;
 import com.atteo.jello.store.PagedFile;
-import com.atteo.jello.store.PagedFileFactory;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -39,12 +38,12 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		Page p = pagePool.acquire();
 		int seed = 1112;
 		
-		Debug.startMethodTracing("jello/testGetPage");
+		//Debug.startMethodTracing("jello/testGetPage");
 		for (int i = 0; i < TESTSIZE; i++) {
 			pagedFile.readPage(seed % FILESIZE, p.getData());
 			seed = ((seed*seed)/10)%10000;
 		}
-		Debug.stopMethodTracing();
+		//Debug.stopMethodTracing();
 		
 	}
 	
@@ -55,15 +54,15 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		Page p = pagePool.acquire();
 		int seed = 3432;
-		
-		Debug.startMethodTracing("jello/testWritePage");
+		p.getData()[7]='a';
+		//Debug.startMethodTracing("jello/testWritePage");
 		
 		for (int i = 0; i < TESTSIZE; i++) {
 			pagedFile.writePage(seed % FILESIZE, p.getData());
 			seed = ((seed*seed)/10)%10000;
 		}
 
-		Debug.stopMethodTracing();
+		//Debug.stopMethodTracing();
 	}
 	
 
@@ -76,7 +75,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		if (f.exists())
 			f.delete();
 		f.createNewFile();
-		PagedFileFactory pfFactory = injector.getInstance(PagedFileFactory.class);
+		PagedFile.Factory pfFactory = injector.getInstance(PagedFile.Factory.class);
 		pagedFile = pfFactory.create(f, false);
 		pagedFile.open();
 	}
@@ -88,7 +87,8 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		f.delete();
+
+		//f.delete();
 	}
 
 }

@@ -25,7 +25,11 @@ public class PagedFileFast implements PagedFile {
 	}
 
 	protected void finalize() {
-		close();
+		try {
+			close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	synchronized public void open() throws IOException {
@@ -37,7 +41,7 @@ public class PagedFileFast implements PagedFile {
 			throw new IOException("File is not readable");
 
 		if (!readOnly && !file.canWrite())
-			readOnly = true;
+			throw new IOException("Tried to open a read only file in rw mode");
 
 		openNative(file.getCanonicalPath(), readOnly, pageSize);
 
@@ -45,15 +49,15 @@ public class PagedFileFast implements PagedFile {
 
 	native private int openNative(String fullpath, boolean readOnly,
 			int pageSize) throws IOException;
-	synchronized native public void close();
-	synchronized native public int addPages(int count) throws IOException;
-	synchronized native public void removePages(int count) throws IOException;
-	native public int getFileLength();
-	native public int getPageCount();
+	synchronized native public void close() throws IOException;
+	synchronized native public long addPages(long count) throws IOException;
+	synchronized native public void removePages(long count) throws IOException;
+	native public long getFileLength();
+	native public long getPageCount();
 	native public boolean isReadOnly();
-	native public void syncPages(int startPage, int count);
+	native public void syncPages(long startPage, long count);
 	native public void syncAll();
-	native public void readPage(final int id, final byte[] data);
-	synchronized native public void writePage(final int id, final byte[] data);
+	native public void readPage(final long id, final byte[] data);
+	synchronized native public void writePage(final long id, final byte[] data);
 
 }

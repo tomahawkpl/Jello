@@ -6,12 +6,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import android.test.InstrumentationTestCase;
+import android.util.Log;
 
 import com.atteo.jello.store.OSInfo;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagePool;
 import com.atteo.jello.store.PagedFile;
-import com.atteo.jello.store.PagedFileFactory;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -25,7 +25,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 	
 	public void testAddPages() throws IOException {
 		final int TESTSIZE = 10;
-		int id;
+		long id;
 
 		for (int i = 0; i < TESTSIZE; i++) {
 			id = pagedFile.addPages(1);
@@ -33,7 +33,6 @@ public class PagedFileTest extends InstrumentationTestCase {
 			assertEquals(i + 1, pagedFile.getPageCount());
 			assertEquals(pageSize * (i + 1), pagedFile.getFileLength());
 		}
-
 	}
 
 	public void testReadPage() throws IOException {
@@ -71,9 +70,13 @@ public class PagedFileTest extends InstrumentationTestCase {
 		assertEquals(0, pagedFile.getPageCount());
 	}
 
-	public void testWriteGetPage() throws IOException {
+	public void testWriteGetPage() {
 		final int FILESIZE = 100;
-		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
+		try {
+			assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
 
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		final Page p = pagePool.acquire();
@@ -82,6 +85,13 @@ public class PagedFileTest extends InstrumentationTestCase {
 			pagedFile.writePage(i, p.getData());
 			p.getData()[i % pageSize] = 0;
 		}
+		try {
+			pagedFile.close();
+			pagedFile.open();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		for (int i = 0; i < FILESIZE; i++) {
 			pagedFile.readPage(i, p.getData());
 			assertEquals((i % 255), p.getData()[i % pageSize]);
@@ -111,7 +121,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 		if (f.exists())
 			f.delete();
 		f.createNewFile();
-		PagedFileFactory pfFactory = injector.getInstance(PagedFileFactory.class);
+		PagedFile.Factory pfFactory = injector.getInstance(PagedFile.Factory.class);
 		pagedFile = pfFactory.create(f, false);
 		pagedFile.open();
 

@@ -4,12 +4,13 @@ import java.io.File;
 
 import android.content.Context;
 
+import com.atteo.jello.store.DatabaseFile;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class Jello {
-	private static Database database;
+	private static DatabaseFile dbFile;
 	private static final int DEVELOPMENT = 1;
 	private static int environment;
 	private static String fullpath;
@@ -22,18 +23,33 @@ public class Jello {
 		return fullpath;
 	}
 
-	public static boolean open(final Context context, final String filename,
+	public static boolean open(final Context context, final String filename, final boolean readOnly,
 			final int environment) {
 		Jello.environment = environment;
 		loadEnvironment();
 
 		final File file = context.getDatabasePath(filename);
 		fullpath = file.getAbsolutePath();
+		
+		boolean isNew = false;
+		
+		if (!file.exists())
+			isNew = true;
+		
+		if (isNew && readOnly)
+			return false;
 
-		database = injector.getInstance(Database.class);
-		return database.isValid();
+		dbFile = injector.getInstance(DatabaseFile.Factory.class).create(file, readOnly);
+
+		dbFile.loadStructure(isNew);
+		
+		return dbFile.isValid();
 	}
 
+	public static void close() {
+		dbFile.close();
+	}
+	
 	private static void loadEnvironment() {
 		switch (environment) {
 		case PRODUCTION:
