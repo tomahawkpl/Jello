@@ -11,17 +11,20 @@ public class StoreModule implements Module {
 	private static final int pagePoolLimit = 5;
 	private final int pageSize = OSInfo.getPageSize();
 	private final HashMap<String, String> properties;
+	private final PagedFile pagedFile;
 
-	public StoreModule(final HashMap<String, String> properties) {
+	public StoreModule(final PagedFile pagedFile, final HashMap<String, String> properties) {
 		this.properties = getDefaultProperties();
 		if (properties != null)
 			this.properties.putAll(properties);
+		this.pagedFile = pagedFile;
 	}
 
 	public void configure(final Binder binder) {
 		Names.bindProperties(binder, properties);
 		binder.bind(PagePool.class);
 		binder.bind(HeaderPage.class);
+		binder.bind(PagedFile.class).toInstance(pagedFile);
 		binder.bind(PagedFile.Factory.class).toProvider(
 				FactoryProvider.newFactory(PagedFile.Factory.class,
 						PagedFileFast.class));

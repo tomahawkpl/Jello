@@ -10,7 +10,10 @@ public class HeaderPage extends Page {
 	private HeaderPage(@Named("pageSize") final int pageSize) {
 		super(pageSize);
 		byteBuffer.put(MAGIC.getBytes());
-		data[20]=97;
+	}
+	
+	public boolean load() {
+		return true;
 	}
 
 
