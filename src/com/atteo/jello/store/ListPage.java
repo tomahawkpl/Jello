@@ -3,8 +3,12 @@ package com.atteo.jello.store;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class ListPage extends Page {
-
+/**
+ * Page which can be organised into single linked lists
+ * @author tomahawk
+ *
+ */
+public class ListPage extends Page {	
 	@Inject
 	ListPage(@Named("pageSize") final int pageSize) {	
 		super(pageSize);
@@ -16,6 +20,10 @@ public class ListPage extends Page {
 	
 	public long getNext() {
 		return byteBuffer.getLong(0);
+	}
+	
+	public int getDataStart() {
+		return Long.SIZE;
 	}
 	
 	public int getCapacity() {

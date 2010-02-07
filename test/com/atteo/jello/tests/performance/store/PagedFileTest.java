@@ -40,7 +40,8 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		
 		//Debug.startMethodTracing("jello/testGetPage");
 		for (int i = 0; i < TESTSIZE; i++) {
-			pagedFile.readPage(seed % FILESIZE, p.getData());
+			p.setId(seed % FILESIZE);
+			pagedFile.readPage(p);
 			seed = ((seed*seed)/10)%10000;
 		}
 		//Debug.stopMethodTracing();
@@ -58,7 +59,8 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		//Debug.startMethodTracing("jello/testWritePage");
 		
 		for (int i = 0; i < TESTSIZE; i++) {
-			pagedFile.writePage(seed % FILESIZE, p.getData());
+			p.setId(seed % FILESIZE);
+			pagedFile.writePage(p);
 			seed = ((seed*seed)/10)%10000;
 		}
 
@@ -68,15 +70,14 @@ public class PagedFileTest extends InstrumentationTestCase implements
 
 	@Override
 	protected void setUp() throws IOException {
-		injector = Guice.createInjector(new StoreModule(null));
+		injector = Guice.createInjector(new StoreModule(filename,null));
 		f = getInstrumentation().getContext().getDatabasePath(
 				filename);
 		f.getParentFile().mkdirs();
 		if (f.exists())
 			f.delete();
 		f.createNewFile();
-		PagedFile.Factory pfFactory = injector.getInstance(PagedFile.Factory.class);
-		pagedFile = pfFactory.create(f, false);
+		pagedFile = injector.getInstance(PagedFile.class);
 		pagedFile.open();
 	}
 	

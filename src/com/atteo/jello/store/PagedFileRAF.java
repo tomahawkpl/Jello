@@ -4,22 +4,22 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import com.atteo.jello.Jello;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 
 public class PagedFileRAF implements PagedFile {
-	private File file;
+	private String fullpath;
 	private boolean readOnly;
 	private int pageSize;
 	private long pages;
 	private RandomAccessFile raf;
 
 	@Inject
-	PagedFileRAF(@Named("pageSize") int pageSize, @Assisted File file, @Assisted boolean readOnly) {
-		this.file = file;
+	PagedFileRAF(@Named("pageSize") int pageSize, @Assisted String fullpath) {
 		this.pageSize = pageSize;
-		this.readOnly = readOnly;
+		this.fullpath = fullpath;
 	}
 
 	public long addPages(long count) {
@@ -58,7 +58,16 @@ public class PagedFileRAF implements PagedFile {
 		return readOnly;
 	}
 
-	public void open() throws IOException {
+	public int open() throws IOException {
+		File file = new File(fullpath);
+		if (!file.exists())
+			file.createNewFile();
+		
+		if (!file.canRead())
+			return Jello.OPEN_FAILED;
+
+		readOnly = !file.canWrite();
+		
 		String mode;
 		if (readOnly)
 			mode = "r";
@@ -68,13 +77,17 @@ public class PagedFileRAF implements PagedFile {
 		raf = new RandomAccessFile(file,mode);
 		
 		pages = (int) (raf.length() / pageSize);
-		
+
+		if (readOnly)
+			return Jello.OPEN_READONLY;
+		else
+			return Jello.OPEN_SUCCESS;
 	}
 
-	public void readPage(long id, byte[] data) {
+	public void readPage(Page page) {
 		try {
-			raf.seek(id * pageSize);
-			raf.readFully(data);
+			raf.seek(page.getId() * pageSize);
+			raf.readFully(page.getData());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -102,10 +115,10 @@ public class PagedFileRAF implements PagedFile {
 
 	}
 
-	public void writePage(long id, byte[] data) {
+	public void writePage(Page page) {
 		try {
-			raf.seek(id * pageSize);
-			raf.write(data);
+			raf.seek(page.getId() * pageSize);
+			raf.write(page.getData());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

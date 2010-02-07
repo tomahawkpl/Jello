@@ -8,6 +8,7 @@ import com.google.inject.name.Named;
 public class Page {
 	public Page nextInPool = null; // public for performance reasons
 	protected int accessCount = 0;
+	protected long id;
 	protected byte data[] = null;
 	protected boolean dirty = false;
 	protected ByteBuffer byteBuffer;
@@ -44,5 +45,13 @@ public class Page {
 
 	public int getCapacity() {
 		return data.length;
+	}
+	
+	public long getId() {
+		return id;
+	}
+	
+	public void setId(long id) {
+		this.id = id;
 	}
 }

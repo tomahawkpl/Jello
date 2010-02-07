@@ -1,20 +1,21 @@
 package com.atteo.jello.store;
 
-import java.io.File;
 import java.io.IOException;
 
+import com.atteo.jello.Jello;
+import com.atteo.jello.space.SpaceManager;
+import com.atteo.jello.space.SpaceManagerPolicy;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.google.inject.assistedinject.Assisted;
 
 @Singleton
 public class DatabaseFile {
 	private static final int MIN_PAGES = 3;
-	private static final int PAGE_HEADER = 0;
-	private static final int PAGE_FREE_LIST = 1;
-	private static final int PAGE_KLASS_LIST = 2;
-	
+	public static final int PAGE_HEADER = 0;
+	public static final int PAGE_FREE_SPACE_MAP = 1;
+	public static final int PAGE_KLASS_LIST = 2;
+
 	private PagedFile pagedFile;
 	private HeaderPage headerPage;
 	private SpaceManager spaceManager;
@@ -22,15 +23,26 @@ public class DatabaseFile {
 	private Injector injector;
 	
 	private boolean valid;
-	
+
 	@Inject
 	private DatabaseFile(Injector injector, PagedFile pagedFile) throws IOException {
 		this.injector = injector;
 		this.pagedFile = pagedFile;
-		pagedFile.open();
 		
 		valid = false;
-
+	}
+	
+	/**
+	 * Either loadStructure or createStructure must be called in order for isValid to return true
+	 * @return
+	 */
+	public int open() {
+		try {
+			return pagedFile.open();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Jello.OPEN_FAILED;
+		}
 	}
 	
 	public void close() {
@@ -46,19 +58,21 @@ public class DatabaseFile {
 			createStructure();
 			return;
 		}
-		
-		headerPage = injector.getInstance(HeaderPage.class);
-		freeSpaceMap = injector.getInstance(ListPage.class);
-		listOfClasses = injector.getInstance(ListPage.class);
-		
+				
 		if (pagedFile.getPageCount() < MIN_PAGES)
 			return;
 		
-		pagedFile.readPage(0, headerPage.getData());
+		headerPage.setId(PAGE_HEADER);
+		pagedFile.readPage(headerPage);
 		if (!headerPage.load())
 			return;
-		pagedFile.readPage(1, freeSpaceMap.getData());
-		pagedFile.readPage(2, listOfClasses.getData());
+		
+		spaceManager = injector.getInstance(SpaceManager.class);
+		if (!spaceManager.load())
+			return;
+		klassManager = injector.getInstance(KlassManager.class);
+		if (!klassManager.load())
+			return;
 		
 		valid = true;
 		
@@ -72,19 +86,14 @@ public class DatabaseFile {
 		}
 		
 		headerPage = injector.getInstance(HeaderPage.class);
-		pagedFile.writePage(0, headerPage.getData());
-		
-		freeSpaceMap = injector.getInstance(ListPage.class);
-		freeSpaceMap.setNext(0);
-		listOfClasses = injector.getInstance(ListPage.class);
-		listOfClasses.setNext(0);
-		
-		
-		
+		headerPage.setId(PAGE_HEADER);
+		pagedFile.writePage(headerPage);
 
+		spaceManager = injector.getInstance(SpaceManager.class);
+		spaceManager.create();
 		
-		pagedFile.writePage(1, freeSpaceMap.getData());
-		pagedFile.writePage(2, listOfClasses.getData());
+		klassManager = injector.getInstance(KlassManager.class);
+		klassManager.create();
 		
 		valid = true;
 	}
@@ -93,7 +102,11 @@ public class DatabaseFile {
 		return valid;
 	}
 	
-	public interface Factory {
-		DatabaseFile create(PagedFile pagedFile);
+	public PagedFile getPagedFile() {
+		return pagedFile;
+	}
+	
+	public SpaceManager getSpaceManager() {
+		return spaceManager;
 	}
 }

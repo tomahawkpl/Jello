@@ -3,23 +3,20 @@ package com.atteo.jello.tests.unit.store;
 import java.io.File;
 import java.io.IOException;
 
-import android.test.InstrumentationTestCase;
-
+import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.DatabaseFile;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class DatabaseFileTest extends InstrumentationTestCase {
+import android.test.InstrumentationTestCase;
+
+public class SpaceManagerTest extends InstrumentationTestCase {
 	private static final String filename = "testfile";
 	private Injector injector;
 	private DatabaseFile dbFile;
 	private File f;
-
-	public void testCreateStructure() {
-		dbFile.loadStructure(true);
-	}
-
+	
 	@Override
 	protected void setUp() throws IOException {
 		f = getInstrumentation().getContext().getDatabasePath(filename);
@@ -32,11 +29,13 @@ public class DatabaseFileTest extends InstrumentationTestCase {
 		dbFile = injector.getInstance(DatabaseFile.class);
 
 	}
+	
+	public void testAcquireReleasePage() {
 
+	}
+	
 	@Override
 	protected void tearDown() {
 		dbFile.close();
-
 	}
-
 }

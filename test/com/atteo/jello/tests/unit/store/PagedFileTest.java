@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import android.test.InstrumentationTestCase;
-import android.util.Log;
 
 import com.atteo.jello.store.OSInfo;
 import com.atteo.jello.store.Page;
@@ -40,8 +39,9 @@ public class PagedFileTest extends InstrumentationTestCase {
 		final Page p = pagePool.acquire();
 		final byte[] saved = p.getData();
 		pagedFile.addPages(1);
-		pagedFile.writePage(0, p.getData());
-		pagedFile.readPage(0, p.getData());
+		p.setId(0);
+		pagedFile.writePage(p);
+		pagedFile.readPage(p);
 		assertTrue(Arrays.equals(p.getData(),saved));
 		pagePool.release(p);
 	}
@@ -80,11 +80,14 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		final Page p = pagePool.acquire();
+		
 		for (int i = 0; i < FILESIZE; i++) {
+			p.setId(i);
 			p.getData()[i % pageSize] = (byte) (i % 255);
-			pagedFile.writePage(i, p.getData());
+			pagedFile.writePage(p);
 			p.getData()[i % pageSize] = 0;
 		}
+		
 		try {
 			pagedFile.close();
 			pagedFile.open();
@@ -93,7 +96,8 @@ public class PagedFileTest extends InstrumentationTestCase {
 		}
 		
 		for (int i = 0; i < FILESIZE; i++) {
-			pagedFile.readPage(i, p.getData());
+			p.setId(i);
+			pagedFile.readPage(p);
 			assertEquals((i % 255), p.getData()[i % pageSize]);
 		}
 		pagePool.release(p);
@@ -105,8 +109,10 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 		final PagePool pagePool = injector.getInstance(PagePool.class);
 		final Page p = pagePool.acquire();
-		for (int i = 0; i < FILESIZE; i++)
-			pagedFile.writePage(i, p.getData());
+		for (int i = 0; i < FILESIZE; i++) {
+			p.setId(i);
+			pagedFile.writePage(p);
+		}
 		pagePool.release(p);
 	}
 
@@ -114,15 +120,15 @@ public class PagedFileTest extends InstrumentationTestCase {
 	protected void setUp() throws IOException {
 		HashMap<String, String> properties = new HashMap<String,String>();
 		properties.put("pageSize", String.valueOf(pageSize));
-		injector = Guice.createInjector(new StoreModule(properties));
 		f = getInstrumentation().getContext().getDatabasePath(
 				filename);
 		f.getParentFile().mkdirs();
 		if (f.exists())
 			f.delete();
 		f.createNewFile();
-		PagedFile.Factory pfFactory = injector.getInstance(PagedFile.Factory.class);
-		pagedFile = pfFactory.create(f, false);
+		injector = Guice.createInjector(new StoreModule(f.getAbsolutePath(),properties));
+
+		pagedFile = injector.getInstance(PagedFile.class);
 		pagedFile.open();
 
 	}

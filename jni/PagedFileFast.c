@@ -142,8 +142,7 @@ jlong JNICALL addPages
 
 	if (ftruncate(pagedFileFD, newLength) == -1)
 		JNI_ThrowByName(env, "java/io/IOException", "ftruncate() failed (addPages)");
-	lseek(pagedFileFD, 0, SEEK_SET);
-	write(pagedFileFD, "a", 1);
+
 
 	fileLength = newLength;
 
@@ -200,11 +199,6 @@ jlong JNICALL getPageCount
 	return pages;
 }
 
-jboolean JNICALL isReadOnly
-(JNIEnv *env, jclass dis) {
-	return (jboolean)readOnly;
-}
-
 void JNICALL syncPages
 	(JNIEnv *env, jclass dis, jlong position, jlong count) {
 		if (mapping != NULL)
@@ -218,27 +212,47 @@ void JNICALL syncAll
 	}
 
 void JNICALL readPage
-(JNIEnv *env, jclass dis, jlong id, jbyteArray buffer) {
+(JNIEnv *env, jclass dis, jobject page) {
 	jboolean isCopy;
+	jbyteArray buffer;
 	jbyte *bytes;
+	jclass cls;
+	jfieldID fid;
+	jlong id;
 
 	if (mapping == NULL)
 		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to read from an empty file");
 
+	cls = (*env)->GetObjectClass(env, page);
+	fid = (*env)->GetFieldID(env, cls, "data", "[B");
+	if (fid == NULL) {
+		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found (data)");
+	}
+	buffer = (*env)->GetObjectField(env, page, fid);
+
+	fid = (*env)->GetFieldID(env, cls, "id", "J");
+	if (fid == NULL) {
+		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found (id)");
+	}
+	id = (*env)->GetLongField(env, page, fid);
+
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
-	memcpy((void*) bytes, (void*) (mapping + id * pageSize), pageSize);
+	memcpy((void*) bytes, (void*) (mapping + (long)id * pageSize), pageSize);
 
 	(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
 
 }
 
 
-
 void JNICALL writePage
-(JNIEnv *env, jclass dis, jlong id, jbyteArray buffer) {
+(JNIEnv *env, jclass dis, jobject page) {
 	jboolean isCopy;
 	jbyte *bytes;
+	jbyteArray buffer;
+	jclass cls;
+	jfieldID fid;
+	jlong id;
 
 	if (readOnly)
 		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
@@ -246,12 +260,25 @@ void JNICALL writePage
 	if (mapping == NULL)
 		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to write to an empty file");
 
+
+	cls = (*env)->GetObjectClass(env, page);
+	fid = (*env)->GetFieldID(env, cls, "data",
+			"[B");
+	if (fid == NULL) {
+		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found");
+	}
+	buffer = (*env)->GetObjectField(env, page, fid);
+
+	fid = (*env)->GetFieldID(env, cls, "id", "J");
+	if (fid == NULL) {
+		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found (id)");
+	}
+	id = (*env)->GetLongField(env, page, fid);
+
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
 	memcpy((void*) (mapping + id * pageSize), (void*) bytes, pageSize);
-	//	if (msync(mapping + id * pageSize, pageSize, MS_SYNC) == -1)
-	//		JNI_ThrowByName(env,"java/lang/InternalError","msync() failed");
-
+	
 	(*env)->ReleaseByteArrayElements(env, buffer, bytes, JNI_ABORT);
 }
 
@@ -260,7 +287,7 @@ void JNICALL writePage
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv* env;
-	JNINativeMethod nm[11];
+	JNINativeMethod nm[10];
 	jclass klass;
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
@@ -293,28 +320,24 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[5].signature = "()J";
 	nm[5].fnPtr = getFileLengthNative;
 
-	nm[6].name = "isReadOnly";
-	nm[6].signature = "()Z";
-	nm[6].fnPtr = isReadOnly;
+	nm[6].name = "syncPages";
+	nm[6].signature = "(JJ)V";
+	nm[6].fnPtr = syncPages;
 
-	nm[7].name = "syncPages";
-	nm[7].signature = "(JJ)V";
-	nm[7].fnPtr = syncPages;
+	nm[7].name = "syncAll";
+	nm[7].signature = "()V";
+	nm[7].fnPtr = syncAll;
 
-	nm[8].name = "syncAll";
-	nm[8].signature = "()V";
-	nm[8].fnPtr = syncAll;
+	nm[8].name = "readPage";
+	nm[8].signature = "(Lcom/atteo/jello/store/Page)V";
+	nm[8].fnPtr = readPage;
 
-	nm[9].name = "readPage";
-	nm[9].signature = "(J[B)V";
-	nm[9].fnPtr = readPage;
-
-	nm[10].name = "writePage";
-	nm[10].signature = "(J[B)V";
-	nm[10].fnPtr = writePage;
+	nm[9].name = "writePage";
+	nm[9].signature = "(Lcom/atteo/jello/store/Page)V";
+	nm[9].fnPtr = writePage;
 
 
-	(*env)->RegisterNatives(env,klass,nm,11);
+	(*env)->RegisterNatives(env,klass,nm,10);
 
 	(*env)->DeleteLocalRef(env, klass);
 

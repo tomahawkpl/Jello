@@ -1,6 +1,7 @@
 package com.atteo.jello;
 
 import java.io.File;
+import java.io.IOException;
 
 import android.content.Context;
 
@@ -11,6 +12,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 public class Jello {
+	public static final int OPEN_FAILED = 0;
+	public static final int OPEN_READONLY = 1;
+	public static final int OPEN_SUCCESS = 2;
+	
 	private static DatabaseFile dbFile;
 	private static final int DEVELOPMENT = 1;
 	private static int environment;
@@ -25,41 +30,46 @@ public class Jello {
 		return fullpath;
 	}
 
-	public static boolean open(final Context context, final String filename, final boolean readOnly,
+	public static int open(final Context context, final String filename,
 			final int environment) {
 		final File file = context.getDatabasePath(filename);
 		fullpath = file.getAbsolutePath();
-		
+
 		boolean isNew = false;
-		
+
 		if (!file.exists())
 			isNew = true;
-		
-		if (isNew && readOnly)
-			return false;
+
+		try {
+			file.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Jello.OPEN_FAILED;
+		}
 
 		Jello.environment = environment;
 		loadEnvironment();
-		
-		pagedFile = injector.getInstance(PagedFile.Factory.class).create(file, readOnly);
-		
-		dbFile = injector.getInstance(DatabaseFile.Factory.class).create(pagedFile);
+
+		dbFile = injector.getInstance(DatabaseFile.class);
 
 		dbFile.loadStructure(isNew);
-		
-		return dbFile.isValid();
+
+		if (!dbFile.isValid())
+			return Jello.OPEN_FAILED;
+		else
+			return Jello.OPEN_SUCCESS;
 	}
 
 	public static void close() {
 		dbFile.close();
 	}
-	
+
 	private static void loadEnvironment() {
 		switch (environment) {
 		case PRODUCTION:
 		case DEVELOPMENT:
 		case TEST:
-			injector = Guice.createInjector(new StoreModule(pagedFile, null));
+			injector = Guice.createInjector(new StoreModule(fullpath, null));
 			break;
 		}
 	}

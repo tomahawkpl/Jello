@@ -10,10 +10,10 @@ import com.google.inject.Guice;
 
 public class GenerateGraph extends InstrumentationTestCase {
 
-	// dummy test just to run the graph generation on device
+	// dummy test just to run the graph generation on a device
 	public void testGenerateGraph() throws IOException {
 		Grapher.graph("/sdcard/jello/graph", Guice
-				.createInjector(new StoreModule(null)));
+				.createInjector(new StoreModule(null,null)));
 	}
 
 }

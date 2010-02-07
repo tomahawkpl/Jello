@@ -1,7 +1,7 @@
 package com.atteo.jello.store;
 
 public class RecordPart {
-	int pageId;
-	int start;
-	int end;
+	public long pageId;
+	public int start;
+	public int end;
 }
