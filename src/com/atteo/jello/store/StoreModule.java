@@ -2,8 +2,6 @@ package com.atteo.jello.store;
 
 import java.util.HashMap;
 
-import com.atteo.jello.space.AppendOnly;
-import com.atteo.jello.space.SpaceManagerPolicy;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
@@ -13,9 +11,12 @@ public class StoreModule implements Module {
 	// ---- SETTINGS
 	private final int pageSize = OSInfo.getPageSize();
 	private final int pagePoolLimit = 5;
-	private final int blockSize = 128;
-	private final int appendOnlyCacheSize = 8;
 	private final String fullpath;
+	private final int appendOnlyCacheSize = 8;
+	private final int blockSize = 128;
+	private final int blocksPerPage;
+	private final int freeSpaceInfoSize;
+	private final int histogramClasses = 8;
 	// --------------
 	
 	private final HashMap<String, String> properties;
@@ -25,6 +26,9 @@ public class StoreModule implements Module {
 		this.properties = getDefaultProperties();
 		if (properties != null)
 			this.properties.putAll(properties);
+		
+		this.blocksPerPage = pageSize / blockSize;
+		this.freeSpaceInfoSize = blocksPerPage / Byte.SIZE;
 	}
 
 	public void configure(final Binder binder) {
@@ -33,16 +37,18 @@ public class StoreModule implements Module {
 		binder.bind(HeaderPage.class);
 		binder.bind(DatabaseFile.class);
 		binder.bind(PagedFile.class).to(PagedFileFast.class);
-		binder.bind(SpaceManagerPolicy.class).to(AppendOnly.class);
 	}
 
 	private HashMap<String, String> getDefaultProperties() {
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("pagePoolLimit", String.valueOf(pagePoolLimit));
 		p.put("pageSize", String.valueOf(pageSize));
-		p.put("blockSize", String.valueOf(blockSize));
 		p.put("fullpath",fullpath);
 		p.put("appendOnlyCacheSize", String.valueOf(appendOnlyCacheSize));
+		p.put("blockSize", String.valueOf(blockSize));
+		p.put("blockPerPage", String.valueOf(blocksPerPage));
+		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
+		p.put("histogramClasses", String.valueOf(histogramClasses));
 
 		return p;
 	}

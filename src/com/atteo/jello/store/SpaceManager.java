@@ -1,70 +1,108 @@
-package com.atteo.jello.space;
+package com.atteo.jello.store;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.atteo.jello.store.DatabaseFile;
-import com.atteo.jello.store.ListPage;
-import com.atteo.jello.store.Page;
-import com.atteo.jello.store.PagedFile;
-import com.atteo.jello.store.RecordPart;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
-/**
- * Implements AppendOnly algorithm with a simple cache
- * 
- * @author tomahawk
- * 
- */
 @Singleton
-public class AppendOnly implements SpaceManagerPolicy {
-	private final int pageSize;
-	private final int blocksPerPage;
+public class SpaceManager {
 	private final int blockSize;
+
 	private final int freeSpaceInfoSize;
+	private final int pageSize;
 	private final int freeSpaceMapPageCapacity;
-	private final int freeSpaceMapPageStart;
 
 	private PagedFile pagedFile;
-	private ArrayList<ListPage> freeSpaceMap;
 	private Injector injector;
-	private AppendOnlyCache appendOnlyCache;
+	
+	private ArrayList<ListPage> freeSpaceMap;
+
+	private final int freeSpaceMapPageStart;
+	private final int blocksPerPage;
+	
+	private final AppendOnlyCache appendOnlyCache;
+	
+	//static {
+	//	System.loadLibrary("SpaceManager");
+	//}
 
 	@Inject
-	AppendOnly(Injector inject, PagedFile pagedFile,
-			@Named("pageSize") int pageSize, @Named("blockSize") int blockSize,
-			@Named("appendOnlyCacheSize") int appendOnlyCacheSize) {
+	public SpaceManager(PagedFile pagedFile,
+			@Named("blockSize") int blockSize, @Named("freeSpaceInfoSize") int freeSpaceInfoSize,
+			@Named("pageSize") int pageSize, @Named("blocksPerPage") int blocksPerPage,
+			AppendOnlyCache appendOnlyCache) {
 		this.pagedFile = pagedFile;
 
-		this.pageSize = pageSize;
+		this.blocksPerPage = blocksPerPage;
 		this.blockSize = blockSize;
-		this.blocksPerPage = pageSize / blockSize;
-		this.freeSpaceInfoSize = blocksPerPage / Byte.SIZE;
+		this.freeSpaceInfoSize = freeSpaceInfoSize;
+		this.freeSpaceMapPageStart = ListPage.getDataStart();
+		this.freeSpaceMapPageCapacity = pageSize - freeSpaceMapPageStart;
+		this.pageSize = pageSize;
+		
+		this.appendOnlyCache = appendOnlyCache;
+		
+		//initVariables(this);
+		
+		
+	}
+	
+	//private native void initVariables(SpaceManager spaceManager);
+	//public native void create(long spaceStart);
+	
+	public boolean load() {
+		long s = pagedFile.getPageCount();
 
-		freeSpaceMap = new ArrayList<ListPage>();
-		ListPage l = injector.getInstance(ListPage.class);
-		freeSpaceMapPageCapacity = l.getCapacity() / freeSpaceInfoSize;
-		freeSpaceMapPageStart = l.getDataStart();
+		long next = DatabaseFile.PAGE_FREE_SPACE_MAP;
+		int i = 0;
+		ListPage p;
+		while (next != 0) {
+			if (next >= s || next < 0)
+				return false;
+			p = injector.getInstance(ListPage.class);
+			p.setId(next);
+			freeSpaceMap.add(p);
+			pagedFile.readPage(p);
+			next = freeSpaceMap.get(i).getNext();
+			i++;
+		}
 
-		appendOnlyCache = inject.getInstance(AppendOnlyCache.class);
-
+		return true;
 	}
 
+	
+	public void create(long spaceStart) {
+		ListPage p = injector.getInstance(ListPage.class);
+		p.setId(DatabaseFile.PAGE_FREE_SPACE_MAP);
+		p.setNext(0);
+		freeSpaceMap.add(p);
+		for (long i=0;i<spaceStart;i++)
+			setPageUsed(i);
+		pagedFile.writePage(p);
+	}
+	
+	
 	/**
 	 * Returns a set of RecordPart objects which describe parts of file. Their
 	 * total size is equal to or higher than length parameter.
 	 */
+	//public synchronized native RecordPart[] acquireRecordSpace(int length);
+	
+	//public synchronized native long acquirePage();
+	
+	
 	public RecordPart[] acquireRecordSpace(int length) {
 		ArrayList<RecordPart> result = new ArrayList<RecordPart>();
 		while (length > 0) {
 			if (!appendOnlyCache.isEmpty()) {
 				// There is at least one page with some free space in the cache,
 				// we're gonna use it
-				long cachedPageId = appendOnlyCache.getBest();
-				int freeSpace = appendOnlyCache.getFreeSpace(cachedPageId);
+				long cachedPageId = appendOnlyCache.getBestId();
+				int freeSpace = appendOnlyCache.getBestFreeSpace();
 				
 				RecordPart rp = null;
 
@@ -101,17 +139,17 @@ public class AppendOnly implements SpaceManagerPolicy {
 					result.add(rp);
 				}
 
-				appendOnlyCache.update(cachedPageId, freeSpace);
 
 			} else {
 				// Page cache is empty, let's allocate a new page and
 				// add it to cache
 				long id = addPages(1);
-				appendOnlyCache.update(id, pageSize);
 			}
 		}
 		return result.toArray(new RecordPart[result.size()]);
 	}
+
+	 
 
 	public RecordPart[] reacquireRecordSpace(RecordPart parts[], int length) {
 		// Probably could be sped up by a full implementation
@@ -120,17 +158,12 @@ public class AppendOnly implements SpaceManagerPolicy {
 	}
 
 	public void releaseRecordSpace(RecordPart parts[]) {
-		long prev = -1;
 		for (int i = 0; i < parts.length; i++) {
 			int startBlock = parts[i].start / blockSize;
 			int endBlock = parts[i].end / blockSize;
 			for (int j=startBlock;j<endBlock;j++)
 				setBlockUnused(parts[i].pageId,j);
 			
-			if (prev != parts[i].pageId) {
-				appendOnlyCache.update(parts[i].pageId, getFreeSpaceOnPage(parts[i].pageId));
-				prev = parts[i].pageId;
-			}
 		}
 	}
 
@@ -141,8 +174,8 @@ public class AppendOnly implements SpaceManagerPolicy {
 	 */
 	public long acquirePage() {
 		if (!appendOnlyCache.isEmpty()) {
-			long id = appendOnlyCache.getBest();
-			if (appendOnlyCache.getFreeSpace(id) == pageSize) {
+			long id = appendOnlyCache.getBestId();
+			if (appendOnlyCache.getBestFreeSpace() == pageSize) {
 					setPageUsed(id);
 					appendOnlyCache.update(id, 0);
 					return id;
@@ -167,7 +200,9 @@ public class AppendOnly implements SpaceManagerPolicy {
 		removePages(toRemove);
 	}
 
-	private long addPages(long count) {
+
+
+	public long addPages(long count) {
 		long r;
 		try {
 			r = pagedFile.addPages(count);
@@ -185,47 +220,20 @@ public class AppendOnly implements SpaceManagerPolicy {
 		return r;
 	}
 
-	private boolean removePages(long count) {
+	public boolean removePages(long count) {
 		try {
 			pagedFile.removePages(count);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return false;
 		}
-
+		// TODO: remove freeSpaceInfo if possible
 		return true;
 	}
 
-	public boolean load() {
-		long s = pagedFile.getPageCount();
-
-		long next = DatabaseFile.PAGE_FREE_SPACE_MAP;
-		int i = 0;
-		ListPage p;
-		while (next != 0) {
-			if (next >= s || next < 0)
-				return false;
-			p = injector.getInstance(ListPage.class);
-			p.setId(next);
-			freeSpaceMap.add(p);
-			pagedFile.readPage(p);
-			next = freeSpaceMap.get(i).getNext();
-			i++;
-		}
-
-		return true;
-	}
-
-	public void create() {
-		ListPage p = injector.getInstance(ListPage.class);
-		p.setId(DatabaseFile.PAGE_FREE_SPACE_MAP);
-		freeSpaceMap.add(p);
-		pagedFile.writePage(p);
-	}
-
-	private int getFreeSpaceOnPage(long id) {
-		int freeSpacePage = pageFreeSpaceInfoPageNumber(id);
-		int freeSpaceOffset = pageFreeSpaceInfoOffset(id);
+	public int getFreeSpaceOnPage(long id) {
+		int freeSpacePage = freeSpaceInfoPageNumber(id);
+		int freeSpaceOffset = freeSpaceInfoOffset(id);
 		int result = 0;
 		Page page = freeSpaceMap.get(freeSpacePage);
 		byte[] data = page.getData();
@@ -237,26 +245,15 @@ public class AppendOnly implements SpaceManagerPolicy {
 		return result;
 	}
 
-	private int pageFreeSpaceInfoPageNumber(long id) {
-		return (int) (id / freeSpaceMapPageCapacity);
+
+	private int freeSpaceInfoPageNumber(long id) {
+		return (int) (id / (freeSpaceMapPageCapacity / freeSpaceInfoSize));
 	}
 
-	private int pageFreeSpaceInfoOffset(long id) {
-		return freeSpaceMapPageStart + (int) (id % freeSpaceMapPageCapacity);
+	private int freeSpaceInfoOffset(long id) {
+		return freeSpaceMapPageStart + (int) (id % (freeSpaceMapPageCapacity / freeSpaceInfoSize));
 	}
 
-	private boolean isPageEmpty(long id) {
-		return isPageEmpty(pageFreeSpaceInfoPageNumber(id),
-				pageFreeSpaceInfoOffset(id));
-	}
-
-	private boolean isPageEmpty(long id, int offset) {
-		byte[] data = freeSpaceMap.get((int) id).getData();
-		for (int i = 0; i < freeSpaceInfoSize; i++)
-			if (data[offset + i] != 0)
-				return false;
-		return true;
-	}
 
 	private boolean createFreeSpaceMapFor(long id) {
 		long newPageId;
@@ -283,49 +280,78 @@ public class AppendOnly implements SpaceManagerPolicy {
 		return true;
 	}
 
-	private void setPageUsed(long id) {
-		ListPage l = freeSpaceMap.get(pageFreeSpaceInfoPageNumber(id));
-		int offset = pageFreeSpaceInfoOffset(id);
+	public boolean isPageEmpty(long id) {
+		return isPageEmpty(freeSpaceInfoPageNumber(id),
+				freeSpaceInfoOffset(id));
+	}
+
+	public boolean isPageEmpty(long id, int offset) {
+		byte[] data = freeSpaceMap.get((int) id).getData();
+		for (int i = 0; i < freeSpaceInfoSize; i++)
+			if (data[offset + i] != 0)
+				return false;
+		return true;
+	}
+
+	public void setPageUsed(long id) {
+		ListPage l = freeSpaceMap.get(freeSpaceInfoPageNumber(id));
+		int offset = freeSpaceInfoOffset(id);
 		byte[] data = l.getData();
-		for (int i = 0; i < blockSize; i++)
-			data[offset + i] |= 0xFF;
+		for (int i = 0; i < freeSpaceInfoSize; i++)
+			data[offset + i] = (byte) 0xFF;
 		pagedFile.writePage(l);
-	}
-
-	private void setPageUnused(long id) {
-		ListPage l = freeSpaceMap.get((int) pageFreeSpaceInfoPageNumber(id));
-		int offset = pageFreeSpaceInfoOffset(id);
-		byte[] data = l.getData();
-		for (int i = 0; i < blockSize; i++)
-			data[offset + i] &= 0;
-
-		pagedFile.writePage(l);
-	}
-
-	private boolean isBlockUsed(long id, int block) {
-		ListPage l = freeSpaceMap.get(pageFreeSpaceInfoPageNumber(id));
-		int offset = pageFreeSpaceInfoOffset(id);
-		int byteNum = block / Byte.SIZE;
-		int byteOffset = block % Byte.SIZE;
-		
-		return (l.getData()[offset+byteNum] & (1 << byteOffset)) > 0;
-	}
-
-	private void setBlockUsed(long id, int block) {
-		ListPage l = freeSpaceMap.get(pageFreeSpaceInfoPageNumber(id));
-		int offset = pageFreeSpaceInfoOffset(id);
-		int byteNum = block / Byte.SIZE;
-		int byteOffset = block % Byte.SIZE;
-		l.getData()[offset+byteNum] |= (1 << byteOffset);
 		
 	}
 
-	private void setBlockUnused(long id, int block) {
-		ListPage l = freeSpaceMap.get(pageFreeSpaceInfoPageNumber(id));
-		int offset = pageFreeSpaceInfoOffset(id);
-		int byteNum = block / Byte.SIZE;
-		int byteOffset = block % Byte.SIZE;
-		l.getData()[offset+byteNum] &= ~(1 << byteOffset);
+	public void setPageUnused(long id) {
+		ListPage l = freeSpaceMap.get((int) freeSpaceInfoPageNumber(id));
+		int offset = freeSpaceInfoOffset(id);
+		byte[] data = l.getData();
+		for (int i = 0; i < freeSpaceInfoSize; i++)
+			data[offset + i] = 0;
+
+		pagedFile.writePage(l);
+		
 	}
 
+	public boolean isBlockUsed(long id, int block) {
+		ListPage l = freeSpaceMap.get(freeSpaceInfoPageNumber(id));
+		int offset = freeSpaceInfoOffset(id);
+		int byteNum = block / Byte.SIZE;
+		int byteOffset = block % Byte.SIZE;
+		return (l.getData()[offset + byteNum] & (1 << byteOffset)) > 0;
+	}
+
+	public void setBlockUsed(long id, int block) {
+		ListPage l = freeSpaceMap.get(freeSpaceInfoPageNumber(id));
+		int offset = freeSpaceInfoOffset(id);
+		int byteNum = block / Byte.SIZE;
+		int byteOffset = block % Byte.SIZE;
+		byte data[] = l.getData();
+		data[offset + byteNum] |= (1 << byteOffset);
+		int freeSpace = 0;
+		for (int i=0;i<freeSpaceInfoSize;i++)
+			for (int j=0;j<Byte.SIZE;j++)
+				if ((data[offset + i] & 0xFF) == 0)
+					freeSpace++;
+		
+		
+	}
+
+	public void setBlockUnused(long id, int block) {
+		ListPage l = freeSpaceMap.get(freeSpaceInfoPageNumber(id));
+		int offset = freeSpaceInfoOffset(id);
+		int byteNum = block / Byte.SIZE;
+		int byteOffset = block % Byte.SIZE;
+		byte data[] = l.getData();
+		data[offset + byteNum] &= ~(1 << byteOffset);
+		
+		int freeSpace = 0;
+		for (int i=0;i<freeSpaceInfoSize;i++)
+			for (int j=0;j<Byte.SIZE;j++)
+				if ((data[offset + i] & 0xFF) == 0)
+					freeSpace++;
+		
+
+	}
 }

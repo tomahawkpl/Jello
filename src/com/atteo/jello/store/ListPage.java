@@ -10,6 +10,7 @@ import com.google.inject.name.Named;
  */
 public class ListPage extends Page {	
 	@Inject
+	public
 	ListPage(@Named("pageSize") final int pageSize) {	
 		super(pageSize);
 	}
@@ -22,14 +23,8 @@ public class ListPage extends Page {
 		return byteBuffer.getLong(0);
 	}
 	
-	public int getDataStart() {
+	public static int getDataStart() {
 		return Long.SIZE;
 	}
-	
-	public int getCapacity() {
-		return data.length - Long.SIZE;
-	}
-	
-	
 
 }

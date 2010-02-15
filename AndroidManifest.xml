@@ -8,4 +8,7 @@
 
 	<instrumentation android:name="android.test.InstrumentationTestRunner"
 		android:targetPackage="com.atteo.jello"></instrumentation>
+
+
+<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"></uses-permission>
 </manifest> 

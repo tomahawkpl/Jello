@@ -32,3 +32,20 @@ LOCAL_MODULE    := OSInfo
 LOCAL_SRC_FILES := OSInfo.c
 
 include $(BUILD_SHARED_LIBRARY)
+
+# --- SpaceManager
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := SpaceManager
+LOCAL_SRC_FILES := SpaceManager.c
+include $(BUILD_SHARED_LIBRARY)
+
+# --- AppendOnlyCacheNative
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := AppendOnlyCacheNative
+LOCAL_SRC_FILES := AppendOnlyCacheNative.c
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)

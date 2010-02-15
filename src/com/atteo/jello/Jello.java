@@ -6,7 +6,6 @@ import java.io.IOException;
 import android.content.Context;
 
 import com.atteo.jello.store.DatabaseFile;
-import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -20,7 +19,6 @@ public class Jello {
 	private static final int DEVELOPMENT = 1;
 	private static int environment;
 	private static String fullpath;
-	private static PagedFile pagedFile;
 
 	private static final int PRODUCTION = 0;
 	private static final int TEST = 2;
@@ -69,8 +67,12 @@ public class Jello {
 		case PRODUCTION:
 		case DEVELOPMENT:
 		case TEST:
-			injector = Guice.createInjector(new StoreModule(fullpath, null));
+			injector = createGuiceInjector();
 			break;
 		}
+	}
+	
+	private static Injector createGuiceInjector() {
+		return Guice.createInjector(new StoreModule(fullpath, null));
 	}
 }

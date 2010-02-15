@@ -15,5 +15,4 @@ public interface PagedFile {
 	void syncPages(long startPageId, long count);
 	void syncAll();
 	boolean isReadOnly();
-
 }

@@ -14,6 +14,7 @@ public class Page {
 	protected ByteBuffer byteBuffer;
 	
 	@Inject
+	public
 	Page(@Named("pageSize") final int pageSize) {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);

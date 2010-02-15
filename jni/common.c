@@ -13,3 +13,19 @@ void JNI_ThrowByName(JNIEnv *env, const char *name, const char *msg)
 	(*env)->DeleteLocalRef(env, cls);
 }
 
+jlong getStaticLongField(JNIEnv *env, const char *className, const char *fieldName) {
+	jfieldID fid;
+	jclass klass;
+
+	klass = (*env)->FindClass(env,klass);
+
+	if (klass == NULL)
+		JNI_ThrowByName(env, "java/lang/ClassNotFoundException", "Couldn't find class (getStaticLongField)");
+
+	fid = (*env)->GetStaticFieldID(env, klass, fieldName, "J");
+
+	if (fid == NULL)
+		JNI_ThrowByName(env, "java/lang/NoSuchFieldException", "Couldn't find field (getStaticLongField)");
+	return (*env)->GetStaticLongField(env, klass, fid);
+
+}

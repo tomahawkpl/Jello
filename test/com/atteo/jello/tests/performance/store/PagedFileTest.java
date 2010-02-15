@@ -26,7 +26,6 @@ public class PagedFileTest extends InstrumentationTestCase implements
 	}
 
 	public int startPerformance(final Intermediates intermediates) {
-
 		return 1;
 	}
 
@@ -38,13 +37,13 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		Page p = pagePool.acquire();
 		int seed = 1112;
 		
-		//Debug.startMethodTracing("jello/testGetPage");
+		Debug.startMethodTracing("jello/testGetPage");
 		for (int i = 0; i < TESTSIZE; i++) {
 			p.setId(seed % FILESIZE);
 			pagedFile.readPage(p);
 			seed = ((seed*seed)/10)%10000;
 		}
-		//Debug.stopMethodTracing();
+		Debug.stopMethodTracing();
 		
 	}
 	
@@ -56,7 +55,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		Page p = pagePool.acquire();
 		int seed = 3432;
 		p.getData()[7]='a';
-		//Debug.startMethodTracing("jello/testWritePage");
+		Debug.startMethodTracing("jello/testWritePage");
 		
 		for (int i = 0; i < TESTSIZE; i++) {
 			p.setId(seed % FILESIZE);
@@ -64,7 +63,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 			seed = ((seed*seed)/10)%10000;
 		}
 
-		//Debug.stopMethodTracing();
+		Debug.stopMethodTracing();
 	}
 	
 

@@ -3,18 +3,16 @@ package com.atteo.jello.store;
 import java.io.IOException;
 
 import com.atteo.jello.Jello;
-import com.atteo.jello.space.SpaceManager;
-import com.atteo.jello.space.SpaceManagerPolicy;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 
 @Singleton
 public class DatabaseFile {
-	private static final int MIN_PAGES = 3;
-	public static final int PAGE_HEADER = 0;
-	public static final int PAGE_FREE_SPACE_MAP = 1;
-	public static final int PAGE_KLASS_LIST = 2;
+	public static final long MIN_PAGES = 3;
+	public static final long PAGE_HEADER = 0;
+	public static final long PAGE_FREE_SPACE_MAP = 1;
+	public static final long PAGE_KLASS_LIST = 2;
 
 	private PagedFile pagedFile;
 	private HeaderPage headerPage;
@@ -90,7 +88,7 @@ public class DatabaseFile {
 		pagedFile.writePage(headerPage);
 
 		spaceManager = injector.getInstance(SpaceManager.class);
-		spaceManager.create();
+		spaceManager.create(MIN_PAGES);
 		
 		klassManager = injector.getInstance(KlassManager.class);
 		klassManager.create();
