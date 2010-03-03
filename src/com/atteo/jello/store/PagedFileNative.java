@@ -7,17 +7,17 @@ import com.atteo.jello.Jello;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-public class PagedFileFast implements PagedFile {
+public class PagedFileNative implements PagedFile {
 	private String fullpath;
 	private boolean readOnly;
 	private int pageSize;
 
 	static {
-		System.loadLibrary("PagedFileFast");
+		System.loadLibrary("PagedFileNative");
 	}
 
 	@Inject
-	PagedFileFast(@Named("pageSize") int pageSize, @Named("fullpath") final String fullpath) {
+	PagedFileNative(@Named("pageSize") int pageSize, @Named("fullpath") final String fullpath) {
 		this.fullpath = fullpath;
 		this.pageSize = pageSize;
 	}
@@ -61,7 +61,7 @@ public class PagedFileFast implements PagedFile {
 	native public long getPageCount();
 	native public void syncPages(long startPage, long count);
 	native public void syncAll();
-	native public void readPage(final Page page);
-	synchronized native public void writePage(final Page page);
+	native public void readPage(Page page);
+	synchronized native public void writePage(Page page);
 
 }

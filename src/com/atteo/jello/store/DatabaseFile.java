@@ -17,6 +17,8 @@ public class DatabaseFile {
 	private PagedFile pagedFile;
 	private HeaderPage headerPage;
 	private SpaceManager spaceManager;
+	private SpaceManagerPolicy spaceManagerPolicy;
+
 	private KlassManager klassManager;
 	private Injector injector;
 	
@@ -72,6 +74,8 @@ public class DatabaseFile {
 		if (!klassManager.load())
 			return;
 		
+		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
+		
 		valid = true;
 		
 	}
@@ -87,8 +91,8 @@ public class DatabaseFile {
 		headerPage.setId(PAGE_HEADER);
 		pagedFile.writePage(headerPage);
 
-		spaceManager = injector.getInstance(SpaceManager.class);
-		spaceManager.create(MIN_PAGES);
+		spaceManager = injector.getInstance(SpaceManagerNative.class);
+		spaceManager.create();
 		
 		klassManager = injector.getInstance(KlassManager.class);
 		klassManager.create();

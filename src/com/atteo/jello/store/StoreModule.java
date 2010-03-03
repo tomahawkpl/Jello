@@ -16,6 +16,7 @@ public class StoreModule implements Module {
 	private final int blockSize = 128;
 	private final int blocksPerPage;
 	private final int freeSpaceInfoSize;
+	private final int freeSpaceInfosPerPage;
 	private final int histogramClasses = 8;
 	// --------------
 	
@@ -29,6 +30,7 @@ public class StoreModule implements Module {
 		
 		this.blocksPerPage = pageSize / blockSize;
 		this.freeSpaceInfoSize = blocksPerPage / Byte.SIZE;
+		this.freeSpaceInfosPerPage = new ListPage(pageSize).getCapacity() / freeSpaceInfoSize;
 	}
 
 	public void configure(final Binder binder) {
@@ -36,7 +38,7 @@ public class StoreModule implements Module {
 		binder.bind(PagePool.class);
 		binder.bind(HeaderPage.class);
 		binder.bind(DatabaseFile.class);
-		binder.bind(PagedFile.class).to(PagedFileFast.class);
+		binder.bind(PagedFile.class).to(PagedFileNative.class);
 	}
 
 	private HashMap<String, String> getDefaultProperties() {
@@ -48,6 +50,7 @@ public class StoreModule implements Module {
 		p.put("blockSize", String.valueOf(blockSize));
 		p.put("blockPerPage", String.valueOf(blocksPerPage));
 		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
+		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
 		p.put("histogramClasses", String.valueOf(histogramClasses));
 
 		return p;

@@ -18,9 +18,8 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := PagedFileFast
-LOCAL_SRC_FILES := PagedFileFast.c
-LOCAL_LDLIBS := -llog
+LOCAL_MODULE    := PagedFileNative
+LOCAL_SRC_FILES := PagedFileNative.c
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -37,8 +36,9 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := SpaceManager
-LOCAL_SRC_FILES := SpaceManager.c
+LOCAL_MODULE    := SpaceManagerNative
+LOCAL_SRC_FILES := SpaceManagerNative.c
+LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
 
 # --- AppendOnlyCacheNative
@@ -47,5 +47,4 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := AppendOnlyCacheNative
 LOCAL_SRC_FILES := AppendOnlyCacheNative.c
-LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)

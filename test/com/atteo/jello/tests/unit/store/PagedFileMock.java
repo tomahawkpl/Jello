@@ -2,7 +2,6 @@ package com.atteo.jello.tests.unit.store;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import com.atteo.jello.Jello;
 import com.atteo.jello.store.Page;

@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <android/log.h>
 #include "common.c"
 
 int pagedFileFD;
@@ -18,6 +17,27 @@ long pages;
 int prot;
 int isOpened;
 int openFlags;
+
+jfieldID fidPageData, fidPageId;
+
+void initIDs(JNIEnv *env) {
+	jclass cls;
+	cls = (*env)->FindClass(env, "com/atteo/jello/store/Page");
+	
+	if (cls == NULL)
+		return;
+
+	fidPageData = (*env)->GetFieldID(env, cls, "data", "[B");
+	if (fidPageData == NULL) {
+		return;
+	}
+
+	fidPageId = (*env)->GetFieldID(env, cls, "id", "J");
+	if (fidPageId == NULL) {
+		return;
+	}
+
+}
 
 void mapFile(JNIEnv *env) {
 	mapping = mmap(NULL, fileLength, prot, MAP_SHARED, pagedFileFD, 0);
@@ -47,11 +67,9 @@ long getFileLength() {
 	long end = lseek(pagedFileFD, 0, SEEK_END);
 	lseek(pagedFileFD, cur, SEEK_SET);
 	return end;
-
 }
 
-jint JNICALL openNative
-(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, jint ps) {
+jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, jint ps) {
 	const jbyte *str;
 
 	if (isOpened)
@@ -96,13 +114,14 @@ jint JNICALL openNative
 	else
 		mapping = NULL;
 
+	initIDs(env);
+
 	return pagedFileFD;
 
 }
 
 
-void JNICALL closeNative
-(JNIEnv *env, jclass dis) {
+void JNICALL closeNative(JNIEnv *env, jclass dis) {
 	jint result;
 
 	if (!isOpened)
@@ -127,8 +146,7 @@ void JNICALL closeNative
 	isOpened = 0;
 }
 
-jlong JNICALL addPages
-(JNIEnv *env, jclass dis, jlong count) {
+jlong JNICALL addPages(JNIEnv *env, jclass dis, jlong count) {
 	long newLength;
 	if (readOnly)
 		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
@@ -140,8 +158,10 @@ jlong JNICALL addPages
 			JNI_ThrowByName(env, "java/io/IOException", "munmap() failed (addPages)");
 	}
 
-	if (ftruncate(pagedFileFD, newLength) == -1)
+	if (ftruncate(pagedFileFD, newLength) == -1) {
 		JNI_ThrowByName(env, "java/io/IOException", "ftruncate() failed (addPages)");
+		return -1;
+	}
 
 
 	fileLength = newLength;
@@ -158,8 +178,7 @@ jlong JNICALL addPages
 
 }
 
-jlong JNICALL removePages
-(JNIEnv *env, jclass dis, jlong count) {
+jlong JNICALL removePages(JNIEnv *env, jclass dis, jlong count) {
 	long newLength;
 	if (readOnly)
 		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
@@ -189,52 +208,35 @@ jlong JNICALL removePages
 
 }
 
-jlong JNICALL getFileLengthNative
-(JNIEnv *env, jclass dis) {
+jlong JNICALL getFileLengthNative(JNIEnv *env, jclass dis) {
 	return (jlong)getFileLength();
 }
 
-jlong JNICALL getPageCount
-(JNIEnv *env, jclass dis) {
+jlong JNICALL getPageCount(JNIEnv *env, jclass dis) {
 	return pages;
 }
 
-void JNICALL syncPages
-	(JNIEnv *env, jclass dis, jlong position, jlong count) {
+void JNICALL syncPages(JNIEnv *env, jclass dis, jlong position, jlong count) {
 		if (mapping != NULL)
 			msync((void*) (mapping+position*pageSize), count*pageSize, MS_SYNC | MS_INVALIDATE);
-	}
+}
 
-void JNICALL syncAll
-	(JNIEnv *env, jclass dis) {
+void JNICALL syncAll(JNIEnv *env, jclass dis) {
 		if (mapping != NULL)
 			msync((void*) (mapping), fileLength, MS_SYNC | MS_INVALIDATE);
-	}
+}
 
-void JNICALL readPage
-(JNIEnv *env, jclass dis, jobject page) {
+void JNICALL readPage(JNIEnv *env, jclass dis, jobject page) {
 	jboolean isCopy;
 	jbyteArray buffer;
 	jbyte *bytes;
-	jclass cls;
-	jfieldID fid;
 	jlong id;
 
 	if (mapping == NULL)
 		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to read from an empty file");
 
-	cls = (*env)->GetObjectClass(env, page);
-	fid = (*env)->GetFieldID(env, cls, "data", "[B");
-	if (fid == NULL) {
-		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found (data)");
-	}
-	buffer = (*env)->GetObjectField(env, page, fid);
-
-	fid = (*env)->GetFieldID(env, cls, "id", "J");
-	if (fid == NULL) {
-		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found (id)");
-	}
-	id = (*env)->GetLongField(env, page, fid);
+	buffer = (*env)->GetObjectField(env, page, fidPageData);
+	id = (*env)->GetLongField(env, page, fidPageId);
 
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
@@ -245,13 +247,10 @@ void JNICALL readPage
 }
 
 
-void JNICALL writePage
-(JNIEnv *env, jclass dis, jobject page) {
+void JNICALL writePage(JNIEnv *env, jclass dis, jobject page) {
 	jboolean isCopy;
 	jbyte *bytes;
 	jbyteArray buffer;
-	jclass cls;
-	jfieldID fid;
 	jlong id;
 
 	if (readOnly)
@@ -261,19 +260,8 @@ void JNICALL writePage
 		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to write to an empty file");
 
 
-	cls = (*env)->GetObjectClass(env, page);
-	fid = (*env)->GetFieldID(env, cls, "data",
-			"[B");
-	if (fid == NULL) {
-		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found");
-	}
-	buffer = (*env)->GetObjectField(env, page, fid);
-
-	fid = (*env)->GetFieldID(env, cls, "id", "J");
-	if (fid == NULL) {
-		JNI_ThrowByName(env,"java/lang/InternalError","Field id not found (id)");
-	}
-	id = (*env)->GetLongField(env, page, fid);
+	buffer = (*env)->GetObjectField(env, page, fidPageData);
+	id = (*env)->GetLongField(env, page, fidPageId);
 
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
@@ -292,9 +280,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
 
-	/* get class with (*env)->FindClass */
-	klass = (*env)->FindClass(env,"com/atteo/jello/store/PagedFileFast");
-	/* register methods with (*env)->RegisterNatives */
+	klass = (*env)->FindClass(env,"com/atteo/jello/store/PagedFileNative");
 
 	nm[0].name = "openNative";
 	nm[0].signature = "(Ljava/lang/String;ZI)I";
@@ -329,11 +315,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[7].fnPtr = syncAll;
 
 	nm[8].name = "readPage";
-	nm[8].signature = "(Lcom/atteo/jello/store/Page)V";
+	nm[8].signature = "(Lcom/atteo/jello/store/Page;)V";
 	nm[8].fnPtr = readPage;
 
 	nm[9].name = "writePage";
-	nm[9].signature = "(Lcom/atteo/jello/store/Page)V";
+	nm[9].signature = "(Lcom/atteo/jello/store/Page;)V";
 	nm[9].fnPtr = writePage;
 
 

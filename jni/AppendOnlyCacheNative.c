@@ -12,27 +12,49 @@ struct CacheElement {
 struct CacheElement *cache;
 int count;
 int limit;
+int minFreeSpace;
 
 void JNICALL init
 (JNIEnv *env, jclass dis, jint cacheSize) {
 	cache = NULL;
 	count = 0;
 	limit = cacheSize;
+	minFreeSpace = -1;
 }
 
-jint JNICALL getBestFreeSpace
-(JNIEnv *env, jclass dis) {
-	if (count > 0)
-		return cache->freeSpace;
-	else
-		return -1;
+jint JNICALL getFreeSpace
+(JNIEnv *env, jclass dis, jlong id) {
+	struct CacheElement *element = cache;
+
+	while (element != NULL) {
+		if (element->id == id)
+			return element->freeSpace;
+		element = element->next;
+	}
+
+	return -1;
 
 }
 
 jlong JNICALL getBestId
-(JNIEnv *env, jclass dis) {
-	if (count > 0)
-		return cache->id;
+(JNIEnv *env, jclass dis, jint freeSpace) {
+	struct CacheElement *element = cache;
+	struct CacheElement *best = NULL;
+	int bestExtraSpace;
+
+
+	while (element != NULL) {
+		if (element->freeSpace >= freeSpace &&
+				(best == NULL || bestExtraSpace > (element->freeSpace - freeSpace))) {
+			bestExtraSpace = element->freeSpace - freeSpace;
+			best = element;
+		}
+		element = element->next;
+	}
+
+
+	if (best != NULL)
+		return best->id;
 	else
 		return -1;
 
@@ -60,92 +82,80 @@ void removeElem(struct CacheElement *element) {
 void insertElem(struct CacheElement *element) {
 	struct CacheElement *e;
 	count++;
-	if (cache == NULL) {
-		element->next = NULL;
-		element->prev = NULL;
-		cache = element;
-		return;
-	}
 
-	if (cache->freeSpace < element->freeSpace) {
-		element->next = cache;
-		element->prev = NULL;
+	element->next = cache;
+	element->prev = NULL;
+	if (cache != NULL)
 		cache->prev = element;
-		cache = element;
-		return;
-	}
-
-	e = cache;
-
-	while (1) {
-		if (e->next != NULL && element->freeSpace < e->next->freeSpace) {
-			e->next->prev = element;
-			element->next = e->next;
-			element->prev = e;
-			e->next = element;
-			return;
-		}
-		
-		if (e->next != NULL)
-			e = e->next;
-		else
-			break;
-	}
-
-	e->next = element;
-	element->prev = e;
-	element->next = NULL;
-
+	cache = element;
 
 
 }
 
 void JNICALL update
 (JNIEnv *env, jclass dis, jlong id, jint freeSpace) {
-	int removed = 0;
 	int leastSpace = -1;
 	struct CacheElement *leastSpaceElem = NULL;
 	struct CacheElement *element = cache;
 
+	// check if already is in cache
 
 	while (element != NULL) {
 		if (element->id == id) {
-			removed = 1;
-			removeElem(element);
-			break;
+			if (freeSpace == 0) {
+				removeElem(element);
+				free(element);
+			} else
+				element->freeSpace = freeSpace;
+			return;
 		}
+		element = element->next;
+	}
 
+	if (freeSpace == 0)
+		return;
+
+	// is not in cache and freeSpace > 0
+
+	// cache is not full
+	if (count < limit) {
+		element = malloc(sizeof(struct CacheElement));
+		element->id = id;
+		element->freeSpace = freeSpace;
+		insertElem(element);
+		return;
+	}
+
+	// cache is full
+	
+	// updated page has less space than any page in cache
+	if (minFreeSpace != -1 && freeSpace > minFreeSpace)
+		return;
+
+	element = cache;
+
+	while (element != NULL) {
 		if (count == limit && (leastSpace == -1 || element->freeSpace < leastSpace)) {
 			leastSpace = element->freeSpace;
 			leastSpaceElem = element;
 		}
-
 		element = element->next;
 	}
 
-	if (freeSpace == 0) {
-		if (element != NULL)
-			free(element);
+	if (freeSpace <= leastSpace) {
+		minFreeSpace = leastSpace;
 		return;
 	}
 
-	if (removed == 0 && leastSpace < freeSpace && leastSpace != -1) {
-		removeElem(leastSpaceElem);
-		element = leastSpaceElem;
-		removed = 1;
-	}
+	minFreeSpace = -1;
 
+	removeElem(leastSpaceElem);
+	element = leastSpaceElem;
 
-	if (count < limit) {
-		if (removed == 0)
-			element = malloc(sizeof(struct CacheElement));
-		element->id = id;
-		element->freeSpace = freeSpace;
-		insertElem(element);
-	} else
-		if (element != NULL)
-			free(element);
+	element->id = id;
+	element->freeSpace = freeSpace;
 
+	insertElem(element);
 
 }
 
@@ -161,12 +171,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	klass = (*env)->FindClass(env,"com/atteo/jello/store/AppendOnlyCacheNative");
 	/* register methods with (*env)->RegisterNatives */
 
-	nm[0].name = "getBestFreeSpace";
-	nm[0].signature = "()I";
-	nm[0].fnPtr = getBestFreeSpace;
+	nm[0].name = "getFreeSpace";
+	nm[0].signature = "(J)I";
+	nm[0].fnPtr = getFreeSpace;
 
 	nm[1].name = "getBestId";
-	nm[1].signature = "()J";
+	nm[1].signature = "(I)J";
 	nm[1].fnPtr = getBestId;
 
 	nm[2].name = "isEmpty";

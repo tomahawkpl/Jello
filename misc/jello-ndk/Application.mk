@@ -1,2 +1,2 @@
-APP_PROJECT_PATH := <path to jello source>
-APP_MODULES      := PagedFileFast OSInfo
+APP_PROJECT_PATH :=
+APP_MODULES      := PagedFileNative OSInfo SpaceManagerNative AppendOnlyCacheNative

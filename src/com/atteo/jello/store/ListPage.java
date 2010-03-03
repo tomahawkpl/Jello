@@ -23,7 +23,7 @@ public class ListPage extends Page {
 		return byteBuffer.getLong(0);
 	}
 	
-	public static int getDataStart() {
+	public int headerSize() {
 		return Long.SIZE;
 	}
 

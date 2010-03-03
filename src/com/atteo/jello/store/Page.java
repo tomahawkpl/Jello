@@ -10,6 +10,7 @@ public class Page {
 	protected int accessCount = 0;
 	protected long id;
 	protected byte data[] = null;
+	protected byte accessibleData[] = null;
 	protected boolean dirty = false;
 	protected ByteBuffer byteBuffer;
 	
@@ -18,6 +19,8 @@ public class Page {
 	Page(@Named("pageSize") final int pageSize) {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);
+		byteBuffer.position(headerSize());
+		accessibleData = byteBuffer.slice().array();
 	}
 
 	public void decreaseAccessCount() {
@@ -29,7 +32,7 @@ public class Page {
 	}
 
 	public byte[] getData() {
-		return data;
+		return accessibleData;
 	}
 
 	public void increaseAccessCount() {
@@ -45,7 +48,11 @@ public class Page {
 	}
 
 	public int getCapacity() {
-		return data.length;
+		return accessibleData.length;
+	}
+	
+	public int headerSize() {
+		return 0;
 	}
 	
 	public long getId() {

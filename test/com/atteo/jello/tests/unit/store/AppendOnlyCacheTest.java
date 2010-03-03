@@ -25,22 +25,30 @@ public class AppendOnlyCacheTest extends InstrumentationTestCase {
 		
 		// simple page added
 		appendOnlyCache.update(0, 10);
-		assertEquals(0, appendOnlyCache.getBestId());
-		assertEquals(10, appendOnlyCache.getBestFreeSpace());
+		assertEquals(-1, appendOnlyCache.getBestId(11));
+		assertEquals(0, appendOnlyCache.getBestId(10));
+		assertEquals(0, appendOnlyCache.getBestId(1));
+		assertEquals(10, appendOnlyCache.getFreeSpace(0));
 		
 		// adding empty page again
 		appendOnlyCache.update(1, 0);
-		assertEquals(0, appendOnlyCache.getBestId());
-		assertEquals(10, appendOnlyCache.getBestFreeSpace());
+		assertEquals(-1, appendOnlyCache.getBestId(11));
+		assertEquals(0, appendOnlyCache.getBestId(10));
+		assertEquals(0, appendOnlyCache.getBestId(1));
+		assertEquals(10, appendOnlyCache.getFreeSpace(0));
 		
 		
 		// couple more pages
 		appendOnlyCache.update(0, 5);
-		assertEquals(0, appendOnlyCache.getBestId());
-		assertEquals(5, appendOnlyCache.getBestFreeSpace());
+		assertEquals(-1, appendOnlyCache.getBestId(11));
+		assertEquals(-1, appendOnlyCache.getBestId(10));
+		assertEquals(0, appendOnlyCache.getBestId(1));
+		assertEquals(5, appendOnlyCache.getFreeSpace(0));
 		appendOnlyCache.update(1, 15);
-		assertEquals(1, appendOnlyCache.getBestId());
-		assertEquals(15, appendOnlyCache.getBestFreeSpace());
+		assertEquals(-1, appendOnlyCache.getBestId(16));
+		assertEquals(1, appendOnlyCache.getBestId(15));
+		assertEquals(0, appendOnlyCache.getBestId(1));
+		assertEquals(15, appendOnlyCache.getFreeSpace(1));
 		appendOnlyCache.update(0, 0);
 		appendOnlyCache.update(1, 0);
 		assertTrue(appendOnlyCache.isEmpty());
@@ -51,12 +59,16 @@ public class AppendOnlyCacheTest extends InstrumentationTestCase {
 		appendOnlyCache.update(1, 10);
 		appendOnlyCache.update(2, 15);
 		appendOnlyCache.update(3, 20);
-		assertEquals(3, appendOnlyCache.getBestId());
-		assertEquals(20, appendOnlyCache.getBestFreeSpace());
+		assertEquals(1, appendOnlyCache.getBestId(1));
+		assertEquals(2, appendOnlyCache.getBestId(15));
+		assertEquals(3, appendOnlyCache.getBestId(16));
+		assertEquals(20, appendOnlyCache.getFreeSpace(3));
 		appendOnlyCache.update(2, 0);
 		appendOnlyCache.update(3, 0);
-		assertEquals(1, appendOnlyCache.getBestId());
-		assertEquals(10, appendOnlyCache.getBestFreeSpace());
+		assertEquals(-1, appendOnlyCache.getBestId(11));
+		assertEquals(1, appendOnlyCache.getBestId(10));
+
+		assertEquals(10, appendOnlyCache.getFreeSpace(1));
 		assertTrue(!appendOnlyCache.isEmpty());
 		appendOnlyCache.update(1, 0);
 		assertTrue(appendOnlyCache.isEmpty());
