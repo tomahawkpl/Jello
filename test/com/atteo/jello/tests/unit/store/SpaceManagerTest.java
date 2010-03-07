@@ -69,6 +69,28 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 		assertFalse(spaceManager.isPageUsed(4));
 
 	}
+	
+	public void testIsBlockUsed() {
+		for (int i=0;i<32;i++)
+			assertFalse(spaceManager.isBlockUsed(0, i));
+
+		assertTrue(spaceManager.isPageUsed(1));
+		
+		for (int i=0;i<32;i++)
+			assertTrue(spaceManager.isBlockUsed(1, i));
+		
+	}
+	
+	public void testSetBlockUsed() {
+		spaceManager.setBlockUsed(0, 30, true);
+		assertTrue(spaceManager.isBlockUsed(0, 30));
+		assertTrue(spaceManager.isPageUsed(0));
+		
+		spaceManager.setBlockUsed(0, 30, false);
+		assertFalse(spaceManager.isBlockUsed(0, 30));
+		
+		
+	}
 
 	@Override
 	protected void tearDown() {

@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 
 import com.atteo.jello.Jello;
 import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 
 public class PagedFileRAF implements PagedFile {
@@ -17,7 +16,7 @@ public class PagedFileRAF implements PagedFile {
 	private RandomAccessFile raf;
 
 	@Inject
-	PagedFileRAF(@Named("pageSize") int pageSize, @Assisted String fullpath) {
+	PagedFileRAF(@Named("pageSize") int pageSize, @Named("fullpath") final String fullpath) {
 		this.pageSize = pageSize;
 		this.fullpath = fullpath;
 	}

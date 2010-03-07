@@ -12,6 +12,8 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jlong id, jboolean used);
 
 long pageCount;
 
+int ByteSize = 8;
+
 struct FreeSpaceInfo *freeSpaceInfo;
 
 jint pageFreeSpaceMap;
@@ -299,8 +301,6 @@ jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block) {
 	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello", "id:%ld, page: %ld, offset %d", id, freeSpaceInfoPage, freeSpaceInfoOffset);
-
 	if (freeSpaceInfoPage >= pageCount) {
 		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
 				"Page with this id is not known to the Space Manager");
@@ -310,14 +310,45 @@ jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block) {
 
 	fsi = &freeSpaceInfo[freeSpaceInfoPage];
 	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
+
+	i = block / ByteSize;
+	block %= ByteSize;
+
 	__android_log_print(ANDROID_LOG_INFO, "Jello", "[%d]:%d",offset+i,fsi->data[offset+i]);
-	if (fsi->data[offset+i] & 1 << block)
+	if (fsi->data[offset+i] & (1 << block))
 		return JNI_TRUE;
 	return JNI_FALSE;
 
 }
 
 void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block, jboolean used) {
+	long freeSpaceInfoPage;
+	int freeSpaceInfoOffset;
+	int offset;
+	int i;
+
+	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
+	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
+
+	if (freeSpaceInfoPage >= pageCount) {
+		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+				"Page with this id is not known to the Space Manager");
+		return;
+	}
+
+
+	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
+
+	i = block / ByteSize;
+	block %= ByteSize;
+
+	if (used == JNI_TRUE)
+		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] |= 1 << block;
+	else
+		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] &= ~(1 << block);
+
+
+	writeFreeSpaceInfo(env, freeSpaceInfoPage);
 
 }
 

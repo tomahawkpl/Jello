@@ -7,7 +7,6 @@ import com.google.inject.Module;
 import com.google.inject.name.Names;
 
 public class StoreModule implements Module {
-	
 	// ---- SETTINGS
 	private final int pageSize = OSInfo.getPageSize();
 	private final int pagePoolLimit = 5;
@@ -19,7 +18,7 @@ public class StoreModule implements Module {
 	private final int freeSpaceInfosPerPage;
 	private final int histogramClasses = 8;
 	// --------------
-	
+
 	private final HashMap<String, String> properties;
 
 	public StoreModule(final String fullpath, final HashMap<String, String> properties) {
@@ -38,7 +37,7 @@ public class StoreModule implements Module {
 		binder.bind(PagePool.class);
 		binder.bind(HeaderPage.class);
 		binder.bind(DatabaseFile.class);
-		binder.bind(PagedFile.class).to(PagedFileNative.class);
+		binder.bind(PagedFile.class).to(PagedFileRAF.class);
 	}
 
 	private HashMap<String, String> getDefaultProperties() {
