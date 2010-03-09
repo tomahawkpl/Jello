@@ -1,4 +1,4 @@
-package com.atteo.jello.store;
+package com.atteo.jello.space;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;

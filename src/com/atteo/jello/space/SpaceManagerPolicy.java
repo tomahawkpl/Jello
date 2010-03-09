@@ -1,4 +1,6 @@
-package com.atteo.jello.store;
+package com.atteo.jello.space;
+
+import com.atteo.jello.store.RecordPart;
 
 
 public interface SpaceManagerPolicy {

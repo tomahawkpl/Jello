@@ -1,15 +1,16 @@
-package com.atteo.jello.tests.unit.store;
+package com.atteo.jello.tests.unit.space;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import android.test.InstrumentationTestCase;
 
+import com.atteo.jello.space.SpaceManagerNative;
 import com.atteo.jello.store.DatabaseFile;
 import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
-import com.atteo.jello.store.SpaceManagerNative;
+import com.atteo.jello.tests.unit.store.PagedFileMock;
 
 public class SpaceManagerTest extends InstrumentationTestCase {
 	private SpaceManagerNative spaceManager;

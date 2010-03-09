@@ -1,4 +1,4 @@
-package com.atteo.jello.store;
+package com.atteo.jello.space;
 
 public interface SpaceManager {
 	boolean load();

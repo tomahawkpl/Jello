@@ -3,6 +3,9 @@ package com.atteo.jello.store;
 import java.io.IOException;
 
 import com.atteo.jello.Jello;
+import com.atteo.jello.space.SpaceManager;
+import com.atteo.jello.space.SpaceManagerNative;
+import com.atteo.jello.space.SpaceManagerPolicy;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;

@@ -1,5 +1,6 @@
-package com.atteo.jello.store;
+package com.atteo.jello.space;
 
+import com.atteo.jello.store.RecordPart;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 

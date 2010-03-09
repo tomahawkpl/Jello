@@ -1,4 +1,4 @@
-package com.atteo.jello.tests.performance.store;
+package com.atteo.jello.tests.performance.space;
 
 import java.io.IOException;
 
@@ -6,8 +6,8 @@ import android.os.Debug;
 import android.test.InstrumentationTestCase;
 import android.test.PerformanceTestCase;
 
-import com.atteo.jello.store.AppendOnlyCache;
-import com.atteo.jello.store.AppendOnlyCacheNative;
+import com.atteo.jello.space.AppendOnlyCache;
+import com.atteo.jello.space.AppendOnlyCacheNative;
 
 public class AppendOnlyCacheTest extends InstrumentationTestCase implements
 		PerformanceTestCase {

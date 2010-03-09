@@ -1,11 +1,11 @@
-package com.atteo.jello.tests.unit.store;
+package com.atteo.jello.tests.unit.space;
 
 import java.io.IOException;
 
 import android.test.InstrumentationTestCase;
 
-import com.atteo.jello.store.AppendOnlyCache;
-import com.atteo.jello.store.AppendOnlyCacheNative;
+import com.atteo.jello.space.AppendOnlyCache;
+import com.atteo.jello.space.AppendOnlyCacheNative;
 
 public class AppendOnlyCacheTest extends InstrumentationTestCase {
 	private AppendOnlyCache appendOnlyCache;

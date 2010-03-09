@@ -1,7 +1,9 @@
-package com.atteo.jello.store;
+package com.atteo.jello.space;
 
 import java.util.ArrayList;
 
+import com.atteo.jello.store.ListPage;
+import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
