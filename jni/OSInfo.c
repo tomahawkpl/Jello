@@ -6,8 +6,7 @@ jint JNICALL getPageSize
 	return getpagesize();
 }
 
-jint JNI_OnLoad(JavaVM* vm, void* reserved)
-{
+jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNIEnv* env;
 	JNINativeMethod nm[1];
 	jclass klass;

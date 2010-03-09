@@ -1,11 +1,9 @@
 package com.atteo.jello.space;
 
-import java.util.ArrayList;
-
+import com.atteo.jello.store.DatabaseFile;
 import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
@@ -15,35 +13,19 @@ public class SpaceManagerNative implements SpaceManager {
 		System.loadLibrary("SpaceManagerNative");
 	}
 	
-	private final int freeSpaceInfoSize;
-	private final int pageSize;
-	@SuppressWarnings("unused")
-	private final int freeSpaceMapPageCapacity;
-	private final int blocksPerPage;
-	private final int freeSpaceInfosPerPage;
-
-	@SuppressWarnings("unused")
-	private PagedFile pagedFile;
-	
 	@Inject
 	public SpaceManagerNative(PagedFile pagedFile,
 			@Named("freeSpaceInfoSize") int freeSpaceInfoSize,
-			@Named("pageSize") int pageSize, @Named("blocksPerPage") int blocksPerPage,
 			@Named("freeSpaceInfosPerPage") int freeSpaceInfosPerPage,
+			@Named("freeSpaceInfoPageCapacity") int freeSpaceInfoPageCapacity,
 			ListPage listPage) {
-		this.pagedFile = pagedFile;
-
-		this.blocksPerPage = blocksPerPage;
-		this.freeSpaceInfosPerPage = freeSpaceInfosPerPage;
 		
-		this.freeSpaceInfoSize = freeSpaceInfoSize;
-		this.freeSpaceMapPageCapacity = listPage.getCapacity();
-		this.pageSize = pageSize;
-		
-		init(this, listPage);
+		init(pagedFile, listPage, freeSpaceInfosPerPage, freeSpaceInfoSize, freeSpaceInfoPageCapacity, DatabaseFile.PAGE_FREE_SPACE_MAP);
 	}
 	
-	public native void init(SpaceManagerNative spaceManager, ListPage listPage);
+	public native void init(PagedFile pagedFile, ListPage listPage,
+			int freeSpaceInfosPerPage, int freeSpaceInfoSize, int freeSpaceInfoPageCapacity, 
+			long pageFreeSpaceInfo);
 
 	public native void create();	
 	public native boolean load();

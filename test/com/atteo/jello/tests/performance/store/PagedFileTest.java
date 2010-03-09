@@ -6,7 +6,6 @@ import java.io.IOException;
 import android.os.Debug;
 import android.test.InstrumentationTestCase;
 import android.test.PerformanceTestCase;
-import android.util.Log;
 
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagePool;

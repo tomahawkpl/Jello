@@ -21,7 +21,7 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 		pagedFile = new PagedFileMock(4096);
 		pagedFile.addPages(5);
 		
-		spaceManager = new SpaceManagerNative(pagedFile, 4, 4096, 32, 1022, 
+		spaceManager = new SpaceManagerNative(pagedFile, 4, 32, 1022, 
 				new ListPage(4096));
 		spaceManager.create();
 	}

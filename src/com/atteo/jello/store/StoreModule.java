@@ -11,12 +11,12 @@ public class StoreModule implements Module {
 	private final int pageSize = OSInfo.getPageSize();
 	private final int pagePoolLimit = 5;
 	private final String fullpath;
-	private final int appendOnlyCacheSize = 8;
+
 	private final int blockSize = 128;
 	private final int blocksPerPage;
 	private final int freeSpaceInfoSize;
 	private final int freeSpaceInfosPerPage;
-	private final int histogramClasses = 8;
+	private final int freeSpaceInfoPageCapacity;
 	// --------------
 
 	private final HashMap<String, String> properties;
@@ -29,7 +29,9 @@ public class StoreModule implements Module {
 		
 		this.blocksPerPage = pageSize / blockSize;
 		this.freeSpaceInfoSize = blocksPerPage / Byte.SIZE;
-		this.freeSpaceInfosPerPage = new ListPage(pageSize).getCapacity() / freeSpaceInfoSize;
+		this.freeSpaceInfoPageCapacity = new ListPage(pageSize).getCapacity();
+		this.freeSpaceInfosPerPage = freeSpaceInfoPageCapacity / freeSpaceInfoSize;
+
 	}
 
 	public void configure(final Binder binder) {
@@ -45,12 +47,10 @@ public class StoreModule implements Module {
 		p.put("pagePoolLimit", String.valueOf(pagePoolLimit));
 		p.put("pageSize", String.valueOf(pageSize));
 		p.put("fullpath",fullpath);
-		p.put("appendOnlyCacheSize", String.valueOf(appendOnlyCacheSize));
 		p.put("blockSize", String.valueOf(blockSize));
 		p.put("blockPerPage", String.valueOf(blocksPerPage));
 		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		p.put("histogramClasses", String.valueOf(histogramClasses));
 
 		return p;
 	}

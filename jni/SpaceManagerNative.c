@@ -1,6 +1,5 @@
 #include <jni.h>
 #include <stdlib.h>
-#include <android/log.h>
 #include "common.c"
 
 struct FreeSpaceInfo {
@@ -16,37 +15,29 @@ int ByteSize = 8;
 
 struct FreeSpaceInfo *freeSpaceInfo;
 
-jint pageFreeSpaceMap;
+jint pageFreeSpaceInfo;
 
-jint freeSpaceMapPageCapacity;
+jint freeSpaceInfoPageCapacity;
 jint freeSpaceInfosPerPage;
 jlong freeSpaceInfoSize;
 
-jclass pagedFileClass;
 jobject pagedFile;
-jobject spaceManager;
 
 jobject listPage;
 
-jfieldID fidSpaceManagerPagedFile;
 jfieldID fidListPageId, fidListPageAccessibleData;
 jmethodID midListPageSetNext, midPagedFileReadPage, midPagedFileWritePage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
 
 void initIDs(JNIEnv *env) {
+	jclass pagedFileClass;
 	jclass klass;
 
 	// get PagedFile class
 	pagedFileClass = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
 	if (pagedFileClass == NULL)
-		JNI_ThrowByName(env, "java/lang/ClassNotFoundException", "Couldn't find class (getStaticLongField)");
-
-	klass = (*env)->FindClass(env,"com/atteo/jello/store/SpaceManagerNative");
-
-	if (klass == NULL)
 		return;
 
-	fidSpaceManagerPagedFile = (*env)->GetFieldID(env, klass, "pagedFile", "Lcom/atteo/jello/store/PagedFile;");
 
 	midPagedFileGetPageCount = (*env)->GetMethodID(env, pagedFileClass,
 			"getPageCount", "()J");
@@ -88,34 +79,19 @@ void initIDs(JNIEnv *env) {
 	midListPageSetNext = (*env)->GetMethodID(env, klass, "setNext", "(J)V");
 }
 
-void JNICALL init(JNIEnv *env, jclass dis, jobject obj, jobject lp) {
-	jclass klass;
-	jfieldID fid = NULL;
+void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject listPageObject,
+		jint freeSpaceInfosPerPageArg, jint freeSpaceInfoSizeArg, jint freeSpaceInfoPageCapacityArg,
+		jlong pageFreeSpaceInfoArg) {
 
 	initIDs(env);
 
-	spaceManager = obj;
-	listPage = (*env)->NewGlobalRef(env,lp);
+	freeSpaceInfosPerPage = freeSpaceInfosPerPageArg;
+	freeSpaceInfoSize = freeSpaceInfoSizeArg;
+	freeSpaceInfoPageCapacity = freeSpaceInfoPageCapacityArg;
+	pageFreeSpaceInfo = pageFreeSpaceInfoArg;
 
-	pageFreeSpaceMap = getStaticLongField(env, "com/atteo/jello/store/DatabaseFile", "PAGE_FREE_SPACE_MAP");
-	klass =(*env)->FindClass(env, "com/atteo/jello/store/SpaceManagerNative");
-
-	fid = (*env)->GetFieldID(env, klass, "freeSpaceMapPageCapacity", "I");
-	if (fid == NULL)
-		return;
-	freeSpaceMapPageCapacity = (*env)->GetIntField(env, obj, fid);
-
-	fid = (*env)->GetFieldID(env, klass, "freeSpaceInfoSize", "I");
-	if (fid == NULL)
-		return;
-	freeSpaceInfoSize = (*env)->GetIntField(env, obj, fid);
-
-	fid = (*env)->GetFieldID(env, klass, "freeSpaceInfosPerPage", "I");
-	if (fid == NULL)
-		return;
-	freeSpaceInfosPerPage = (*env)->GetIntField(env, obj, fid);
-
-	pagedFile = (*env)->NewGlobalRef(env, (*env)->GetObjectField(env, spaceManager, fidSpaceManagerPagedFile));
+	listPage = (*env)->NewGlobalRef(env,listPageObject);
+	pagedFile = (*env)->NewGlobalRef(env, pagedFileObject);
 
 }
 
@@ -130,7 +106,7 @@ void writeFreeSpaceInfo(JNIEnv *env, int page) {
 	buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
-	memcpy((void*) bytes, (void*) freeSpaceInfo[page].data, freeSpaceMapPageCapacity);
+	memcpy((void*) bytes, (void*) freeSpaceInfo[page].data, freeSpaceInfoPageCapacity);
 
 	(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
 
@@ -156,7 +132,7 @@ void addPages(JNIEnv *env, jclass dis, long count) {
 		newPage = &freeSpaceInfo[pageCount + i];
 
 		newPage->pageId = lastNewPage - count + 1 + i;
-		newPage->data = calloc(1, freeSpaceMapPageCapacity);
+		newPage->data = calloc(1, freeSpaceInfoPageCapacity);
 
 		setPageUsed(env, dis, newPage->pageId, (jboolean)1);
 	}
@@ -230,7 +206,6 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jlong id) {
 	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello", "id:%ld, page: %ld, offset %d", id, freeSpaceInfoPage, freeSpaceInfoOffset);
 
 	if (freeSpaceInfoPage >= pageCount) {
 		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
@@ -244,7 +219,6 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jlong id) {
 	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
 
 	for (i=0;i<freeSpaceInfoSize;i++) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello", "[%d]:%d",offset+i,fsi->data[offset+i]);
 		if (fsi->data[offset+i] != 0)
 			return JNI_TRUE;
 	}
@@ -268,7 +242,6 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jlong id, jboolean used) {
 	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello", "id:%ld, page: %ld, offset %d, newValue: %d", id, freeSpaceInfoPage, freeSpaceInfoOffset, newValue);
 
 	if (freeSpaceInfoPage >= pageCount) {
 		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
@@ -280,11 +253,7 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jlong id, jboolean used) {
 	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
 
 	for (i=0;i<freeSpaceInfoSize;i++) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello", "page: %ld, [%d]:%d",freeSpaceInfoPage, offset+i,
-				freeSpaceInfo[freeSpaceInfoPage].data[offset+i]);
 		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] = newValue;
-		__android_log_print(ANDROID_LOG_INFO, "Jello", "[%d]:%d",offset+i,
-				freeSpaceInfo[freeSpaceInfoPage].data[offset+i]);
 	}
 
 
@@ -314,7 +283,6 @@ jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block) {
 	i = block / ByteSize;
 	block %= ByteSize;
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello", "[%d]:%d",offset+i,fsi->data[offset+i]);
 	if (fsi->data[offset+i] & (1 << block))
 		return JNI_TRUE;
 	return JNI_FALSE;
@@ -355,11 +323,11 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block, jboolea
 void JNICALL create(JNIEnv *env, jclass dis) {
 	long i;
 	freeSpaceInfo = malloc(sizeof(struct FreeSpaceInfo));
-	freeSpaceInfo[0].pageId = pageFreeSpaceMap;
-	freeSpaceInfo[0].data = calloc(1, freeSpaceMapPageCapacity);
+	freeSpaceInfo[0].pageId = pageFreeSpaceInfo;
+	freeSpaceInfo[0].data = calloc(1, freeSpaceInfoPageCapacity);
 	pageCount = 1;
 
-	setPageUsed(env, dis, pageFreeSpaceMap, (jboolean)1);
+	setPageUsed(env, dis, pageFreeSpaceInfo, (jboolean)1);
 
 	writeFreeSpaceInfo(env, 0);
 
@@ -368,7 +336,7 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 
 
 jboolean JNICALL load(JNIEnv *env, jclass dis) {
-	(*env)->SetLongField(env, listPage, fidListPageId, pageFreeSpaceMap);
+	(*env)->SetLongField(env, listPage, fidListPageId, pageFreeSpaceInfo);
 	(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
 }
 
@@ -376,15 +344,16 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNIEnv* env;
 	JNINativeMethod nm[8];
 	jclass klass;
+
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
 
 	/* get class with (*env)->FindClass */
-	klass = (*env)->FindClass(env,"com/atteo/jello/store/SpaceManagerNative");
+	klass = (*env)->FindClass(env,"com/atteo/jello/space/SpaceManagerNative");
 	/* register methods with (*env)->RegisterNatives */
 
 	nm[0].name = "init";
-	nm[0].signature = "(Lcom/atteo/jello/store/SpaceManagerNative;Lcom/atteo/jello/store/ListPage;)V";
+	nm[0].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/store/ListPage;IIIJ)V";
 	nm[0].fnPtr = init;
 
 	nm[1].name = "create";
