@@ -19,7 +19,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 	private static final String filename = "testfile";
 	private Injector injector;
 	private PagedFile pagedFile;
-	private int pageSize = OSInfo.getPageSize();
+	private short pageSize = OSInfo.getPageSize();
 	private File f;
 	
 	public void testAddPages() throws IOException {

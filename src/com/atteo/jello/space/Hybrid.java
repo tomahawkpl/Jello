@@ -1,5 +1,6 @@
 package com.atteo.jello.space;
 
+import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.RecordPart;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -9,15 +10,24 @@ public class Hybrid implements SpaceManagerPolicy {
 	private SpaceManager spaceManager;
 	private AppendOnlyCache appendOnlyCache;
 	private NextFitHistogram nextFitHistogram;
-	
+	private PagedFile pagedFile;
+
 	@Inject
-	public Hybrid(SpaceManager spaceManager, AppendOnlyCache appendOnlyCache, NextFitHistogram nextFitHistogram) {
+	public Hybrid(PagedFile pagedFile, SpaceManager spaceManager,
+			AppendOnlyCache appendOnlyCache, NextFitHistogram nextFitHistogram) {
 		this.spaceManager = spaceManager;
 		this.appendOnlyCache = appendOnlyCache;
 		this.nextFitHistogram = nextFitHistogram;
+		this.pagedFile = pagedFile;
+		
+		for (int i=0;i<pagedFile.getPageCount();i++) {
+			
+			
+		}
+		
 	}
-	
-	public long acquirePage() {
+
+	public int acquirePage() {
 		// TODO Auto-generated method stub
 		return 0;
 	}
@@ -32,7 +42,7 @@ public class Hybrid implements SpaceManagerPolicy {
 		return null;
 	}
 
-	public void releasePage(long id) {
+	public void releasePage(int id) {
 		// TODO Auto-generated method stub
 
 	}

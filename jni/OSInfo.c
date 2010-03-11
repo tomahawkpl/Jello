@@ -1,9 +1,9 @@
 #include <jni.h>
 #include <unistd.h>
 
-jint JNICALL getPageSize
+jshort JNICALL getPageSize
 (JNIEnv *env, jclass dis) {
-	return getpagesize();
+	return (short)getpagesize();
 }
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
@@ -18,7 +18,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	/* register methods with (*env)->RegisterNatives */
 
 	nm[0].name = "getPageSize";
-	nm[0].signature = "()I";
+	nm[0].signature = "()S";
 	nm[0].fnPtr = getPageSize;
 
 	(*env)->RegisterNatives(env,klass,nm,1);

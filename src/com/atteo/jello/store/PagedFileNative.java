@@ -10,14 +10,14 @@ import com.google.inject.name.Named;
 public class PagedFileNative implements PagedFile {
 	private String fullpath;
 	private boolean readOnly;
-	private int pageSize;
+	private short pageSize;
 
 	static {
 		System.loadLibrary("PagedFileNative");
 	}
 
 	@Inject
-	PagedFileNative(@Named("pageSize") int pageSize, @Named("fullpath") final String fullpath) {
+	PagedFileNative(@Named("pageSize") short pageSize, @Named("fullpath") final String fullpath) {
 		this.fullpath = fullpath;
 		this.pageSize = pageSize;
 	}
@@ -53,13 +53,13 @@ public class PagedFileNative implements PagedFile {
 	}
 	
 	native private int openNative(String fullpath, boolean readOnly,
-			int pageSize) throws IOException;
+			short pageSize) throws IOException;
 	synchronized native public void close() throws IOException;
-	synchronized native public long addPages(long count) throws IOException;
-	synchronized native public void removePages(long count) throws IOException;
+	synchronized native public int addPages(int count) throws IOException;
+	synchronized native public void removePages(int count) throws IOException;
 	native public long getFileLength();
-	native public long getPageCount();
-	native public void syncPages(long startPage, long count);
+	native public int getPageCount();
+	native public void syncPages(int startPage, int count);
 	native public void syncAll();
 	native public void readPage(Page page);
 	synchronized native public void writePage(Page page);

@@ -5,6 +5,6 @@ public class OSInfo {
 		System.loadLibrary("OSInfo");
 	}
 	
-	native static public int getPageSize();
+	native static public short getPageSize();
 	
 }

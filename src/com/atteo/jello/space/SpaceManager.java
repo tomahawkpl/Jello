@@ -5,9 +5,11 @@ public interface SpaceManager {
 	void create();
 	void update(); 
 	
-	void setBlockUsed(long id, int block, boolean used);
-	boolean isBlockUsed(long id, int block);
+	void setBlockUsed(int id, short block, boolean used);
+	boolean isBlockUsed(int id, short block);
 	
-	void setPageUsed(long id, boolean used);
-	boolean isPageUsed(long id);
+	short freeSpaceOnPage(int id);
+	
+	void setPageUsed(int id, boolean used);
+	boolean isPageUsed(int id);
 }

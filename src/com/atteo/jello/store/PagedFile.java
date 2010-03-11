@@ -7,12 +7,12 @@ public interface PagedFile {
 	int open() throws IOException;
 	void close() throws IOException;
 	long getFileLength();
-	long addPages(long count) throws IOException;
-	void removePages(long count) throws IOException;
+	int addPages(int count) throws IOException;
+	void removePages(int count) throws IOException;
 	void readPage(Page page);
 	void writePage(Page page);
-	long getPageCount();
-	void syncPages(long startPageId, long count);
+	int getPageCount();
+	void syncPages(int startPageId, int count);
 	void syncAll();
 	boolean isReadOnly();
 }

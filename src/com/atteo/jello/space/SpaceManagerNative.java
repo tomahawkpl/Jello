@@ -12,28 +12,36 @@ public class SpaceManagerNative implements SpaceManager {
 	static {
 		System.loadLibrary("SpaceManagerNative");
 	}
-	
+
 	@Inject
 	public SpaceManagerNative(PagedFile pagedFile,
-			@Named("freeSpaceInfoSize") int freeSpaceInfoSize,
-			@Named("freeSpaceInfosPerPage") int freeSpaceInfosPerPage,
-			@Named("freeSpaceInfoPageCapacity") int freeSpaceInfoPageCapacity,
-			ListPage listPage) {
-		
-		init(pagedFile, listPage, freeSpaceInfosPerPage, freeSpaceInfoSize, freeSpaceInfoPageCapacity, DatabaseFile.PAGE_FREE_SPACE_MAP);
-	}
-	
-	public native void init(PagedFile pagedFile, ListPage listPage,
-			int freeSpaceInfosPerPage, int freeSpaceInfoSize, int freeSpaceInfoPageCapacity, 
-			long pageFreeSpaceInfo);
+			@Named("freeSpaceInfoSize") short freeSpaceInfoSize,
+			@Named("freeSpaceInfosPerPage") short freeSpaceInfosPerPage,
+			@Named("freeSpaceInfoPageCapacity") short freeSpaceInfoPageCapacity,
+			ListPage listPage, @Named("blockSize") short blockSize) {
 
-	public native void create();	
+		init(pagedFile, listPage, freeSpaceInfosPerPage, freeSpaceInfoSize,
+				freeSpaceInfoPageCapacity, DatabaseFile.PAGE_FREE_SPACE_MAP,
+				blockSize);
+	}
+
+	public native void init(PagedFile pagedFile, ListPage listPage,
+			short freeSpaceInfosPerPage, short freeSpaceInfoSize,
+			short freeSpaceInfoPageCapacity, int pageFreeSpaceInfo, short blockSize);
+
+	public native void create();
+
 	public native boolean load();
+
 	public native void update();
-	
-	public native boolean isPageUsed(long id);
-	public native void setPageUsed(long id, boolean used);
-	
-	public native boolean isBlockUsed(long id, int block);
-	public native void setBlockUsed(long id, int block, boolean used);
+
+	public native boolean isPageUsed(int id);
+
+	public native void setPageUsed(int id, boolean used);
+
+	public native boolean isBlockUsed(int id, short block);
+
+	public native void setBlockUsed(int id, short block, boolean used);
+
+	public native short freeSpaceOnPage(int id);
 }

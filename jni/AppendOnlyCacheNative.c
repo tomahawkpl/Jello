@@ -3,8 +3,8 @@
 #include "common.c"
 
 struct CacheElement {
-	long id;
-	int freeSpace;
+	int id;
+	short freeSpace;
 	struct CacheElement *next;
 	struct CacheElement *prev;
 };
@@ -14,16 +14,14 @@ int count;
 int limit;
 int minFreeSpace;
 
-void JNICALL init
-(JNIEnv *env, jclass dis, jint cacheSize) {
+void JNICALL init(JNIEnv *env, jclass dis, jint cacheSize) {
 	cache = NULL;
 	count = 0;
 	limit = cacheSize;
 	minFreeSpace = -1;
 }
 
-jint JNICALL getFreeSpace
-(JNIEnv *env, jclass dis, jlong id) {
+jint JNICALL getFreeSpace(JNIEnv *env, jclass dis, jint id) {
 	struct CacheElement *element = cache;
 
 	while (element != NULL) {
@@ -36,8 +34,7 @@ jint JNICALL getFreeSpace
 
 }
 
-jlong JNICALL getBestId
-(JNIEnv *env, jclass dis, jint freeSpace) {
+jint JNICALL getBestId(JNIEnv *env, jclass dis, jshort freeSpace) {
 	struct CacheElement *element = cache;
 	struct CacheElement *best = NULL;
 	int bestExtraSpace;
@@ -60,8 +57,7 @@ jlong JNICALL getBestId
 
 }
 
-jboolean JNICALL isEmpty
-(JNIEnv *env, jclass dis) {
+jboolean JNICALL isEmpty(JNIEnv *env, jclass dis) {
 	if (count > 0)
 		return (jboolean)0;
 	else
@@ -92,8 +88,7 @@ void insertElem(struct CacheElement *element) {
 
 }
 
-void JNICALL update
-(JNIEnv *env, jclass dis, jlong id, jint freeSpace) {
+void JNICALL update(JNIEnv *env, jclass dis, jint id, jshort freeSpace) {
 	int leastSpace = -1;
 	struct CacheElement *leastSpaceElem = NULL;
 	struct CacheElement *element = cache;
@@ -172,11 +167,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	/* register methods with (*env)->RegisterNatives */
 
 	nm[0].name = "getFreeSpace";
-	nm[0].signature = "(J)I";
+	nm[0].signature = "(I)S";
 	nm[0].fnPtr = getFreeSpace;
 
 	nm[1].name = "getBestId";
-	nm[1].signature = "(I)J";
+	nm[1].signature = "(S)I";
 	nm[1].fnPtr = getBestId;
 
 	nm[2].name = "isEmpty";
@@ -184,7 +179,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[2].fnPtr = isEmpty;
 
 	nm[3].name = "update";
-	nm[3].signature = "(JI)V";
+	nm[3].signature = "(IS)V";
 	nm[3].fnPtr = update;
 
 	nm[4].name = "init";

@@ -3,13 +3,13 @@
 #include "common.c"
 
 struct FreeSpaceInfo {
-	jlong pageId;
+	jint pageId;
 	jbyte *data;
 };
 
-void JNICALL setPageUsed(JNIEnv *env, jclass dis, jlong id, jboolean used);
+void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used);
 
-long pageCount;
+int pageCount;
 
 int ByteSize = 8;
 
@@ -17,9 +17,10 @@ struct FreeSpaceInfo *freeSpaceInfo;
 
 jint pageFreeSpaceInfo;
 
-jint freeSpaceInfoPageCapacity;
-jint freeSpaceInfosPerPage;
-jlong freeSpaceInfoSize;
+jshort freeSpaceInfoPageCapacity;
+jshort freeSpaceInfosPerPage;
+jshort freeSpaceInfoSize;
+jshort blockSize;
 
 jobject pagedFile;
 
@@ -40,7 +41,7 @@ void initIDs(JNIEnv *env) {
 
 
 	midPagedFileGetPageCount = (*env)->GetMethodID(env, pagedFileClass,
-			"getPageCount", "()J");
+			"getPageCount", "()I");
 
 	if (midPagedFileGetPageCount == NULL)
 		return;
@@ -58,13 +59,13 @@ void initIDs(JNIEnv *env) {
 		return;
 
 	midPagedFileAddPages = (*env)->GetMethodID(env, pagedFileClass,
-			"addPages", "(J)J");
+			"addPages", "(I)I");
 
 	if (midPagedFileAddPages == NULL)
 		return;
 
 	midPagedFileRemovePages = (*env)->GetMethodID(env, pagedFileClass,
-			"removePages", "(J)V");
+			"removePages", "(I)V");
 
 	if (midPagedFileRemovePages == NULL)
 		return;
@@ -74,14 +75,14 @@ void initIDs(JNIEnv *env) {
 	if (klass == NULL)
 		return;
 
-	fidListPageId = (*env)->GetFieldID(env, klass, "id", "J");
+	fidListPageId = (*env)->GetFieldID(env, klass, "id", "I");
 	fidListPageAccessibleData = (*env)->GetFieldID(env, klass, "accessibleData", "[B");
-	midListPageSetNext = (*env)->GetMethodID(env, klass, "setNext", "(J)V");
+	midListPageSetNext = (*env)->GetMethodID(env, klass, "setNext", "(I)V");
 }
 
 void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject listPageObject,
-		jint freeSpaceInfosPerPageArg, jint freeSpaceInfoSizeArg, jint freeSpaceInfoPageCapacityArg,
-		jlong pageFreeSpaceInfoArg) {
+		jshort freeSpaceInfosPerPageArg, jshort freeSpaceInfoSizeArg, jshort freeSpaceInfoPageCapacityArg,
+		jshort pageFreeSpaceInfoArg, jshort blockSizeArg) {
 
 	initIDs(env);
 
@@ -89,6 +90,7 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 	freeSpaceInfoSize = freeSpaceInfoSizeArg;
 	freeSpaceInfoPageCapacity = freeSpaceInfoPageCapacityArg;
 	pageFreeSpaceInfo = pageFreeSpaceInfoArg;
+	blockSize = blockSizeArg;
 
 	listPage = (*env)->NewGlobalRef(env,listPageObject);
 	pagedFile = (*env)->NewGlobalRef(env, pagedFileObject);
@@ -101,7 +103,7 @@ void writeFreeSpaceInfo(JNIEnv *env, int page) {
 	jbyteArray buffer;
 	jbyte *bytes;
 
-	(*env)->SetLongField(env, listPage, fidListPageId, freeSpaceInfo[page].pageId);
+	(*env)->SetIntField(env, listPage, fidListPageId, freeSpaceInfo[page].pageId);
 
 	buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
@@ -116,12 +118,12 @@ void writeFreeSpaceInfo(JNIEnv *env, int page) {
 }
 
 
-void addPages(JNIEnv *env, jclass dis, long count) {
+void addPages(JNIEnv *env, jclass dis, int count) {
 	struct FreeSpaceInfo *newPage;
-	long i;
-	long lastNewPage;
+	int i;
+	int lastNewPage;
 
-	lastNewPage = (*env)->CallLongMethod(env, pagedFile, midPagedFileAddPages, count);
+	lastNewPage = (*env)->CallIntMethod(env, pagedFile, midPagedFileAddPages, count);
 
 	if (lastNewPage == -1)
 		return;
@@ -134,15 +136,15 @@ void addPages(JNIEnv *env, jclass dis, long count) {
 		newPage->pageId = lastNewPage - count + 1 + i;
 		newPage->data = calloc(1, freeSpaceInfoPageCapacity);
 
-		setPageUsed(env, dis, newPage->pageId, (jboolean)1);
+		setPageUsed(env, dis, newPage->pageId, JNI_TRUE);
 	}
 	pageCount += count;
 }
 
-void JNICALL removePages(JNIEnv *env, jclass dis, jlong count) {
+void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 	struct FreeSpaceInfo *page;
-	long i;
-	long lastNewPage;
+	int i;
+	int lastNewPage;
 
 	if (count >= pageCount) {
 		count = pageCount - 1;
@@ -153,7 +155,7 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jlong count) {
 	pageCount -= count;
 
 	for (i=0;i<count;i++) {
-		setPageUsed(env, dis, pageCount + count - i - 1, (jboolean)0);
+		setPageUsed(env, dis, pageCount + count - i - 1, JNI_FALSE);
 
 		free(&freeSpaceInfo[pageCount+count-i].data);
 		free(&freeSpaceInfo[pageCount+count-i]);
@@ -166,10 +168,10 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jlong count) {
 
 void JNICALL update(JNIEnv *env, jclass dis) {
 	long pagedFileSize;
-	long currentPages;
+	int currentPages;
 	long difference;
 
-	pagedFileSize = (*env)->CallLongMethod(env, pagedFile, midPagedFileGetPageCount);
+	pagedFileSize = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount);
 	currentPages = pageCount * freeSpaceInfosPerPage;
 
 	if (pagedFileSize > currentPages) {
@@ -188,19 +190,19 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 	}
 }
 
-long getFreeSpaceInfoPage(long id) {
+int getFreeSpaceInfoPage(int id) {
 	return id / freeSpaceInfosPerPage;
 }
 
-int getFreeSpaceInfoOffset(long id) {
+short getFreeSpaceInfoOffset(int id) {
 	return id % freeSpaceInfosPerPage;
 }
 
-jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jlong id) {
-	long freeSpaceInfoPage;
-	int freeSpaceInfoOffset;
+jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jint id) {
+	int freeSpaceInfoPage;
+	short freeSpaceInfoOffset;
 	struct FreeSpaceInfo *fsi;
-	int offset;
+	short offset;
 	int i;
 
 	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
@@ -227,10 +229,10 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jlong id) {
 
 }
 
-void JNICALL setPageUsed(JNIEnv *env, jclass dis, jlong id, jboolean used) {
-	long freeSpaceInfoPage;
-	int freeSpaceInfoOffset;
-	int offset;
+void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
+	int freeSpaceInfoPage;
+	short freeSpaceInfoOffset;
+	short offset;
 	int i;
 	jbyte newValue;
 
@@ -260,11 +262,11 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jlong id, jboolean used) {
 	writeFreeSpaceInfo(env, freeSpaceInfoPage);
 }
 
-jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block) {
-	long freeSpaceInfoPage;
-	int freeSpaceInfoOffset;
+jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block) {
+	int freeSpaceInfoPage;
+	short freeSpaceInfoOffset;
 	struct FreeSpaceInfo *fsi;
-	int offset;
+	short offset;
 	int i;
 
 	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
@@ -289,10 +291,10 @@ jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block) {
 
 }
 
-void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block, jboolean used) {
-	long freeSpaceInfoPage;
-	int freeSpaceInfoOffset;
-	int offset;
+void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block, jboolean used) {
+	int freeSpaceInfoPage;
+	short freeSpaceInfoOffset;
+	short offset;
 	int i;
 
 	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
@@ -320,14 +322,45 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jlong id, jint block, jboolea
 
 }
 
+jshort JNICALL freeSpaceOnPage(JNIEnv *env, jclass dis, jint id) {
+	int freeSpaceInfoPage;
+	short freeSpaceInfoOffset;
+	struct FreeSpaceInfo *fsi;
+	short offset;
+	int i, j;
+	int result = 0;
+
+	freeSpaceInfoPage = getFreeSpaceInfoPage(id);
+	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
+
+	if (freeSpaceInfoPage >= pageCount) {
+		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+				"Page with this id is not known to the Space Manager");
+		return JNI_FALSE;
+		
+	}
+
+	fsi = &freeSpaceInfo[freeSpaceInfoPage];
+	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
+
+	for (i=0;i<freeSpaceInfoSize;i++)
+		for (j=0;j<ByteSize;j++) {
+			if (fsi->data[offset+i] & (1 << j))
+				result += blockSize;
+
+		}
+
+	return result;
+
+}
+
 void JNICALL create(JNIEnv *env, jclass dis) {
-	long i;
 	freeSpaceInfo = malloc(sizeof(struct FreeSpaceInfo));
 	freeSpaceInfo[0].pageId = pageFreeSpaceInfo;
 	freeSpaceInfo[0].data = calloc(1, freeSpaceInfoPageCapacity);
 	pageCount = 1;
 
-	setPageUsed(env, dis, pageFreeSpaceInfo, (jboolean)1);
+	setPageUsed(env, dis, pageFreeSpaceInfo, JNI_TRUE);
 
 	writeFreeSpaceInfo(env, 0);
 
@@ -336,13 +369,13 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 
 
 jboolean JNICALL load(JNIEnv *env, jclass dis) {
-	(*env)->SetLongField(env, listPage, fidListPageId, pageFreeSpaceInfo);
+	(*env)->SetIntField(env, listPage, fidListPageId, pageFreeSpaceInfo);
 	(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
 }
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNIEnv* env;
-	JNINativeMethod nm[8];
+	JNINativeMethod nm[9];
 	jclass klass;
 
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
@@ -353,7 +386,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	/* register methods with (*env)->RegisterNatives */
 
 	nm[0].name = "init";
-	nm[0].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/store/ListPage;IIIJ)V";
+	nm[0].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/store/ListPage;SSSIS)V";
 	nm[0].fnPtr = init;
 
 	nm[1].name = "create";
@@ -369,23 +402,26 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[3].fnPtr = update;
 
 	nm[4].name = "isPageUsed";
-	nm[4].signature = "(J)Z";
+	nm[4].signature = "(I)Z";
 	nm[4].fnPtr = isPageUsed;
 
 	nm[5].name = "setPageUsed";
-	nm[5].signature = "(JZ)V";
+	nm[5].signature = "(IZ)V";
 	nm[5].fnPtr = setPageUsed;
 
 	nm[6].name = "isBlockUsed";
-	nm[6].signature = "(JI)Z";
+	nm[6].signature = "(IS)Z";
 	nm[6].fnPtr = isBlockUsed;
 
 	nm[7].name = "setBlockUsed";
-	nm[7].signature = "(JIZ)V";
+	nm[7].signature = "(ISZ)V";
 	nm[7].fnPtr = setBlockUsed;
 
+	nm[8].name = "freeSpaceOnPage";
+	nm[8].signature = "(I)S";
+	nm[8].fnPtr = freeSpaceOnPage;
 
-	(*env)->RegisterNatives(env,klass,nm,8);
+	(*env)->RegisterNatives(env,klass,nm,9);
 
 	(*env)->DeleteLocalRef(env, klass);
 

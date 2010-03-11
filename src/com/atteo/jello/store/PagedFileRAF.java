@@ -12,16 +12,16 @@ public class PagedFileRAF implements PagedFile {
 	private String fullpath;
 	private boolean readOnly;
 	private int pageSize;
-	private long pages;
+	private int pages;
 	private RandomAccessFile raf;
 
 	@Inject
-	PagedFileRAF(@Named("pageSize") int pageSize, @Named("fullpath") final String fullpath) {
+	PagedFileRAF(@Named("pageSize") short pageSize, @Named("fullpath") final String fullpath) {
 		this.pageSize = pageSize;
 		this.fullpath = fullpath;
 	}
 
-	public long addPages(long count) {
+	public int addPages(int count) {
 		pages += count;
 		try {
 			raf.setLength(pages * pageSize);
@@ -40,16 +40,16 @@ public class PagedFileRAF implements PagedFile {
 	}
 
 	public long getFileLength() {
-		int len = 0;
+		long len = 0;
 		try {
-			len = (int)raf.length();
+			len = raf.length();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return len;
 	}
 
-	public long getPageCount() {
+	public int getPageCount() {
 		return pages;
 	}
 
@@ -94,7 +94,7 @@ public class PagedFileRAF implements PagedFile {
 
 	}
 
-	public void removePages(long count){
+	public void removePages(int count){
 		pages -= count;
 		if (pages < 0)
 			pages = 0;
@@ -110,7 +110,7 @@ public class PagedFileRAF implements PagedFile {
 
 	}
 
-	public void syncPages(long startPage, long count) {
+	public void syncPages(int startPage, int count) {
 
 	}
 

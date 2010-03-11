@@ -7,7 +7,7 @@ public class HeaderPage extends Page {
 	static final private String MAGIC = "JelloDatabase";
 	
 	@Inject
-	private HeaderPage(@Named("pageSize") final int pageSize) {
+	private HeaderPage(@Named("pageSize") final short pageSize) {
 		super(pageSize);
 		byteBuffer.put(MAGIC.getBytes());
 	}

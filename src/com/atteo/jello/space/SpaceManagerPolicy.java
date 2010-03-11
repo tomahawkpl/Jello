@@ -8,6 +8,6 @@ public interface SpaceManagerPolicy {
 	public RecordPart[] reacquireRecordSpace(RecordPart parts[], int length);
 	public void releaseRecordSpace(RecordPart parts[]);
 	
-	public long acquirePage();
-	public void releasePage(long id);
+	public int acquirePage();
+	public void releasePage(int id);
 }

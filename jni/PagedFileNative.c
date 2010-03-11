@@ -12,8 +12,8 @@ int pagedFileFD;
 void *mapping;
 int readOnly;
 long fileLength;
-int pageSize;
-long pages;
+short pageSize;
+int pages;
 int prot;
 int isOpened;
 int openFlags;
@@ -69,7 +69,7 @@ long getFileLength() {
 	return end;
 }
 
-jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, jint ps) {
+jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, jshort ps) {
 	const jbyte *str;
 
 	if (isOpened)
@@ -146,7 +146,7 @@ void JNICALL closeNative(JNIEnv *env, jclass dis) {
 	isOpened = 0;
 }
 
-jlong JNICALL addPages(JNIEnv *env, jclass dis, jlong count) {
+jint JNICALL addPages(JNIEnv *env, jclass dis, jint count) {
 	long newLength;
 	if (readOnly)
 		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
@@ -178,7 +178,7 @@ jlong JNICALL addPages(JNIEnv *env, jclass dis, jlong count) {
 
 }
 
-jlong JNICALL removePages(JNIEnv *env, jclass dis, jlong count) {
+jint JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 	long newLength;
 	if (readOnly)
 		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
@@ -212,11 +212,11 @@ jlong JNICALL getFileLengthNative(JNIEnv *env, jclass dis) {
 	return (jlong)getFileLength();
 }
 
-jlong JNICALL getPageCount(JNIEnv *env, jclass dis) {
+jint JNICALL getPageCount(JNIEnv *env, jclass dis) {
 	return pages;
 }
 
-void JNICALL syncPages(JNIEnv *env, jclass dis, jlong position, jlong count) {
+void JNICALL syncPages(JNIEnv *env, jclass dis, jint position, jint count) {
 		if (mapping != NULL)
 			msync((void*) (mapping+position*pageSize), count*pageSize, MS_SYNC | MS_INVALIDATE);
 }
@@ -230,17 +230,17 @@ void JNICALL readPage(JNIEnv *env, jclass dis, jobject page) {
 	jboolean isCopy;
 	jbyteArray buffer;
 	jbyte *bytes;
-	jlong id;
+	jint id;
 
 	if (mapping == NULL)
 		JNI_ThrowByName(env,"java/lang/InternalError","Attempting to read from an empty file");
 
 	buffer = (*env)->GetObjectField(env, page, fidPageData);
-	id = (*env)->GetLongField(env, page, fidPageId);
+	id = (*env)->GetIntField(env, page, fidPageId);
 
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
-	memcpy((void*) bytes, (void*) (mapping + (long)id * pageSize), pageSize);
+	memcpy((void*) bytes, (void*) (mapping + (int)id * pageSize), pageSize);
 
 	(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
 
@@ -251,7 +251,7 @@ void JNICALL writePage(JNIEnv *env, jclass dis, jobject page) {
 	jboolean isCopy;
 	jbyte *bytes;
 	jbyteArray buffer;
-	jlong id;
+	jint id;
 
 	if (readOnly)
 		JNI_ThrowByName(env,"java/lang/InternalError","File opened in read-only mode");
@@ -261,11 +261,11 @@ void JNICALL writePage(JNIEnv *env, jclass dis, jobject page) {
 
 
 	buffer = (*env)->GetObjectField(env, page, fidPageData);
-	id = (*env)->GetLongField(env, page, fidPageId);
+	id = (*env)->GetIntField(env, page, fidPageId);
 
 	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
-	memcpy((void*) (mapping + id * pageSize), (void*) bytes, pageSize);
+	memcpy((void*) (mapping + (int)id * pageSize), (void*) bytes, pageSize);
 	
 	(*env)->ReleaseByteArrayElements(env, buffer, bytes, JNI_ABORT);
 }

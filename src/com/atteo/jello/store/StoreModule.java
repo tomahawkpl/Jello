@@ -8,15 +8,15 @@ import com.google.inject.name.Names;
 
 public class StoreModule implements Module {
 	// ---- SETTINGS
-	private final int pageSize = OSInfo.getPageSize();
+	private final short pageSize = OSInfo.getPageSize();
 	private final int pagePoolLimit = 5;
 	private final String fullpath;
 
-	private final int blockSize = 128;
-	private final int blocksPerPage;
-	private final int freeSpaceInfoSize;
-	private final int freeSpaceInfosPerPage;
-	private final int freeSpaceInfoPageCapacity;
+	private final short blockSize = 128;
+	private final short blocksPerPage;
+	private final short freeSpaceInfoSize;
+	private final short freeSpaceInfosPerPage;
+	private final short freeSpaceInfoPageCapacity;
 	// --------------
 
 	private final HashMap<String, String> properties;
@@ -27,10 +27,10 @@ public class StoreModule implements Module {
 		if (properties != null)
 			this.properties.putAll(properties);
 		
-		this.blocksPerPage = pageSize / blockSize;
-		this.freeSpaceInfoSize = blocksPerPage / Byte.SIZE;
+		this.blocksPerPage = (short) (pageSize / blockSize);
+		this.freeSpaceInfoSize = (short) (blocksPerPage / (short)Byte.SIZE);
 		this.freeSpaceInfoPageCapacity = new ListPage(pageSize).getCapacity();
-		this.freeSpaceInfosPerPage = freeSpaceInfoPageCapacity / freeSpaceInfoSize;
+		this.freeSpaceInfosPerPage = (short) (freeSpaceInfoPageCapacity / freeSpaceInfoSize);
 
 	}
 

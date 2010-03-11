@@ -9,16 +9,16 @@ import com.atteo.jello.store.PagedFile;
 
 public class PagedFileMock implements PagedFile {
 
-	private final int pageSize;
+	private final short pageSize;
 
 	private ArrayList<Page> pages;
 
-	public PagedFileMock(int pageSize) {
+	public PagedFileMock(short pageSize) {
 		this.pageSize = pageSize;
 		pages = new ArrayList<Page>();
 	}
 
-	public long addPages(long count) throws IOException {
+	public int addPages(int count) throws IOException {
 		for (int i = 0; i < count; i++)
 			pages.add(new Page(pageSize));
 		return pages.size() - 1;
@@ -32,7 +32,7 @@ public class PagedFileMock implements PagedFile {
 		return pages.size() * pageSize;
 	}
 
-	public long getPageCount() {
+	public int getPageCount() {
 		return pages.size();
 	}
 
@@ -49,7 +49,7 @@ public class PagedFileMock implements PagedFile {
 
 	}
 
-	public void removePages(long count) throws IOException {
+	public void removePages(int count) throws IOException {
 		for (int i = 0; i < count; i++)
 			pages.remove(pages.size() - 1);
 
@@ -59,7 +59,7 @@ public class PagedFileMock implements PagedFile {
 
 	}
 
-	public void syncPages(long startPageId, long count) {
+	public void syncPages(int startPageId, int count) {
 
 	}
 

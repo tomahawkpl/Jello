@@ -26,10 +26,10 @@ public class AppendOnlyCacheTest extends InstrumentationTestCase implements
 		final int TESTSIZE = 100;
 		Debug.startMethodTracing("jello/testAppendOnlyCache");
 		for (int i=0;i<TESTSIZE;i++) {
-			appendOnlyCache.update(4*i, 100);
-			appendOnlyCache.update(4*i+1, 50);
-			appendOnlyCache.update(4*i+2, 200);
-			appendOnlyCache.update(4*i+3, 20);
+			appendOnlyCache.update(4*i, (short) 100);
+			appendOnlyCache.update(4*i+1, (short) 50);
+			appendOnlyCache.update(4*i+2, (short) 200);
+			appendOnlyCache.update(4*i+3, (short) 20);
 		}
 		Debug.stopMethodTracing();
 		

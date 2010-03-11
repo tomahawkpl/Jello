@@ -15,8 +15,8 @@ public class AppendOnlyCacheNative implements AppendOnlyCache {
 	}
 	
 	private native void init(int appendOnlyCacheSize);
-	public native int getFreeSpace(long id);
-	public native long getBestId(int freeSpace);
+	public native short getFreeSpace(int id);
+	public native int getBestId(short freeSpace);
 	public native boolean isEmpty();
-	public native void update(long id, int freeSpace);
+	public native void update(int id, short freeSpace);
 }

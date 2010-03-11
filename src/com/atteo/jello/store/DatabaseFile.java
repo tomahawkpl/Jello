@@ -12,10 +12,10 @@ import com.google.inject.Singleton;
 
 @Singleton
 public class DatabaseFile {
-	public static final long MIN_PAGES = 3;
-	public static final long PAGE_HEADER = 0;
-	public static final long PAGE_FREE_SPACE_MAP = 1;
-	public static final long PAGE_KLASS_LIST = 2;
+	public static final int MIN_PAGES = 3;
+	public static final int PAGE_HEADER = 0;
+	public static final int PAGE_FREE_SPACE_MAP = 1;
+	public static final int PAGE_KLASS_LIST = 2;
 
 	private PagedFile pagedFile;
 	private HeaderPage headerPage;

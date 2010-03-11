@@ -11,20 +11,20 @@ import com.google.inject.name.Named;
 public class ListPage extends Page {	
 	@Inject
 	public
-	ListPage(@Named("pageSize") final int pageSize) {	
+	ListPage(@Named("pageSize") final short pageSize) {	
 		super(pageSize);
 	}
 	
-	public void setNext(long id) {
-		byteBuffer.putLong(0, id);
+	public void setNext(int id) {
+		byteBuffer.putInt(0, id);
 	}
 	
-	public long getNext() {
-		return byteBuffer.getLong(0);
+	public int getNext() {
+		return byteBuffer.getInt(0);
 	}
 	
-	public int headerSize() {
-		return Long.SIZE;
+	public short headerSize() {
+		return Integer.SIZE;
 	}
 
 }
