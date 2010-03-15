@@ -1,13 +1,17 @@
 #include <jni.h>
 #include <stdlib.h>
+#include <android/log.h>
 #include "common.c"
 
 struct FreeSpaceInfo {
-	jint pageId;
-	jbyte *data;
+	int pageId;
+	unsigned char *data;
 };
 
+unsigned char *bitCounts;
+
 void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used);
+void JNICALL update(JNIEnv *env, jclass dis);
 
 int pageCount;
 
@@ -16,6 +20,8 @@ int ByteSize = 8;
 struct FreeSpaceInfo *freeSpaceInfo;
 
 jint pageFreeSpaceInfo;
+
+jlong pagedFileSize;
 
 jshort freeSpaceInfoPageCapacity;
 jshort freeSpaceInfosPerPage;
@@ -29,6 +35,25 @@ jobject listPage;
 jfieldID fidListPageId, fidListPageAccessibleData;
 jmethodID midListPageSetNext, midPagedFileReadPage, midPagedFileWritePage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
+
+unsigned char bitcount (unsigned char n)  {
+	unsigned char count = 0 ;
+	while (n)  {
+		count++ ;
+		n &= (n - 1) ;
+	}
+	return count;
+}
+
+
+void precomputeBits() {
+	unsigned char i;
+	bitCounts = malloc(256);
+
+	bitCounts[0] = ByteSize - bitcount(0);
+	for (i=1;i!=0;i++)
+		bitCounts[i] = ByteSize - bitcount(i);
+}
 
 void initIDs(JNIEnv *env) {
 	jclass pagedFileClass;
@@ -86,6 +111,8 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 
 	initIDs(env);
 
+	precomputeBits();
+
 	freeSpaceInfosPerPage = freeSpaceInfosPerPageArg;
 	freeSpaceInfoSize = freeSpaceInfoSizeArg;
 	freeSpaceInfoPageCapacity = freeSpaceInfoPageCapacityArg;
@@ -95,6 +122,7 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 	listPage = (*env)->NewGlobalRef(env,listPageObject);
 	pagedFile = (*env)->NewGlobalRef(env, pagedFileObject);
 
+	pagedFileSize = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount);
 }
 
 
@@ -167,7 +195,6 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 }
 
 void JNICALL update(JNIEnv *env, jclass dis) {
-	long pagedFileSize;
 	int currentPages;
 	long difference;
 
@@ -213,7 +240,7 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jint id) {
 		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return JNI_FALSE;
-		
+
 	}
 
 	fsi = &freeSpaceInfo[freeSpaceInfoPage];
@@ -276,7 +303,7 @@ jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block) {
 		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return JNI_FALSE;
-		
+
 	}
 
 	fsi = &freeSpaceInfo[freeSpaceInfoPage];
@@ -322,6 +349,29 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block, jboole
 
 }
 
+jlong JNICALL totalFreeSpace(JNIEnv *env, jclass dis) {
+	int i, j, k, l, offset;
+	long freeSpace = 0;
+	struct FreeSpaceInfo *fsi;
+	int pages = 0;
+
+	for (i=0;i<pageCount;i++) {
+		fsi = &freeSpaceInfo[i];
+		for (j=0;j<freeSpaceInfosPerPage;j++) {
+			pages++;
+			if (pages > pagedFileSize)
+				break;
+			offset = j * freeSpaceInfoSize;
+			for (k=0;k<freeSpaceInfoSize;k++) {
+				__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d %d %d", offset + k, fsi->data[offset+k], bitCounts[fsi->data[offset+k]]);
+				freeSpace += blockSize * bitCounts[fsi->data[offset+k]];
+			}
+		}
+	}
+
+	return freeSpace;
+}
+
 jshort JNICALL freeSpaceOnPage(JNIEnv *env, jclass dis, jint id) {
 	int freeSpaceInfoPage;
 	short freeSpaceInfoOffset;
@@ -337,18 +387,16 @@ jshort JNICALL freeSpaceOnPage(JNIEnv *env, jclass dis, jint id) {
 		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return JNI_FALSE;
-		
+
 	}
 
 	fsi = &freeSpaceInfo[freeSpaceInfoPage];
 	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
 
-	for (i=0;i<freeSpaceInfoSize;i++)
-		for (j=0;j<ByteSize;j++) {
-			if (fsi->data[offset+i] & (1 << j))
-				result += blockSize;
-
-		}
+	for (i=0;i<freeSpaceInfoSize;i++) {
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d %d %d", offset + i, fsi->data[offset+i], bitCounts[fsi->data[offset+i]]);
+		result += blockSize * bitCounts[fsi->data[offset+i]];
+	}
 
 	return result;
 
@@ -375,7 +423,7 @@ jboolean JNICALL load(JNIEnv *env, jclass dis) {
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNIEnv* env;
-	JNINativeMethod nm[9];
+	JNINativeMethod nm[10];
 	jclass klass;
 
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
@@ -421,7 +469,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[8].signature = "(I)S";
 	nm[8].fnPtr = freeSpaceOnPage;
 
-	(*env)->RegisterNatives(env,klass,nm,9);
+	nm[9].name = "totalFreeSpace";
+	nm[9].signature = "()J";
+	nm[9].fnPtr = totalFreeSpace;
+
+	(*env)->RegisterNatives(env,klass,nm,10);
 
 	(*env)->DeleteLocalRef(env, klass);
 

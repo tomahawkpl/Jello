@@ -11,7 +11,6 @@ public class VanillaHistogram implements NextFitHistogram {
 	private int classSize;
 	private ArrayList<Integer> witnesses;
 	private ArrayList<Integer> counts;
-	private long freeSpaceSum;
 	private int count;
 	
 	@Inject
@@ -20,7 +19,6 @@ public class VanillaHistogram implements NextFitHistogram {
 
 		this.classSize = pageSize / histogramClasses;
 		count = 0;
-		freeSpaceSum = 0;
 		
 		witnesses = new ArrayList<Integer>();
 		counts = new ArrayList<Integer>();
@@ -46,7 +44,6 @@ public class VanillaHistogram implements NextFitHistogram {
 	}
 
 	public void update(int id, short previousFreeSpace, short freeSpace) {
-		freeSpaceSum += freeSpace - previousFreeSpace;
 		if (previousFreeSpace != -1) {
 			int loc = classFor(previousFreeSpace);
 			counts.set(loc, counts.get(loc) - 1);
@@ -69,9 +66,4 @@ public class VanillaHistogram implements NextFitHistogram {
 	private int classFor(int freeSpace) {
 		return freeSpace / classSize;
 	}
-
-	public short averageFreeSpace() {
-		return (short) (freeSpaceSum / count);
-	}
-
 }

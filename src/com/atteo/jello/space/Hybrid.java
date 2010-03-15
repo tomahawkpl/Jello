@@ -4,6 +4,7 @@ import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.RecordPart;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 
 @Singleton
 public class Hybrid implements SpaceManagerPolicy {
@@ -11,19 +12,22 @@ public class Hybrid implements SpaceManagerPolicy {
 	private AppendOnlyCache appendOnlyCache;
 	private NextFitHistogram nextFitHistogram;
 	private PagedFile pagedFile;
+	private short threshold;
 
 	@Inject
 	public Hybrid(PagedFile pagedFile, SpaceManager spaceManager,
-			AppendOnlyCache appendOnlyCache, NextFitHistogram nextFitHistogram) {
+			AppendOnlyCache appendOnlyCache, NextFitHistogram nextFitHistogram, 
+			@Named("hybridThreshold") int hybridThreshold, @Named("pageSize") short pageSize) {
 		this.spaceManager = spaceManager;
 		this.appendOnlyCache = appendOnlyCache;
 		this.nextFitHistogram = nextFitHistogram;
 		this.pagedFile = pagedFile;
 		
-		for (int i=0;i<pagedFile.getPageCount();i++) {
-			
-			
-		}
+		this.threshold = (short) (pageSize * (100-hybridThreshold) / 100);
+		
+		long currentFreeSpace = spaceManager.totalFreeSpace();
+		
+
 		
 	}
 

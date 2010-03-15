@@ -92,6 +92,24 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 
 	}
 
+	public void testFreeSpaceOnPage() {
+		assertEquals(4096, spaceManager.freeSpaceOnPage(0));
+		for (short i=0;i<32;i++) {
+			spaceManager.setBlockUsed(0, i, true);
+			assertEquals(4096 - 128*(i+1), spaceManager.freeSpaceOnPage(0));
+		}
+		assertEquals(0, spaceManager.freeSpaceOnPage(DatabaseFile.PAGE_FREE_SPACE_MAP));
+
+	}
+	
+	public void testTotalFreeSpace() {
+		assertEquals(4096 * 4, spaceManager.totalFreeSpace());
+		for (short i=0;i<32;i++) {
+			spaceManager.setBlockUsed(0, i, true);
+			assertEquals(4*4096 - 128*(i+1), spaceManager.totalFreeSpace());
+		}
+	}
+	
 	@Override
 	protected void tearDown() {
 	}

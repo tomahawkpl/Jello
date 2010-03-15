@@ -8,8 +8,10 @@ import com.google.inject.name.Names;
 
 public class SpaceModule implements Module {
 	// ---- SETTINGS
+
 	private final int appendOnlyCacheSize = 8;
 	private final int histogramClasses = 8;
+	private final int hybridThreshold = 90;
 
 	// --------------
 
@@ -33,6 +35,7 @@ public class SpaceModule implements Module {
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("appendOnlyCacheSize", String.valueOf(appendOnlyCacheSize));
 		p.put("histogramClasses", String.valueOf(histogramClasses));
+		p.put("hybridThreshold", String.valueOf(hybridThreshold));
 
 		return p;
 	}

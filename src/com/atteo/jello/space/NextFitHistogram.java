@@ -6,5 +6,4 @@ public interface NextFitHistogram {
 	
 	public int getWitness(short freeSpace);
 	public void update(int id, short previousFreeSpace, short freeSpace);
-	public short averageFreeSpace();
 }

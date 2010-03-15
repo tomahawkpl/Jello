@@ -9,6 +9,7 @@ import com.google.inject.name.Named;
 
 @Singleton
 public class SpaceManagerNative implements SpaceManager {
+	// TODO: currently keeps all freeSpaceInfo pages in memory
 	static {
 		System.loadLibrary("SpaceManagerNative");
 	}
@@ -43,5 +44,7 @@ public class SpaceManagerNative implements SpaceManager {
 
 	public native void setBlockUsed(int id, short block, boolean used);
 
+	public native long totalFreeSpace();
+	
 	public native short freeSpaceOnPage(int id);
 }
