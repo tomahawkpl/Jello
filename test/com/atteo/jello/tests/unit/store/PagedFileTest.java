@@ -6,14 +6,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import android.test.InstrumentationTestCase;
+import android.util.Pool;
 
 import com.atteo.jello.store.OSInfo;
 import com.atteo.jello.store.Page;
-import com.atteo.jello.store.PagePool;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 public class PagedFileTest extends InstrumentationTestCase {
 	private static final String filename = "testfile";
@@ -35,7 +37,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 	}
 
 	public void testReadPage() throws IOException {
-		final PagePool pagePool = injector.getInstance(PagePool.class);
+		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		final Page p = pagePool.acquire();
 		final byte[] saved = p.getData();
 		pagedFile.addPages(1);
@@ -72,13 +74,9 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 	public void testWriteGetPage() {
 		final int FILESIZE = 100;
-		try {
-			assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		}
+		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
 
-		final PagePool pagePool = injector.getInstance(PagePool.class);
+		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		final Page p = pagePool.acquire();
 		
 		for (int i = 0; i < FILESIZE; i++) {
@@ -88,12 +86,8 @@ public class PagedFileTest extends InstrumentationTestCase {
 			p.getData()[i % pageSize] = 0;
 		}
 		
-		try {
-			pagedFile.close();
-			pagedFile.open();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		pagedFile.close();
+		pagedFile.open();
 		
 		for (int i = 0; i < FILESIZE; i++) {
 			p.setId(i);
@@ -107,7 +101,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 		final int FILESIZE = 100;
 		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
 
-		final PagePool pagePool = injector.getInstance(PagePool.class);
+		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		final Page p = pagePool.acquire();
 		for (int i = 0; i < FILESIZE; i++) {
 			p.setId(i);
@@ -135,11 +129,7 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 	@Override
 	protected void tearDown() {
-		try {
-			pagedFile.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		pagedFile.close();
 		f.delete();
 
 	}

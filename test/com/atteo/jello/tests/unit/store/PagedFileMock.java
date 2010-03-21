@@ -1,6 +1,5 @@
 package com.atteo.jello.tests.unit.store;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 import com.atteo.jello.Jello;
@@ -18,13 +17,13 @@ public class PagedFileMock implements PagedFile {
 		pages = new ArrayList<Page>();
 	}
 
-	public int addPages(int count) throws IOException {
+	public int addPages(int count) {
 		for (int i = 0; i < count; i++)
 			pages.add(new Page(pageSize));
 		return pages.size() - 1;
 	}
 
-	public void close() throws IOException {
+	public void close() {
 
 	}
 
@@ -40,7 +39,7 @@ public class PagedFileMock implements PagedFile {
 		return false;
 	}
 
-	public int open() throws IOException {
+	public int open() {
 		return Jello.OPEN_SUCCESS;
 	}
 
@@ -49,7 +48,7 @@ public class PagedFileMock implements PagedFile {
 
 	}
 
-	public void removePages(int count) throws IOException {
+	public void removePages(int count) {
 		for (int i = 0; i < count; i++)
 			pages.remove(pages.size() - 1);
 

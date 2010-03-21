@@ -1,12 +1,11 @@
 package com.atteo.jello.space;
 
-import com.atteo.jello.store.RecordPart;
-
-
 public interface SpaceManagerPolicy {
-	public RecordPart[] acquireRecordSpace(int length);
-	public RecordPart[] reacquireRecordSpace(RecordPart parts[], int length);
-	public void releaseRecordSpace(RecordPart parts[]);
+	public static int ACQUIRE_FAILED = -1;
+	
+	public Record acquireRecordSpace(int length);
+	public Record reacquireRecordSpace(Record record, int length);
+	public void releaseRecordSpace(Record record);
 	
 	public int acquirePage();
 	public void releasePage(int id);

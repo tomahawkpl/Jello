@@ -6,13 +6,15 @@ import java.io.IOException;
 import android.os.Debug;
 import android.test.InstrumentationTestCase;
 import android.test.PerformanceTestCase;
+import android.util.Pool;
 
 import com.atteo.jello.store.Page;
-import com.atteo.jello.store.PagePool;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 
 public class PagedFileTest extends InstrumentationTestCase implements
 		PerformanceTestCase {
@@ -33,7 +35,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		final int FILESIZE = 200;
 		final int TESTSIZE = 10000;
 		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
-		final PagePool pagePool = injector.getInstance(PagePool.class);
+		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		Page p = pagePool.acquire();
 		int seed = 1112;
 		
@@ -51,7 +53,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 		final int FILESIZE = 200;
 		final int TESTSIZE = 10000;
 		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
-		final PagePool pagePool = injector.getInstance(PagePool.class);
+		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		Page p = pagePool.acquire();
 		int seed = 3432;
 		p.getData()[7]='a';
@@ -84,11 +86,7 @@ public class PagedFileTest extends InstrumentationTestCase implements
 	
 	@Override
 	protected void tearDown() {
-		try {
-			pagedFile.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		pagedFile.close();
 
 		//f.delete();
 	}

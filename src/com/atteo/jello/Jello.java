@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import android.content.Context;
 
-import com.atteo.jello.store.DatabaseFile;
 import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;

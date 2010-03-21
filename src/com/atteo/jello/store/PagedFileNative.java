@@ -17,30 +17,37 @@ public class PagedFileNative implements PagedFile {
 	}
 
 	@Inject
+	public
 	PagedFileNative(@Named("pageSize") short pageSize, @Named("fullpath") final String fullpath) {
 		this.fullpath = fullpath;
 		this.pageSize = pageSize;
 	}
 
 	protected void finalize() {
-		try {
-			close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		close();
 	}
 
-	synchronized public int open() throws IOException {
+	synchronized public int open() {
 		File file = new File(fullpath);
 		if (!file.exists())
-			file.createNewFile();
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+				return Jello.OPEN_FAILED;
+			}
 		
 		if (!file.canRead())
 			return Jello.OPEN_FAILED;
 
 		readOnly = !file.canWrite();
 
-		openNative(file.getCanonicalPath(), readOnly, pageSize);
+		try {
+			openNative(file.getCanonicalPath(), readOnly, pageSize);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Jello.OPEN_FAILED;
+		}
 		
 		if (readOnly)
 			return Jello.OPEN_READONLY;
@@ -54,9 +61,9 @@ public class PagedFileNative implements PagedFile {
 	
 	native private int openNative(String fullpath, boolean readOnly,
 			short pageSize) throws IOException;
-	synchronized native public void close() throws IOException;
-	synchronized native public int addPages(int count) throws IOException;
-	synchronized native public void removePages(int count) throws IOException;
+	synchronized native public void close();
+	synchronized native public int addPages(int count);
+	synchronized native public void removePages(int count);
 	native public long getFileLength();
 	native public int getPageCount();
 	native public void syncPages(int startPage, int count);

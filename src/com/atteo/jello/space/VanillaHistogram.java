@@ -12,12 +12,20 @@ public class VanillaHistogram implements NextFitHistogram {
 	private ArrayList<Integer> witnesses;
 	private ArrayList<Integer> counts;
 	private int count;
+	private int histogramClasses;
 	
 	@Inject
 	public VanillaHistogram(@Named("pageSize") short pageSize,
 			@Named("histogramClasses") int histogramClasses) {
 
+		if (pageSize % histogramClasses != 0)
+			throw new IllegalArgumentException("histogramClasses should divide pageSize");
+		
 		this.classSize = pageSize / histogramClasses;
+		
+		histogramClasses++; // empty pages have a separate class
+
+		this.histogramClasses = histogramClasses;
 		count = 0;
 		
 		witnesses = new ArrayList<Integer>();
@@ -32,22 +40,32 @@ public class VanillaHistogram implements NextFitHistogram {
 
 	public int getWitness(short freeSpace) {
 		int loc = classFor(freeSpace);
-		if (counts.get(loc) == 0)
+		loc++;
+		if (loc == histogramClasses)
+			loc = histogramClasses - 1;
+		
+		boolean found = false;
+		
+		while (loc < histogramClasses) {
+			if (counts.get(loc) > 0) {
+				found = true;
+				int w = witnesses.get(loc);
+				if (w != -1)
+					return w;
+			}
+			loc++;
+		}
+		
+		if (found == false)
 			return NextFitHistogram.NO_PAGE;
 		
-		int w = witnesses.get(loc);
-		
-		if (w == -1)
-			return NextFitHistogram.NO_WITNESS;
-		
-		return w;
+		return NextFitHistogram.NO_WITNESS;
 	}
 
 	public void update(int id, short previousFreeSpace, short freeSpace) {
 		if (previousFreeSpace != -1) {
 			int loc = classFor(previousFreeSpace);
 			counts.set(loc, counts.get(loc) - 1);
-			
 			if (witnesses.get(loc) == id)
 				witnesses.set(loc, -1);
 			

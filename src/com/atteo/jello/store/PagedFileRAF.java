@@ -1,6 +1,7 @@
 package com.atteo.jello.store;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -57,10 +58,16 @@ public class PagedFileRAF implements PagedFile {
 		return readOnly;
 	}
 
-	public int open() throws IOException {
+	public int open() {
 		File file = new File(fullpath);
 		if (!file.exists())
-			file.createNewFile();
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+				return Jello.OPEN_FAILED;
+
+			}
 		
 		if (!file.canRead())
 			return Jello.OPEN_FAILED;
@@ -73,9 +80,21 @@ public class PagedFileRAF implements PagedFile {
 		else
 			mode = "rw";
 		
-		raf = new RandomAccessFile(file,mode);
+		try {
+			raf = new RandomAccessFile(file,mode);
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+			return Jello.OPEN_FAILED;
+
+		}
 		
-		pages = (int) (raf.length() / pageSize);
+		try {
+			pages = (int) (raf.length() / pageSize);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return Jello.OPEN_FAILED;
+
+		}
 
 		if (readOnly)
 			return Jello.OPEN_READONLY;

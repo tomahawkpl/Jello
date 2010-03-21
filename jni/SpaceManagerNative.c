@@ -21,7 +21,7 @@ struct FreeSpaceInfo *freeSpaceInfo;
 
 jint pageFreeSpaceInfo;
 
-jlong pagedFileSize;
+jint pagedFileSize;
 
 jshort freeSpaceInfoPageCapacity;
 jshort freeSpaceInfosPerPage;
@@ -56,14 +56,13 @@ void precomputeBits() {
 }
 
 void initIDs(JNIEnv *env) {
-	jclass pagedFileClass;
 	jclass klass;
+	jclass pagedFileClass;
 
 	// get PagedFile class
 	pagedFileClass = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
 	if (pagedFileClass == NULL)
 		return;
-
 
 	midPagedFileGetPageCount = (*env)->GetMethodID(env, pagedFileClass,
 			"getPageCount", "()I");
@@ -153,6 +152,8 @@ void addPages(JNIEnv *env, jclass dis, int count) {
 
 	lastNewPage = (*env)->CallIntMethod(env, pagedFile, midPagedFileAddPages, count);
 
+
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d pages, new pageCount: %d", count, pageCount);
 	if (lastNewPage == -1)
 		return;
 
@@ -164,9 +165,13 @@ void addPages(JNIEnv *env, jclass dis, int count) {
 		newPage->pageId = lastNewPage - count + 1 + i;
 		newPage->data = calloc(1, freeSpaceInfoPageCapacity);
 
-		setPageUsed(env, dis, newPage->pageId, JNI_TRUE);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting used: %d", newPage->pageId);
 	}
+
 	pageCount += count;
+
+	for(i=pageCount - count;i<pageCount;i++)
+		setPageUsed(env, dis, i, JNI_TRUE);
 }
 
 void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
@@ -196,13 +201,15 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 
 void JNICALL update(JNIEnv *env, jclass dis) {
 	int currentPages;
-	long difference;
+	int difference;
 
 	pagedFileSize = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount);
 	currentPages = pageCount * freeSpaceInfosPerPage;
 
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
 	if (pagedFileSize > currentPages) {
 		difference = (pagedFileSize - currentPages) / freeSpaceInfosPerPage + 1;
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "difference %d", difference);
 		addPages(env, dis, difference);
 		//---
 		update(env, dis);
@@ -237,7 +244,7 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jint id) {
 
 
 	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return JNI_FALSE;
 
@@ -261,7 +268,7 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
 	short freeSpaceInfoOffset;
 	short offset;
 	int i;
-	jbyte newValue;
+	unsigned char newValue;
 
 	if (used == JNI_TRUE)
 		newValue = 255;
@@ -272,8 +279,9 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
 
+
 	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return;
 	}
@@ -282,6 +290,8 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
 	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
 
 	for (i=0;i<freeSpaceInfoSize;i++) {
+
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpaceInfoPage: %d, offset: %d", freeSpaceInfoPage, offset + i);
 		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] = newValue;
 	}
 
@@ -300,7 +310,7 @@ jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block) {
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
 	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return JNI_FALSE;
 
@@ -328,7 +338,7 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block, jboole
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
 	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return;
 	}
@@ -350,8 +360,8 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block, jboole
 }
 
 jlong JNICALL totalFreeSpace(JNIEnv *env, jclass dis) {
-	int i, j, k, l, offset;
-	long freeSpace = 0;
+	int i, j, k, offset;
+	jlong freeSpace = 0;
 	struct FreeSpaceInfo *fsi;
 	int pages = 0;
 
@@ -363,7 +373,7 @@ jlong JNICALL totalFreeSpace(JNIEnv *env, jclass dis) {
 				break;
 			offset = j * freeSpaceInfoSize;
 			for (k=0;k<freeSpaceInfoSize;k++) {
-				__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d %d %d", offset + k, fsi->data[offset+k], bitCounts[fsi->data[offset+k]]);
+				//__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d %d %d", offset + k, fsi->data[offset+k], bitCounts[fsi->data[offset+k]]);
 				freeSpace += blockSize * bitCounts[fsi->data[offset+k]];
 			}
 		}
@@ -384,7 +394,7 @@ jshort JNICALL freeSpaceOnPage(JNIEnv *env, jclass dis, jint id) {
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
 	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/InvalidArgumentException",
+		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Page with this id is not known to the Space Manager");
 		return JNI_FALSE;
 
@@ -394,7 +404,7 @@ jshort JNICALL freeSpaceOnPage(JNIEnv *env, jclass dis, jint id) {
 	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
 
 	for (i=0;i<freeSpaceInfoSize;i++) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d %d %d", offset + i, fsi->data[offset+i], bitCounts[fsi->data[offset+i]]);
+		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d %d %d", offset + i, fsi->data[offset+i], bitCounts[fsi->data[offset+i]]);
 		result += blockSize * bitCounts[fsi->data[offset+i]];
 	}
 
@@ -429,9 +439,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
 
-	/* get class with (*env)->FindClass */
 	klass = (*env)->FindClass(env,"com/atteo/jello/space/SpaceManagerNative");
-	/* register methods with (*env)->RegisterNatives */
 
 	nm[0].name = "init";
 	nm[0].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/store/ListPage;SSSIS)V";

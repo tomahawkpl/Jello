@@ -52,3 +52,13 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := AppendOnlyCacheNative
 LOCAL_SRC_FILES := AppendOnlyCacheNative.c
 include $(BUILD_SHARED_LIBRARY)
+
+# --- SimpleLockManager
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := SimpleLockManager
+LOCAL_SRC_FILES := SimpleLockManager.c
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)
+

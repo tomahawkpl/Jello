@@ -17,11 +17,13 @@ int pages;
 int prot;
 int isOpened;
 int openFlags;
+int pageAddFailed;
 
 jfieldID fidPageData, fidPageId;
 
 void initIDs(JNIEnv *env) {
 	jclass cls;
+	jfieldID fid;
 	cls = (*env)->FindClass(env, "com/atteo/jello/store/Page");
 	
 	if (cls == NULL)
@@ -36,6 +38,15 @@ void initIDs(JNIEnv *env) {
 	if (fidPageId == NULL) {
 		return;
 	}
+
+	cls = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
+	fid = (*env)->GetFieldID(env, cls, "PAGE_ADD_FAILED", "I");
+	if (fid == NULL) {
+		return;
+	}
+
+	pageAddFailed = (*env)->GetIntField(env, cls, fid);
+
 
 }
 
@@ -160,7 +171,7 @@ jint JNICALL addPages(JNIEnv *env, jclass dis, jint count) {
 
 	if (ftruncate(pagedFileFD, newLength) == -1) {
 		JNI_ThrowByName(env, "java/io/IOException", "ftruncate() failed (addPages)");
-		return -1;
+		return pageAddFailed;
 	}
 
 
@@ -283,7 +294,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	klass = (*env)->FindClass(env,"com/atteo/jello/store/PagedFileNative");
 
 	nm[0].name = "openNative";
-	nm[0].signature = "(Ljava/lang/String;ZI)I";
+	nm[0].signature = "(Ljava/lang/String;ZS)I";
 	nm[0].fnPtr = openNative;
 
 	nm[1].name = "close";
@@ -291,15 +302,15 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[1].fnPtr = closeNative;
 
 	nm[2].name = "addPages";
-	nm[2].signature = "(J)J";
+	nm[2].signature = "(I)I";
 	nm[2].fnPtr = addPages;
 
 	nm[3].name = "removePages";
-	nm[3].signature = "(J)V";
+	nm[3].signature = "(I)V";
 	nm[3].fnPtr = removePages;
 
 	nm[4].name = "getPageCount";
-	nm[4].signature = "()J";
+	nm[4].signature = "()I";
 	nm[4].fnPtr = getPageCount;
 
 	nm[5].name = "getFileLength";
@@ -307,7 +318,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[5].fnPtr = getFileLengthNative;
 
 	nm[6].name = "syncPages";
-	nm[6].signature = "(JJ)V";
+	nm[6].signature = "(II)V";
 	nm[6].fnPtr = syncPages;
 
 	nm[7].name = "syncAll";

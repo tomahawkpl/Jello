@@ -1,5 +1,5 @@
 package com.atteo.jello;
 
-public class Schema {
+public class Storable {
 
 }

@@ -1,11 +1,13 @@
-package com.atteo.jello.store;
+package com.atteo.jello;
 
 import java.io.IOException;
 
-import com.atteo.jello.Jello;
 import com.atteo.jello.space.SpaceManager;
 import com.atteo.jello.space.SpaceManagerNative;
 import com.atteo.jello.space.SpaceManagerPolicy;
+import com.atteo.jello.store.HeaderPage;
+import com.atteo.jello.store.KlassManager;
+import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
@@ -40,20 +42,11 @@ public class DatabaseFile {
 	 * @return
 	 */
 	public int open() {
-		try {
-			return pagedFile.open();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return Jello.OPEN_FAILED;
-		}
+		return pagedFile.open();
 	}
 	
 	public void close() {
-		try {
-			pagedFile.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		pagedFile.close();
 	}
 	
 	public void loadStructure(boolean create) {
@@ -84,11 +77,7 @@ public class DatabaseFile {
 	}
 	
 	private void createStructure() {
-		try {
-			pagedFile.addPages(3);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		pagedFile.addPages(3);
 		
 		headerPage = injector.getInstance(HeaderPage.class);
 		headerPage.setId(PAGE_HEADER);

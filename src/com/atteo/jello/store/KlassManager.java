@@ -11,11 +11,11 @@ public class KlassManager {
 		this.pagedFile = pagedFile;
 	}
 	
-	void create() {
+	public void create() {
 		
 	}
 	
-	boolean load() {
+	public boolean load() {
 		return true;
 	}
 }

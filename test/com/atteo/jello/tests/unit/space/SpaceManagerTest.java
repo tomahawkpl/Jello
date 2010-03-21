@@ -5,8 +5,8 @@ import java.nio.ByteBuffer;
 
 import android.test.InstrumentationTestCase;
 
+import com.atteo.jello.DatabaseFile;
 import com.atteo.jello.space.SpaceManagerNative;
-import com.atteo.jello.store.DatabaseFile;
 import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
@@ -21,8 +21,9 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 		pagedFile = new PagedFileMock((short) 4096);
 		pagedFile.addPages(5);
 
-		spaceManager = new SpaceManagerNative(pagedFile, (short) 4, (short) 32,
-				(short) 1022, new ListPage((short) 4096), (short) 128);
+		spaceManager = new SpaceManagerNative(pagedFile, new ListPage(
+				(short) 4096), (short) 4, (short) 1022, (short) 4092,
+				(short) 128);
 		spaceManager.create();
 	}
 
@@ -94,22 +95,33 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 
 	public void testFreeSpaceOnPage() {
 		assertEquals(4096, spaceManager.freeSpaceOnPage(0));
-		for (short i=0;i<32;i++) {
+		for (short i = 0; i < 32; i++) {
 			spaceManager.setBlockUsed(0, i, true);
-			assertEquals(4096 - 128*(i+1), spaceManager.freeSpaceOnPage(0));
+			assertEquals(4096 - 128 * (i + 1), spaceManager.freeSpaceOnPage(0));
 		}
-		assertEquals(0, spaceManager.freeSpaceOnPage(DatabaseFile.PAGE_FREE_SPACE_MAP));
+		assertEquals(0, spaceManager
+				.freeSpaceOnPage(DatabaseFile.PAGE_FREE_SPACE_MAP));
 
 	}
-	
+
 	public void testTotalFreeSpace() {
 		assertEquals(4096 * 4, spaceManager.totalFreeSpace());
-		for (short i=0;i<32;i++) {
+		for (short i = 0; i < 32; i++) {
 			spaceManager.setBlockUsed(0, i, true);
-			assertEquals(4*4096 - 128*(i+1), spaceManager.totalFreeSpace());
+			assertEquals(4 * 4096 - 128 * (i + 1), spaceManager
+					.totalFreeSpace());
 		}
 	}
-	
+
+	public void testUpdate() {
+		pagedFile.addPages(1022);
+		spaceManager.update();
+		assertFalse(spaceManager.isPageUsed(1022));
+		spaceManager.setPageUsed(1022, true);
+		assertTrue(spaceManager.isPageUsed(1022));
+		
+	}
+
 	@Override
 	protected void tearDown() {
 	}
