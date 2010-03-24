@@ -5,8 +5,8 @@ import java.util.HashMap;
 import android.util.Pool;
 import android.util.Pools;
 
+import com.atteo.jello.OSInfo;
 import com.atteo.jello.store.ListPage;
-import com.atteo.jello.store.OSInfo;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;

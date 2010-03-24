@@ -121,6 +121,7 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 		assertTrue(spaceManager.isPageUsed(1022));
 		
 	}
+	
 
 	@Override
 	protected void tearDown() {

@@ -1,4 +1,4 @@
-package com.atteo.jello.store;
+package com.atteo.jello;
 
 public class OSInfo {
 	static {

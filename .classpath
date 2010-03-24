@@ -4,9 +4,9 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="src" path="jni"/>
-	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
-	<classpathentry kind="lib" path="libs/guice-assisted-inject-2.0.jar"/>
 	<classpathentry kind="lib" path="libs/guice-2.0-no_aop.jar"/>
 	<classpathentry kind="lib" path="libs/guice-grapher-with-deps.jar"/>
+	<classpathentry kind="lib" path="libs/easymock-2.5.2.jar"/>
+	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -179,19 +179,19 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 	int i;
 	int lastNewPage;
 
-	if (count >= pageCount) {
-		count = pageCount - 1;
+	if (count > pageCount)
 		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Trying to remove too many Space Manager pages");
-	}
 
 	pageCount -= count;
 
 	for (i=0;i<count;i++) {
-		setPageUsed(env, dis, pageCount + count - i - 1, JNI_FALSE);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting not used: %d", freeSpaceInfo[pageCount + count - i - 1].pageId);
 
-		free(&freeSpaceInfo[pageCount+count-i].data);
-		free(&freeSpaceInfo[pageCount+count-i]);
+		setPageUsed(env, dis, freeSpaceInfo[pageCount + count - i - 1].pageId, JNI_FALSE);
+
+		free(&freeSpaceInfo[pageCount + count - i - 1].data);
+		free(&freeSpaceInfo[pageCount + count - i - 1]);
 
 	}
 
@@ -207,7 +207,7 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 	currentPages = pageCount * freeSpaceInfosPerPage;
 
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
-	if (pagedFileSize > currentPages) {
+	if (pagedFileSize >= currentPages) {
 		difference = (pagedFileSize - currentPages) / freeSpaceInfosPerPage + 1;
 		__android_log_print(ANDROID_LOG_INFO, "Jello",  "difference %d", difference);
 		addPages(env, dis, difference);
@@ -219,6 +219,7 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 
 	if (pagedFileSize <= currentPages - freeSpaceInfosPerPage) {
 		difference = (currentPages - pagedFileSize) / freeSpaceInfosPerPage;
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
 		removePages(env, dis, difference);
 		return;
 	}

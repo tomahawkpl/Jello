@@ -8,7 +8,7 @@ import java.util.HashMap;
 import android.test.InstrumentationTestCase;
 import android.util.Pool;
 
-import com.atteo.jello.store.OSInfo;
+import com.atteo.jello.OSInfo;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.StoreModule;

@@ -6,6 +6,7 @@ import android.util.Pool;
 import android.util.Pools;
 
 import com.atteo.jello.DatabaseFile;
+import com.atteo.jello.OSInfo;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provider;
@@ -35,9 +36,8 @@ public class StoreModule implements Module {
 	public void configure(final Binder binder) {
 		Names.bindProperties(binder, properties);
 		binder.bind(Short.class).annotatedWith(
-				Names.named("pageSize").annotationType()).toProvider(
+				Names.named("pageSize")).toProvider(
 				PageSizeProvider.class);
-		//binder.bind(PagePool.class);
 		binder.bind(HeaderPage.class);
 		binder.bind(DatabaseFile.class);
 		binder.bind(PagedFile.class).to(PagedFileRAF.class);

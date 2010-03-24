@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import com.atteo.jello.Jello;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public class PagedFileMock implements PagedFile {
 
@@ -12,7 +14,8 @@ public class PagedFileMock implements PagedFile {
 
 	private ArrayList<Page> pages;
 
-	public PagedFileMock(short pageSize) {
+	@Inject
+	public PagedFileMock(@Named("pageSize") short pageSize) {
 		this.pageSize = pageSize;
 		pages = new ArrayList<Page>();
 	}
