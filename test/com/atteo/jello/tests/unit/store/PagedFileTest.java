@@ -1,29 +1,43 @@
 package com.atteo.jello.tests.unit.store;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 
-import android.test.InstrumentationTestCase;
+import android.content.Context;
 import android.util.Pool;
 
-import com.atteo.jello.OSInfo;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
-import com.atteo.jello.store.StoreModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
+import com.atteo.jello.tests.JelloInterfaceTestCase;
+import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 
-public class PagedFileTest extends InstrumentationTestCase {
-	private static final String filename = "testfile";
-	private Injector injector;
+public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
+	@Inject
 	private PagedFile pagedFile;
-	private short pageSize = OSInfo.getPageSize();
-	private File f;
-	
+
+	@Inject @Named("pageSize")
+	private short pageSize;
+	@Inject
+	private Pool<Page> pagePool;
+
+	@Override
+	protected Class<PagedFile> classUnderTest() {
+		return PagedFile.class;
+	}
+
+	public void configure(Binder binder) {
+		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
+				.toInstance((short) 4096);
+		Context context = getInstrumentation().getContext();
+		String path = context.getDatabasePath(
+				"testfile").getAbsolutePath();
+		binder.bind(String.class).annotatedWith(Names.named("fullpath"))
+				.toInstance(path);
+	}
+
 	public void testAddPages() throws IOException {
 		final int TESTSIZE = 10;
 		long id;
@@ -36,22 +50,21 @@ public class PagedFileTest extends InstrumentationTestCase {
 		}
 	}
 
+	public void testPagedFile() {
+		assertTrue(!pagedFile.isReadOnly());
+		assertEquals(0, pagedFile.getPageCount());
+		assertEquals(0, pagedFile.getFileLength());
+	}
+
 	public void testReadPage() throws IOException {
-		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		final Page p = pagePool.acquire();
 		final byte[] saved = p.getData();
 		pagedFile.addPages(1);
 		p.setId(0);
 		pagedFile.writePage(p);
 		pagedFile.readPage(p);
-		assertTrue(Arrays.equals(p.getData(),saved));
+		assertTrue(Arrays.equals(p.getData(), saved));
 		pagePool.release(p);
-	}
-
-	public void testPagedFile() {
-		assertTrue(!pagedFile.isReadOnly());
-		assertEquals(0, pagedFile.getPageCount());
-		assertEquals(0, pagedFile.getFileLength());
 	}
 
 	public void testRemovePage() throws IOException {
@@ -74,21 +87,21 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 	public void testWriteGetPage() {
 		final int FILESIZE = 100;
-		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
+		assertEquals(FILESIZE - 1, pagedFile.addPages(FILESIZE));
 
-		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		final Page p = pagePool.acquire();
-		
+
 		for (int i = 0; i < FILESIZE; i++) {
 			p.setId(i);
 			p.getData()[i % pageSize] = (byte) (i % 255);
 			pagedFile.writePage(p);
 			p.getData()[i % pageSize] = 0;
 		}
-		
+
 		pagedFile.close();
+
 		pagedFile.open();
-		
+
 		for (int i = 0; i < FILESIZE; i++) {
 			p.setId(i);
 			pagedFile.readPage(p);
@@ -99,9 +112,8 @@ public class PagedFileTest extends InstrumentationTestCase {
 
 	public void testWritePage() throws IOException {
 		final int FILESIZE = 100;
-		assertEquals(FILESIZE-1, pagedFile.addPages(FILESIZE));
+		assertEquals(FILESIZE - 1, pagedFile.addPages(FILESIZE));
 
-		final Pool<Page> pagePool = injector.getInstance(Key.get(new TypeLiteral<Pool<Page>>(){}));
 		final Page p = pagePool.acquire();
 		for (int i = 0; i < FILESIZE; i++) {
 			p.setId(i);
@@ -111,27 +123,17 @@ public class PagedFileTest extends InstrumentationTestCase {
 	}
 
 	@Override
-	protected void setUp() throws IOException {
-		HashMap<String, String> properties = new HashMap<String,String>();
-		properties.put("pageSize", String.valueOf(pageSize));
-		f = getInstrumentation().getContext().getDatabasePath(
-				filename);
-		f.getParentFile().mkdirs();
-		if (f.exists())
-			f.delete();
-		f.createNewFile();
-		injector = Guice.createInjector(new StoreModule(f.getAbsolutePath(),properties));
-
-		pagedFile = injector.getInstance(PagedFile.class);
+	protected void setUp() {
+		if (pagedFile.exists())
+			pagedFile.remove();
+		pagedFile.create();
 		pagedFile.open();
-
 	}
 
 	@Override
 	protected void tearDown() {
 		pagedFile.close();
-		f.delete();
-
+		pagedFile.remove();
 	}
 
 }

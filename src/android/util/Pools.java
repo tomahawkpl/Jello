@@ -20,22 +20,26 @@ package android.util;
  * @hide
  */
 public class Pools {
-    private Pools() {
-    }
+	public static <T extends Poolable<T>> Pool<T> finitePool(
+			final PoolableManager<T> manager, final int limit) {
+		return new FinitePool<T>(manager, limit);
+	}
 
-    public static <T extends Poolable<T>> Pool<T> simplePool(PoolableManager<T> manager) {
-        return new FinitePool<T>(manager);
-    }
-    
-    public static <T extends Poolable<T>> Pool<T> finitePool(PoolableManager<T> manager, int limit) {
-        return new FinitePool<T>(manager, limit);
-    }
+	public static <T extends Poolable<T>> Pool<T> simplePool(
+			final PoolableManager<T> manager) {
+		return new FinitePool<T>(manager);
+	}
 
-    public static <T extends Poolable<T>> Pool<T> synchronizedPool(Pool<T> pool) {
-        return new SynchronizedPool<T>(pool);
-    }
+	public static <T extends Poolable<T>> Pool<T> synchronizedPool(
+			final Pool<T> pool) {
+		return new SynchronizedPool<T>(pool);
+	}
 
-    public static <T extends Poolable<T>> Pool<T> synchronizedPool(Pool<T> pool, Object lock) {
-        return new SynchronizedPool<T>(pool, lock);
-    }
+	public static <T extends Poolable<T>> Pool<T> synchronizedPool(
+			final Pool<T> pool, final Object lock) {
+		return new SynchronizedPool<T>(pool, lock);
+	}
+
+	private Pools() {
+	}
 }

@@ -5,7 +5,6 @@ import java.io.IOException;
 
 import android.content.Context;
 
-import com.atteo.jello.store.StoreModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -13,15 +12,21 @@ public class Jello {
 	public static final int OPEN_FAILED = 0;
 	public static final int OPEN_READONLY = 1;
 	public static final int OPEN_SUCCESS = 2;
-	
+
 	private static DatabaseFile dbFile;
 	private static final int DEVELOPMENT = 1;
+	private static final int PRODUCTION = 0;
+	private static final int TEST = 2;
+	private static final int DEBUG = 3;
+
 	private static int environment;
 	private static String fullpath;
 
-	private static final int PRODUCTION = 0;
-	private static final int TEST = 2;
 	static Injector injector;
+
+	public static void close() {
+		dbFile.close();
+	}
 
 	public static String getFullpath() {
 		return fullpath;
@@ -37,28 +42,45 @@ public class Jello {
 		if (!file.exists())
 			isNew = true;
 
-		try {
-			file.createNewFile();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return Jello.OPEN_FAILED;
-		}
+		if (isNew)
+			try {
+				file.createNewFile();
+			} catch (final IOException e) {
+				e.printStackTrace();
+				return Jello.OPEN_FAILED;
+			}
 
 		Jello.environment = environment;
 		loadEnvironment();
 
 		dbFile = injector.getInstance(DatabaseFile.class);
 
-		dbFile.loadStructure(isNew);
+		if (isNew)
+			if (dbFile.createStructure())
+				return Jello.OPEN_SUCCESS;
+			else
+				return Jello.OPEN_FAILED;
 
-		if (!dbFile.isValid())
+		if (!dbFile.loadHeader())
 			return Jello.OPEN_FAILED;
-		else
-			return Jello.OPEN_SUCCESS;
+
+		injector = injector.createChildInjector(dbFile);
+
+		
+		// recreate dbFile in case pageSize or other basic settings
+		// read from the file have values different that the defaults
+		dbFile = injector.getInstance(DatabaseFile.class);
+		if (!dbFile.loadHeader())
+			return Jello.OPEN_FAILED;
+		
+		if (!dbFile.loadStructure())
+			return Jello.OPEN_FAILED;
+		
+		return Jello.OPEN_SUCCESS;
 	}
 
-	public static void close() {
-		dbFile.close();
+	private static Injector createGuiceInjector() {
+		return Guice.createInjector(new JelloModule(fullpath, null));
 	}
 
 	private static void loadEnvironment() {
@@ -66,12 +88,10 @@ public class Jello {
 		case PRODUCTION:
 		case DEVELOPMENT:
 		case TEST:
+		case DEBUG:
 			injector = createGuiceInjector();
 			break;
+
 		}
-	}
-	
-	private static Injector createGuiceInjector() {
-		return Guice.createInjector(new StoreModule(fullpath, null));
 	}
 }

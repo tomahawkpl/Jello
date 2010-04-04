@@ -5,8 +5,10 @@ import java.util.HashMap;
 import android.util.Pool;
 import android.util.Pools;
 
-import com.atteo.jello.OSInfo;
+import com.atteo.jello.Record;
+import com.atteo.jello.RecordPoolableManager;
 import com.atteo.jello.store.ListPage;
+import com.atteo.jello.store.PageSizeProvider;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -26,10 +28,14 @@ public class SpaceModule implements Module {
 	private short freeSpaceInfosPerPage;
 	private short freeSpaceInfoPageCapacity;
 
-	private int maxRecordFragments = 4;
-	private int recordPoolLimit = 8;
+	private final int maxRecordPages = 4;
+	private final int maxRecordSize;
+	private final int recordPoolLimit = 8;
+	private final int chunkPoolLimit = 8;
 	// --------------
 
+	private final short pageSize;
+	
 	private final HashMap<String, String> properties;
 
 	public SpaceModule(final HashMap<String, String> properties) {
@@ -37,29 +43,23 @@ public class SpaceModule implements Module {
 		if (properties != null)
 			this.properties.putAll(properties);
 		
-
+		pageSize = new PageSizeProvider().get();
+		maxRecordSize = maxRecordPages * pageSize;
+		
 	}
 
 	public void configure(final Binder binder) {
-		// TODO fix this dependency
-		short pageSize = OSInfo.getPageSize();
-		
-		this.blocksPerPage = (short) (pageSize / blockSize);
-		this.freeSpaceInfoSize = (short) (blocksPerPage / (short)Byte.SIZE);
-		this.freeSpaceInfoPageCapacity = new ListPage(pageSize).getCapacity();
-		this.freeSpaceInfosPerPage = (short) (freeSpaceInfoPageCapacity / freeSpaceInfoSize);
+		blocksPerPage = (short) (pageSize / blockSize);
+		freeSpaceInfoSize = (short) (blocksPerPage / (short) Byte.SIZE);
+		freeSpaceInfoPageCapacity = new ListPage(pageSize).getCapacity();
+		freeSpaceInfosPerPage = (short) (freeSpaceInfoPageCapacity / freeSpaceInfoSize);
 
 		Names.bindProperties(binder, properties);
-		
+
 		binder.bind(AppendOnlyCache.class).to(AppendOnlyCacheNative.class);
 		binder.bind(NextFitHistogram.class).to(VanillaHistogram.class);
-		
+
 		binder.bind(RecordPoolableManager.class);
-	}
-	
-	@Provides
-	Pool<Record> recordPoolProvider(RecordPoolableManager manager, @Named("recordPoolLimit") int limit) {
-		return Pools.finitePool(manager, limit);
 	}
 
 	private HashMap<String, String> getDefaultProperties() {
@@ -71,11 +71,19 @@ public class SpaceModule implements Module {
 		p.put("blockPerPage", String.valueOf(blocksPerPage));
 		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		p.put("maxRecordFragments", String.valueOf(maxRecordFragments));
+		p.put("maxRecordPages", String.valueOf(maxRecordPages));
+		p.put("maxRecordSize", String.valueOf(maxRecordSize));
 		p.put("recordPoolLimit", String.valueOf(recordPoolLimit));
-
+		p.put("chunkPoolLimit", String.valueOf(chunkPoolLimit));
 		
 		return p;
 	}
 
+	@Provides
+	Pool<Record> recordPoolProvider(final RecordPoolableManager manager,
+			@Named("recordPoolLimit") final int limit) {
+		return Pools.finitePool(manager, limit);
+	}
+
+	
 }

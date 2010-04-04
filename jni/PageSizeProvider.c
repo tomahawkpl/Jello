@@ -14,7 +14,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 		return -1;
 
 	/* get class with (*env)->FindClass */
-	klass = (*env)->FindClass(env,"com/atteo/jello/OSInfo");
+	klass = (*env)->FindClass(env,"com/atteo/jello/PageSizeProvider");
 	/* register methods with (*env)->RegisterNatives */
 
 	nm[0].name = "getPageSize";

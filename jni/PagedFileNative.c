@@ -34,18 +34,18 @@ void initIDs(JNIEnv *env) {
 		return;
 	}
 
-	fidPageId = (*env)->GetFieldID(env, cls, "id", "J");
+	fidPageId = (*env)->GetFieldID(env, cls, "id", "I");
 	if (fidPageId == NULL) {
 		return;
 	}
 
 	cls = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
-	fid = (*env)->GetFieldID(env, cls, "PAGE_ADD_FAILED", "I");
+	fid = (*env)->GetStaticFieldID(env, cls, "PAGE_ADD_FAILED", "I");
 	if (fid == NULL) {
 		return;
 	}
 
-	pageAddFailed = (*env)->GetIntField(env, cls, fid);
+	pageAddFailed = (*env)->GetStaticIntField(env, cls, fid);
 
 
 }
@@ -78,6 +78,10 @@ long getFileLength() {
 	long end = lseek(pagedFileFD, 0, SEEK_END);
 	lseek(pagedFileFD, cur, SEEK_SET);
 	return end;
+}
+
+void JNICALL init(JNIEnv *env, jclass dis) {
+	initIDs(env);
 }
 
 jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, jshort ps) {
@@ -125,7 +129,6 @@ jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, 
 	else
 		mapping = NULL;
 
-	initIDs(env);
 
 	return pagedFileFD;
 
@@ -286,7 +289,7 @@ void JNICALL writePage(JNIEnv *env, jclass dis, jobject page) {
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv* env;
-	JNINativeMethod nm[10];
+	JNINativeMethod nm[11];
 	jclass klass;
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
@@ -333,8 +336,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[9].signature = "(Lcom/atteo/jello/store/Page;)V";
 	nm[9].fnPtr = writePage;
 
+	nm[10].name = "init";
+	nm[10].signature = "()V";
+	nm[10].fnPtr = init;
 
-	(*env)->RegisterNatives(env,klass,nm,10);
+
+	(*env)->RegisterNatives(env,klass,nm,11);
 
 	(*env)->DeleteLocalRef(env, klass);
 

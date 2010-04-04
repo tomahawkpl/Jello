@@ -10,23 +10,26 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class PagedFileRAF implements PagedFile {
-	private String fullpath;
+	final File file;
+
 	private boolean readOnly;
-	private int pageSize;
+	private final int pageSize;
 	private int pages;
 	private RandomAccessFile raf;
 
 	@Inject
-	PagedFileRAF(@Named("pageSize") short pageSize, @Named("fullpath") final String fullpath) {
+	PagedFileRAF(@Named("pageSize") final short pageSize,
+			@Named("fullpath") final String fullpath) {
 		this.pageSize = pageSize;
-		this.fullpath = fullpath;
+		
+		file = new File(fullpath);
 	}
 
-	public int addPages(int count) {
+	public int addPages(final int count) {
 		pages += count;
 		try {
 			raf.setLength(pages * pageSize);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 		return pages - 1;
@@ -35,7 +38,7 @@ public class PagedFileRAF implements PagedFile {
 	public void close() {
 		try {
 			raf.close();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -44,7 +47,7 @@ public class PagedFileRAF implements PagedFile {
 		long len = 0;
 		try {
 			len = raf.length();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 		return len;
@@ -59,38 +62,31 @@ public class PagedFileRAF implements PagedFile {
 	}
 
 	public int open() {
-		File file = new File(fullpath);
-		if (!file.exists())
-			try {
-				file.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return Jello.OPEN_FAILED;
-
-			}
+		if (!exists())
+			return Jello.OPEN_FAILED;
 		
 		if (!file.canRead())
 			return Jello.OPEN_FAILED;
 
 		readOnly = !file.canWrite();
-		
+
 		String mode;
 		if (readOnly)
 			mode = "r";
 		else
 			mode = "rw";
-		
+
 		try {
-			raf = new RandomAccessFile(file,mode);
-		} catch (FileNotFoundException e1) {
+			raf = new RandomAccessFile(file, mode);
+		} catch (final FileNotFoundException e1) {
 			e1.printStackTrace();
 			return Jello.OPEN_FAILED;
 
 		}
-		
+
 		try {
 			pages = (int) (raf.length() / pageSize);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 			return Jello.OPEN_FAILED;
 
@@ -102,24 +98,23 @@ public class PagedFileRAF implements PagedFile {
 			return Jello.OPEN_SUCCESS;
 	}
 
-	public void readPage(Page page) {
+	public void readPage(final Page page) {
 		try {
 			raf.seek(page.getId() * pageSize);
 			raf.readFully(page.getData());
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
-		
 
 	}
 
-	public void removePages(int count){
+	public void removePages(final int count) {
 		pages -= count;
 		if (pages < 0)
 			pages = 0;
 		try {
 			raf.setLength(pages * pageSize);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 
@@ -129,17 +124,36 @@ public class PagedFileRAF implements PagedFile {
 
 	}
 
-	public void syncPages(int startPage, int count) {
+	public void syncPages(final int startPage, final int count) {
 
 	}
 
-	public void writePage(Page page) {
+	public void writePage(final Page page) {
 		try {
 			raf.seek(page.getId() * pageSize);
 			raf.write(page.getData());
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean create() {
+		try {
+			file.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		return true;
+	}
+
+	public void remove() {
+		file.delete();
+	}
+
+	public boolean exists() {
+		return file.exists();
 	}
 
 }

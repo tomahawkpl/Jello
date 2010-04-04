@@ -5,26 +5,27 @@ import com.google.inject.name.Named;
 
 /**
  * Page which can be organised into single linked lists
+ * 
  * @author tomahawk
- *
+ * 
  */
-public class ListPage extends Page {	
+public class ListPage extends Page {
 	@Inject
-	public
-	ListPage(@Named("pageSize") final short pageSize) {	
+	public ListPage(@Named("pageSize") final short pageSize) {
 		super(pageSize);
 	}
-	
-	public void setNext(int id) {
-		byteBuffer.putInt(0, id);
-	}
-	
+
 	public int getNext() {
 		return byteBuffer.getInt(0);
 	}
-	
+
+	@Override
 	public short headerSize() {
 		return Integer.SIZE;
+	}
+
+	public void setNext(final int id) {
+		byteBuffer.putInt(0, id);
 	}
 
 }

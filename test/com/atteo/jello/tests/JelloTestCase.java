@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.easymock.EasyMock;
 
+import android.app.Instrumentation;
 import android.test.InstrumentationTestCase;
 
 import com.google.inject.Binder;
@@ -18,55 +19,58 @@ import com.google.inject.util.Modules;
 
 abstract public class JelloTestCase extends InstrumentationTestCase implements
 		Module {
-
+	
+	Module s = null;
+	
 	public JelloTestCase() {
-		prepareInjector(null);
+		super();
 	}
 
-	public JelloTestCase(Module s) {
+	public JelloTestCase(final Module s) {
 		super();
+		this.s = s;
+	}
+	
+	@Override
+	public void injectInsrumentation(Instrumentation instrumentation) {
+		super.injectInsrumentation(instrumentation);
 		prepareInjector(s);
 	}
 
-	protected Module extraBindings() {
-		return null;
-	}
-
-	private void prepareInjector(Module s) {
+	private void prepareInjector(final Module s) {
 		final HashMap<Class<?>, Object> mocks = new HashMap<Class<?>, Object>();
 
 		Class<?> klass = this.getClass();
 
 		while (!klass.equals(JelloTestCase.class)) {
-			Field fields[] = klass.getDeclaredFields();
+			final Field fields[] = klass.getDeclaredFields();
 
-			for (Field field : fields) {
+			for (final Field field : fields)
 				if (field.isAnnotationPresent(Mock.class)) {
-					Object m = EasyMock.createMock(field.getType());
+					final Object m = EasyMock.createMock(field.getType());
 					mocks.put(field.getType(), m);
 					field.setAccessible(true);
 					try {
 						field.set(this, m);
-					} catch (IllegalArgumentException e) {
+					} catch (final IllegalArgumentException e) {
 						e.printStackTrace();
-					} catch (IllegalAccessException e) {
+					} catch (final IllegalAccessException e) {
 						e.printStackTrace();
 					}
 				}
-			}
-			
+
 			klass = klass.getSuperclass();
 		}
 		Module m = new Module() {
 
 			@SuppressWarnings("unchecked")
-			public void configure(Binder binder) {
-				Set<Class<?>> keys = mocks.keySet();
-				Iterator<Class<?>> i = keys.iterator();
+			public void configure(final Binder binder) {
+				final Set<Class<?>> keys = mocks.keySet();
+				final Iterator<Class<?>> i = keys.iterator();
 				while (i.hasNext()) {
-					Class<?> klass = i.next();
-					TypeLiteral t = TypeLiteral.get(klass);
-					Object o = mocks.get(klass);
+					final Class<?> klass = i.next();
+					final TypeLiteral t = TypeLiteral.get(klass);
+					final Object o = mocks.get(klass);
 					binder.bind(t).toInstance(o);
 				}
 			}
@@ -76,9 +80,14 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 		if (extraBindings() != null)
 			m = Modules.combine(extraBindings(), m);
 
-		Injector injector = Guice.createInjector(m, new CommonBindings(), this);
+		final Injector injector = Guice.createInjector(m, new CommonBindings(),
+				this);
 		injector.injectMembers(this);
 
+	}
+
+	protected Module extraBindings() {
+		return null;
 	}
 
 }

@@ -5,11 +5,8 @@ import java.util.HashMap;
 import android.util.Pool;
 import android.util.Pools;
 
-import com.atteo.jello.DatabaseFile;
-import com.atteo.jello.OSInfo;
 import com.google.inject.Binder;
 import com.google.inject.Module;
-import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
@@ -21,7 +18,7 @@ public class StoreModule implements Module {
 	// --------------
 
 	private Pool<Page> pagePool = null;
-	
+
 	private final HashMap<String, String> properties;
 
 	public StoreModule(final String fullpath,
@@ -35,19 +32,8 @@ public class StoreModule implements Module {
 
 	public void configure(final Binder binder) {
 		Names.bindProperties(binder, properties);
-		binder.bind(Short.class).annotatedWith(
-				Names.named("pageSize")).toProvider(
-				PageSizeProvider.class);
-		binder.bind(HeaderPage.class);
-		binder.bind(DatabaseFile.class);
-		binder.bind(PagedFile.class).to(PagedFileRAF.class);
-	}
-	
-	@Provides
-	Pool<Page> pagePoolProvider(PagePoolableManager manager, @Named("pagePoolLimit") int limit) {
-		if (pagePool == null)
-			pagePool = Pools.finitePool(manager, limit);
-		return pagePool;
+		binder.bind(Short.class).annotatedWith(Names.named("pageSize")).toProvider(PageSizeProvider.class);
+		binder.bind(PagedFile.class).to(PagedFileNative.class);
 	}
 
 	private HashMap<String, String> getDefaultProperties() {
@@ -58,12 +44,13 @@ public class StoreModule implements Module {
 		return p;
 	}
 
-	public static class PageSizeProvider implements Provider<Short> {
+	@Provides
+	Pool<Page> pagePoolProvider(final PagePoolableManager manager,
+			@Named("pagePoolLimit") final int limit) {
+		if (pagePool == null)
+			pagePool = Pools.finitePool(manager, limit);
+		return pagePool;
+	}
 
-		public Short get() {
-			return OSInfo.getPageSize();
-		}
-
-	};
 
 }

@@ -1,28 +1,28 @@
-package com.atteo.jello.space;
+package com.atteo.jello;
+
+import android.util.PoolableManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
-import android.util.PoolableManager;
-
 public class RecordPoolableManager implements PoolableManager<Record> {
-	private Injector injector;
-	
+	private final Injector injector;
+
 	@Inject
-	public RecordPoolableManager(Injector injector) {
+	public RecordPoolableManager(final Injector injector) {
 		this.injector = injector;
 	}
-	
+
 	public Record newInstance() {
 		return injector.getInstance(Record.class);
 	}
 
-	public void onAcquired(Record element) {
-		
+	public void onAcquired(final Record element) {
+
 	}
 
-	public void onReleased(Record element) {
-		
+	public void onReleased(final Record element) {
+
 	}
 
 }

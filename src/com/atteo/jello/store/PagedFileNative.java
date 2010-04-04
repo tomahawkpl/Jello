@@ -8,35 +8,41 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class PagedFileNative implements PagedFile {
-	private String fullpath;
 	private boolean readOnly;
-	private short pageSize;
-
+	private final short pageSize;
+	private final File file;
+	
 	static {
 		System.loadLibrary("PagedFileNative");
 	}
 
 	@Inject
-	public
-	PagedFileNative(@Named("pageSize") short pageSize, @Named("fullpath") final String fullpath) {
-		this.fullpath = fullpath;
+	public PagedFileNative(@Named("pageSize") final short pageSize,
+			@Named("fullpath") final String fullpath) {
 		this.pageSize = pageSize;
+		
+		file = new File(fullpath);
+		
+		init();
 	}
 
-	protected void finalize() {
-		close();
+	private native void init();
+	synchronized native public int addPages(int count);
+
+	synchronized native public void close();
+
+	native public long getFileLength();
+
+	native public int getPageCount();
+
+	public boolean isReadOnly() {
+		return readOnly;
 	}
 
 	synchronized public int open() {
-		File file = new File(fullpath);
 		if (!file.exists())
-			try {
-				file.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-				return Jello.OPEN_FAILED;
-			}
-		
+			return Jello.OPEN_FAILED;
+
 		if (!file.canRead())
 			return Jello.OPEN_FAILED;
 
@@ -44,31 +50,51 @@ public class PagedFileNative implements PagedFile {
 
 		try {
 			openNative(file.getCanonicalPath(), readOnly, pageSize);
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 			return Jello.OPEN_FAILED;
 		}
-		
+
 		if (readOnly)
 			return Jello.OPEN_READONLY;
 		else
 			return Jello.OPEN_SUCCESS;
 	}
 
-	public boolean isReadOnly() {
-		return readOnly;
-	}
-	
+	native public void readPage(Page page);
+
+	synchronized native public void removePages(int count);
+
+	native public void syncAll();
+
+	native public void syncPages(int startPage, int count);
+
+	synchronized native public void writePage(Page page);
+
 	native private int openNative(String fullpath, boolean readOnly,
 			short pageSize) throws IOException;
-	synchronized native public void close();
-	synchronized native public int addPages(int count);
-	synchronized native public void removePages(int count);
-	native public long getFileLength();
-	native public int getPageCount();
-	native public void syncPages(int startPage, int count);
-	native public void syncAll();
-	native public void readPage(Page page);
-	synchronized native public void writePage(Page page);
+
+	@Override
+	protected void finalize() {
+		close();
+	}
+
+	public boolean create() {
+		try {
+			file.createNewFile();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	public boolean exists() {
+		return file.exists();
+	}
+
+	public void remove() {
+		file.delete();
+	}
 
 }

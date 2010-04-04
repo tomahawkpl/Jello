@@ -16,8 +16,8 @@ import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.name.Names;
 
-
-public abstract class SpaceManagerPolicyTest extends JelloInterfaceTestCase<SpaceManagerPolicy> {
+public abstract class SpaceManagerPolicyTest extends
+		JelloInterfaceTestCase<SpaceManagerPolicy> {
 	// ---- SETTINGS
 	private final short pageSize = 4096;
 	private final short blockSize = 128;
@@ -27,45 +27,69 @@ public abstract class SpaceManagerPolicyTest extends JelloInterfaceTestCase<Spac
 	private final short freeSpaceInfoSize = 4;
 	private final short appendOnlyCacheSize = 5;
 
-
 	private final int hybridThreshold = 90;
 	// --------------
 	
-	@Inject private SpaceManagerPolicy policy;
-	
+	@Inject
+	private SpaceManagerPolicy policy;
+
+	@Inject
+	private PagedFile pagedFile;
+	@Inject
+	private SpaceManager spaceManager;
+	@Inject
+	private AppendOnlyCache appendOnlyCache;
+	@Inject
+	private NextFitHistogram nextFitHistogram;
+
 	@Override
 	protected Class<SpaceManagerPolicy> classUnderTest() {
 		return SpaceManagerPolicy.class;
 	}
 	
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.bind(PagedFile.class).to(PagedFileMock.class);
 		binder.bind(SpaceManager.class).to(SpaceManagerNative.class);
 		binder.bind(AppendOnlyCache.class).to(AppendOnlyCacheNative.class);
 		binder.bind(NextFitHistogram.class).to(VanillaHistogram.class);
-		
-		HashMap<String, String> p = new HashMap<String, String>();
+
+		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("blockSize", String.valueOf(blockSize));
 		p.put("hybridThreshold", String.valueOf(hybridThreshold));
 		p.put("pageSize", String.valueOf(pageSize));
 		p.put("histogramClasses", String.valueOf(histogramClasses));
 		p.put("appendOnlyCacheSize", String.valueOf(appendOnlyCacheSize));
 		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
-		p.put("freeSpaceInfoPageCapacity", String.valueOf(freeSpaceInfoPageCapacity));
+		p.put("freeSpaceInfoPageCapacity", String
+				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
 
 		Names.bindProperties(binder, p);
 	}
 
-	@Override
-	protected void setUp() {
+	public void testSimpleAcquirePage() {
+		assertEquals(2, policy.acquirePage());
+		assertEquals(3, policy.acquirePage());
+
+		appendOnlyCache.update(0, pageSize);
+
+		assertEquals(4, policy.acquirePage());
+
+		nextFitHistogram.update(0, (short) -1, pageSize);
+
+		policy.releasePage(2);
+
+		assertEquals(2, policy.acquirePage());
+	}
+	
+	public void testAverageFreeSpace() {
 		
 	}
 
-	public void testSimpleAcquirePage() {
-		assertEquals(0, policy.acquirePage());
-		assertEquals(2, policy.acquirePage());
-		
+	@Override
+	protected void setUp() {
+		pagedFile.addPages(2);
+		spaceManager.create();
 	}
 
 	@Override

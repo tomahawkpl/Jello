@@ -1,10 +1,12 @@
 package com.atteo.jello.index;
 
-import com.atteo.jello.space.Record;
+import com.atteo.jello.Record;
 
 public interface Index {
-	public void addRecord(Record record);
-	public void removeRecord(Record record);
-	public Record findRecord(Record record);
-	
+	public void create(int pageId);
+	public void load(int pageId);
+	public void insert(Record record);
+	public void update(Record record);
+	public Record find(int id);
+	public void delete(Record record);
 }

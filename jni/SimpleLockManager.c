@@ -3,20 +3,31 @@
 #include <android/log.h>
 #include "common.c"
 
+struct LockInfo {
+	int pageId;
+	unsigned char *map;
+	struct LockInfo *next;
+};
+
+struct LockInfo *sharedLocks;
+struct LockInfo *exclusiveLocks;
 
 void initIDs(JNIEnv *env) {
 }
 
-void JNICALL init(JNIEnv *env, jclass dis) {
-
+void JNICALL init(JNIEnv *env, jclass dis, jshort pageSize) {
 	initIDs(env);
 
+	sharedLocks = NULL;
+	exclusiveLocks = NULL;
+
 }
 
-jint JNICALL acquirePageLock(JNIEnv *env, jclass dis, jint pageId) {
+jint JNICALL acquirePageLock(JNIEnv *env, jclass dis, jint pageId, jboolean exclusive) {
+
 }
 
-jint JNICALL acquireRecordLock(JNIEnv *env, jclass dis, jobject record) {
+jint JNICALL acquireRecordLock(JNIEnv *env, jclass dis, jobject record, jboolean exclusive) {
 }
 
 void JNICALL releaseLock(JNIEnv *env, jclass dis, jint lockId) {
@@ -37,11 +48,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[0].fnPtr = init;
 
 	nm[1].name = "acquirePageLock";
-	nm[1].signature = "(I)I";
+	nm[1].signature = "(IZ)I";
 	nm[1].fnPtr = acquirePageLock;
 
 	nm[2].name = "acquireRecordLock";
-	nm[2].signature = "(Lcom/atteo/jello/Record;)I";
+	nm[2].signature = "(Lcom/atteo/jello/Record;Z)I";
 	nm[2].fnPtr = acquireRecordLock;
 
 	nm[3].name = "releaseLock";

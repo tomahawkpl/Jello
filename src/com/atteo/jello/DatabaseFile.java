@@ -3,104 +3,123 @@ package com.atteo.jello;
 import java.io.IOException;
 
 import com.atteo.jello.space.SpaceManager;
-import com.atteo.jello.space.SpaceManagerNative;
-import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.HeaderPage;
-import com.atteo.jello.store.KlassManager;
 import com.atteo.jello.store.PagedFile;
+import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
 
 @Singleton
-public class DatabaseFile {
-	public static final int MIN_PAGES = 3;
-	public static final int PAGE_HEADER = 0;
-	public static final int PAGE_FREE_SPACE_MAP = 1;
-	public static final int PAGE_KLASS_LIST = 2;
-
-	private PagedFile pagedFile;
+public class DatabaseFile implements Module {
+	private final PagedFile pagedFile;
 	private HeaderPage headerPage;
 	private SpaceManager spaceManager;
-	private SpaceManagerPolicy spaceManagerPolicy;
 
 	private KlassManager klassManager;
-	private Injector injector;
-	
-	private boolean valid;
+	private final Injector injector;
+
+	private int headerPageId;
+	private int minimumPages;
 
 	@Inject
-	private DatabaseFile(Injector injector, PagedFile pagedFile) throws IOException {
+	private DatabaseFile(final Injector injector, final PagedFile pagedFile,
+			@Named("headerPageId") int headerPageId,
+			@Named("minimumPages") int minimumPages) throws IOException {
+
 		this.injector = injector;
 		this.pagedFile = pagedFile;
-		
-		valid = false;
+		this.headerPageId = headerPageId;
+		this.minimumPages = minimumPages;
 	}
-	
+
+	public void close() {
+		pagedFile.close();
+	}
+
+	public PagedFile getPagedFile() {
+		return pagedFile;
+	}
+
+	public SpaceManager getSpaceManager() {
+		return spaceManager;
+	}
+
+	public boolean loadHeader() {
+		if (pagedFile.getPageCount() < minimumPages)
+			return false;
+
+		headerPage.setId(headerPageId);
+		pagedFile.readPage(headerPage);
+		if (!headerPage.load())
+			return false;
+
+		return true;
+	}
+
+	public boolean loadStructure() {
+		spaceManager = injector.getInstance(SpaceManager.class);
+		if (!spaceManager.load())
+			return false;
+		klassManager = injector.getInstance(KlassManager.class);
+		if (!klassManager.load())
+			return false;
+
+		return true;
+	}
+
 	/**
-	 * Either loadStructure or createStructure must be called in order for isValid to return true
+	 * Either loadStructure or createStructure must be called in order for
+	 * isValid to return true
+	 * 
 	 * @return
 	 */
 	public int open() {
 		return pagedFile.open();
 	}
-	
-	public void close() {
-		pagedFile.close();
-	}
-	
-	public void loadStructure(boolean create) {
-		if (create) {
-			createStructure();
-			return;
-		}
-				
-		if (pagedFile.getPageCount() < MIN_PAGES)
-			return;
-		
-		headerPage.setId(PAGE_HEADER);
-		pagedFile.readPage(headerPage);
-		if (!headerPage.load())
-			return;
-		
-		spaceManager = injector.getInstance(SpaceManager.class);
-		if (!spaceManager.load())
-			return;
-		klassManager = injector.getInstance(KlassManager.class);
-		if (!klassManager.load())
-			return;
-		
-		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
-		
-		valid = true;
-		
-	}
-	
-	private void createStructure() {
-		pagedFile.addPages(3);
-		
+
+	public boolean createStructure() {
+		if (pagedFile.addPages(minimumPages) != minimumPages - 1)
+			return false;
+
 		headerPage = injector.getInstance(HeaderPage.class);
-		headerPage.setId(PAGE_HEADER);
+		headerPage.setId(headerPageId);
 		pagedFile.writePage(headerPage);
 
-		spaceManager = injector.getInstance(SpaceManagerNative.class);
+		spaceManager = injector.getInstance(SpaceManager.class);
 		spaceManager.create();
-		
+
 		klassManager = injector.getInstance(KlassManager.class);
 		klassManager.create();
+
+		return true;
+	}
+
+	public void configure(Binder binder) {
+		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
+				.toInstance(headerPage.getPageSize());
+		binder.bind(Short.class).annotatedWith(Names.named("blockSize"))
+				.toInstance(headerPage.getBlockSize());
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("freeSpaceMapPageId")).toInstance(
+				headerPage.getFreeSpaceMapPageId());
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("klassManagerPageId")).toInstance(
+				headerPage.getKlassManagerPageId());
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("fileFormatVersion")).toInstance(
+				headerPage.getFileFormatVersion());
 		
-		valid = true;
-	}
-	
-	public boolean isValid() {
-		return valid;
-	}
-	
-	public PagedFile getPagedFile() {
-		return pagedFile;
-	}
-	
-	public SpaceManager getSpaceManager() {
-		return spaceManager;
+		int mp = headerPage.getFreeSpaceMapPageId();
+		if (mp < headerPage.getKlassManagerPageId())
+			mp = headerPage.getKlassManagerPageId();
+		mp++;		
+		
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("minimumPages")).toInstance(mp);
+
 	}
 }

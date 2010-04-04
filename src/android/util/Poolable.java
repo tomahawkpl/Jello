@@ -20,6 +20,7 @@ package android.util;
  * @hide
  */
 public interface Poolable<T> {
-    void setNextPoolable(T element);
-    T getNextPoolable();
+	T getNextPoolable();
+
+	void setNextPoolable(T element);
 }

@@ -2,73 +2,73 @@ package com.atteo.jello.tests.unit.space;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 
-import android.test.InstrumentationTestCase;
-
-import com.atteo.jello.DatabaseFile;
+import com.atteo.jello.space.SpaceManager;
 import com.atteo.jello.space.SpaceManagerNative;
-import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
+import com.atteo.jello.tests.JelloInterfaceTestCase;
 import com.atteo.jello.tests.unit.store.PagedFileMock;
+import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.name.Names;
 
-public class SpaceManagerTest extends InstrumentationTestCase {
+public abstract class SpaceManagerTest extends
+		JelloInterfaceTestCase<SpaceManager> {
+	// ---- SETTINGS
+	private final short pageSize = 4096;
+	private final short blockSize = 128;
+	private final short freeSpaceInfosPerPage = 1023;
+	private final short freeSpaceInfoPageCapacity = 4092;
+	private final short freeSpaceInfoSize = 4;
+	private final int freeSpaceMapPageId = 0;
+
+	// --------------
+
+	@Inject
 	private SpaceManagerNative spaceManager;
+	@Inject
 	private PagedFile pagedFile;
 
 	@Override
-	protected void setUp() throws IOException {
-		pagedFile = new PagedFileMock((short) 4096);
-		pagedFile.addPages(5);
+	protected Class<SpaceManager> classUnderTest() {
+		return SpaceManager.class;
+	}
 
-		spaceManager = new SpaceManagerNative(pagedFile, new ListPage(
-				(short) 4096), (short) 4, (short) 1022, (short) 4092,
-				(short) 128);
-		spaceManager.create();
+	public void configure(final Binder binder) {
+		binder.bind(PagedFile.class).to(PagedFileMock.class);
+
+		final HashMap<String, String> p = new HashMap<String, String>();
+		p.put("blockSize", String.valueOf(blockSize));
+		p.put("pageSize", String.valueOf(pageSize));
+		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
+		p.put("freeSpaceInfoPageCapacity", String
+				.valueOf(freeSpaceInfoPageCapacity));
+		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
+
+		Names.bindProperties(binder, p);
+
 	}
 
 	public void testCreate() {
-		Page p = new Page((short) 4096);
+		final Page p = new Page(pageSize);
 
-		p.setId(DatabaseFile.PAGE_FREE_SPACE_MAP);
+		p.setId(freeSpaceMapPageId);
 		pagedFile.readPage(p);
 
-		ByteBuffer b = ByteBuffer.wrap(p.getData());
+		final ByteBuffer b = ByteBuffer.wrap(p.getData());
 
 		assertEquals(-1, b.getLong(0));
 	}
 
-	public void testIsPageUsed() {
-		assertFalse(spaceManager.isPageUsed(0));
-		assertTrue(spaceManager.isPageUsed(1));
-		assertFalse(spaceManager.isPageUsed(2));
-		assertFalse(spaceManager.isPageUsed(3));
-		assertFalse(spaceManager.isPageUsed(4));
-
-		Page p = new Page((short) 4096);
-
-		p.setId(DatabaseFile.PAGE_FREE_SPACE_MAP);
-		pagedFile.readPage(p);
-
-		ByteBuffer b = ByteBuffer.wrap(p.getData());
-
-		b.position(8);
-
-		for (int i = 0; i < 5; i++)
-			assertEquals(0, b.getInt());
-
-	}
-
-	public void testSetPageUsed() {
-		assertFalse(spaceManager.isPageUsed(0));
-
-		spaceManager.setPageUsed(2, true);
-
-		assertFalse(spaceManager.isPageUsed(0));
-		assertTrue(spaceManager.isPageUsed(1));
-		assertTrue(spaceManager.isPageUsed(2));
-		assertFalse(spaceManager.isPageUsed(3));
-		assertFalse(spaceManager.isPageUsed(4));
+	public void testFreeSpaceOnPage() {
+		assertEquals(4096, spaceManager.freeSpaceOnPage(0));
+		for (short i = 0; i < 32; i++) {
+			spaceManager.setBlockUsed(0, i, true);
+			assertEquals(4096 - 128 * (i + 1), spaceManager.freeSpaceOnPage(0));
+		}
+		assertEquals(0, spaceManager.freeSpaceOnPage(freeSpaceMapPageId));
 
 	}
 
@@ -83,6 +83,27 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 
 	}
 
+	public void testIsPageUsed() {
+		assertFalse(spaceManager.isPageUsed(0));
+		assertTrue(spaceManager.isPageUsed(1));
+		assertFalse(spaceManager.isPageUsed(2));
+		assertFalse(spaceManager.isPageUsed(3));
+		assertFalse(spaceManager.isPageUsed(4));
+
+		final Page p = new Page((short) 4096);
+
+		p.setId(freeSpaceMapPageId);
+		pagedFile.readPage(p);
+
+		final ByteBuffer b = ByteBuffer.wrap(p.getData());
+
+		b.position(8);
+
+		for (int i = 0; i < 5; i++)
+			assertEquals(0, b.getInt());
+
+	}
+
 	public void testSetBlockUsed() {
 		spaceManager.setBlockUsed(0, (short) 30, true);
 		assertTrue(spaceManager.isBlockUsed(0, (short) 30));
@@ -93,14 +114,16 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 
 	}
 
-	public void testFreeSpaceOnPage() {
-		assertEquals(4096, spaceManager.freeSpaceOnPage(0));
-		for (short i = 0; i < 32; i++) {
-			spaceManager.setBlockUsed(0, i, true);
-			assertEquals(4096 - 128 * (i + 1), spaceManager.freeSpaceOnPage(0));
-		}
-		assertEquals(0, spaceManager
-				.freeSpaceOnPage(DatabaseFile.PAGE_FREE_SPACE_MAP));
+	public void testSetPageUsed() {
+		assertFalse(spaceManager.isPageUsed(0));
+
+		spaceManager.setPageUsed(2, true);
+
+		assertFalse(spaceManager.isPageUsed(0));
+		assertTrue(spaceManager.isPageUsed(1));
+		assertTrue(spaceManager.isPageUsed(2));
+		assertFalse(spaceManager.isPageUsed(3));
+		assertFalse(spaceManager.isPageUsed(4));
 
 	}
 
@@ -119,11 +142,21 @@ public class SpaceManagerTest extends InstrumentationTestCase {
 		assertFalse(spaceManager.isPageUsed(1022));
 		spaceManager.setPageUsed(1022, true);
 		assertTrue(spaceManager.isPageUsed(1022));
-		
+
 	}
-	
+
+	@Override
+	protected void setUp() throws IOException {
+		if (!pagedFile.exists())
+			pagedFile.create();
+		pagedFile.open();
+		pagedFile.addPages(5);
+		spaceManager.create();
+	}
 
 	@Override
 	protected void tearDown() {
+		pagedFile.close();
+		pagedFile.remove();
 	}
 }

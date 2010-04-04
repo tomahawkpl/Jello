@@ -13,7 +13,7 @@ public class GenerateGraph extends InstrumentationTestCase {
 	// dummy test just to run the graph generation on a device
 	public void testGenerateGraph() throws IOException {
 		Grapher.graph("/sdcard/jello/graph", Guice
-				.createInjector(new StoreModule(null,null)));
+				.createInjector(new StoreModule(null, null)));
 	}
 
 }

@@ -29,8 +29,8 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := OSInfo
-LOCAL_SRC_FILES := OSInfo.c
+LOCAL_MODULE    := PageSizeProvider
+LOCAL_SRC_FILES := PageSizeProvider.c
 
 include $(BUILD_SHARED_LIBRARY)
 
@@ -62,3 +62,20 @@ LOCAL_SRC_FILES := SimpleLockManager.c
 LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
 
+# --- BTree
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := BTree
+LOCAL_SRC_FILES := BTree.c
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)
+
+# --- AppendOnly
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := AppendOnly
+LOCAL_SRC_FILES := AppendOnly.c
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)

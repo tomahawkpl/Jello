@@ -1,29 +1,29 @@
 package com.atteo.jello.store;
 
+import android.util.PoolableManager;
+
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 
-import android.util.PoolableManager;
-
 public class PagePoolableManager implements PoolableManager<Page> {
 
-	private Injector injector;
-	
+	private final Injector injector;
+
 	@Inject
-	public PagePoolableManager(Injector injector) {
+	public PagePoolableManager(final Injector injector) {
 		this.injector = injector;
 	}
-	
+
 	public Page newInstance() {
 		return injector.getInstance(Page.class);
 	}
 
-	public void onAcquired(Page element) {
-		
+	public void onAcquired(final Page element) {
+
 	}
 
-	public void onReleased(Page element) {
-		
+	public void onReleased(final Page element) {
+
 	}
 
 }

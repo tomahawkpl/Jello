@@ -1,4 +1,4 @@
-package com.atteo.jello.tests.unit.store;
+package com.atteo.jello.tests.unit;
 
 import java.io.IOException;
 
@@ -7,7 +7,7 @@ import android.test.InstrumentationTestCase;
 public class DatabaseFileTest extends InstrumentationTestCase {
 
 	public void testCreateStructure() {
-		//dbFile.loadStructure(true);
+		// dbFile.loadStructure(true);
 	}
 
 	@Override
