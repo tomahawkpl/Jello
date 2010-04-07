@@ -36,7 +36,7 @@ void JNICALL releasePage(JNIEnv *env, jclass dis, jint id) {
 
 }
 
-jobject JNICALL acquireRecord(JNIEnv *env, jclass dis, jint length) {
+JNIEXPORT jobject JNICALL acquireRecord(JNIEnv *env, jclass dis, jint length) {
 
 }
 

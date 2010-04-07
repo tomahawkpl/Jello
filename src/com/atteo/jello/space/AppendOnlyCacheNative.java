@@ -1,5 +1,7 @@
 package com.atteo.jello.space;
 
+import android.util.Log;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -14,7 +16,9 @@ public class AppendOnlyCacheNative implements AppendOnlyCache {
 	@Inject
 	public AppendOnlyCacheNative(
 			@Named("appendOnlyCacheSize") final int appendOnlyCacheSize) {
+		Log.i("jello","constructor");
 		init(appendOnlyCacheSize);
+		Log.i("jello","constructor2");
 	}
 
 	public native int getBestId(short freeSpace);

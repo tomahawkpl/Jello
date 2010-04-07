@@ -32,11 +32,17 @@ public class PagedFileMock implements PagedFile {
 	}
 
 	public long getFileLength() {
-		return pages.size() * pageSize;
+		if (pages != null)
+			return pages.size() * pageSize;
+		else
+			return 0;
 	}
 
 	public int getPageCount() {
-		return pages.size();
+		if (pages != null)
+			return pages.size();
+		else
+			return 0;
 	}
 
 	public boolean isReadOnly() {
@@ -54,8 +60,9 @@ public class PagedFileMock implements PagedFile {
 	}
 
 	public void removePages(int count) {
-		if (count > pages.size());
-			count = pages.size();
+		if (count > pages.size())
+			;
+		count = pages.size();
 		for (int i = 0; i < count; i++)
 			pages.remove(pages.size() - 1);
 
@@ -84,10 +91,7 @@ public class PagedFileMock implements PagedFile {
 	}
 
 	public boolean exists() {
-		if (pages == null)
-			return false;
-		else
-			return true;
+		return pages != null;
 	}
 
 }

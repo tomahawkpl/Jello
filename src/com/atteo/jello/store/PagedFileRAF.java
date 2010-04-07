@@ -7,8 +7,10 @@ import java.io.RandomAccessFile;
 
 import com.atteo.jello.Jello;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
+@Singleton
 public class PagedFileRAF implements PagedFile {
 	final File file;
 

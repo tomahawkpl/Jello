@@ -5,8 +5,10 @@ import java.io.IOException;
 
 import com.atteo.jello.Jello;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
+@Singleton
 public class PagedFileNative implements PagedFile {
 	private boolean readOnly;
 	private final short pageSize;

@@ -39,7 +39,6 @@ jint JNICALL getBestId(JNIEnv *env, jclass dis, jshort freeSpace) {
 	struct CacheElement *best = NULL;
 	int bestExtraSpace;
 
-
 	while (element != NULL) {
 		if (element->freeSpace >= freeSpace &&
 				(best == NULL || bestExtraSpace > (element->freeSpace - freeSpace))) {

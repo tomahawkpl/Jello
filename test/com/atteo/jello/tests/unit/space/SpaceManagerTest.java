@@ -1,11 +1,9 @@
 package com.atteo.jello.tests.unit.space;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 import com.atteo.jello.space.SpaceManager;
-import com.atteo.jello.space.SpaceManagerNative;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.tests.JelloInterfaceTestCase;
@@ -22,17 +20,18 @@ public abstract class SpaceManagerTest extends
 	private final short freeSpaceInfosPerPage = 1023;
 	private final short freeSpaceInfoPageCapacity = 4092;
 	private final short freeSpaceInfoSize = 4;
-	private final int freeSpaceMapPageId = 0;
+	private final int freeSpaceMapPageId = 1;
 
 	// --------------
 
 	@Inject
-	private SpaceManagerNative spaceManager;
+	private SpaceManager spaceManager;
+	
 	@Inject
 	private PagedFile pagedFile;
 
 	@Override
-	protected Class<SpaceManager> classUnderTest() {
+	protected Class<SpaceManager> interfaceUnderTest() {
 		return SpaceManager.class;
 	}
 
@@ -46,7 +45,9 @@ public abstract class SpaceManagerTest extends
 		p.put("freeSpaceInfoPageCapacity", String
 				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
+		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
 
+		
 		Names.bindProperties(binder, p);
 
 	}
@@ -128,10 +129,10 @@ public abstract class SpaceManagerTest extends
 	}
 
 	public void testTotalFreeSpace() {
-		assertEquals(4096 * 4, spaceManager.totalFreeSpace());
+		assertEquals(pageSize * 4, spaceManager.totalFreeSpace());
 		for (short i = 0; i < 32; i++) {
 			spaceManager.setBlockUsed(0, i, true);
-			assertEquals(4 * 4096 - 128 * (i + 1), spaceManager
+			assertEquals(4 * pageSize - blockSize * (i + 1), spaceManager
 					.totalFreeSpace());
 		}
 	}
@@ -146,11 +147,13 @@ public abstract class SpaceManagerTest extends
 	}
 
 	@Override
-	protected void setUp() throws IOException {
+	protected void setUp() {
+		super.setUp();
 		if (!pagedFile.exists())
 			pagedFile.create();
 		pagedFile.open();
 		pagedFile.addPages(5);
+
 		spaceManager.create();
 	}
 

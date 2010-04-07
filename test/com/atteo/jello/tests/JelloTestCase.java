@@ -7,7 +7,6 @@ import java.util.Set;
 
 import org.easymock.EasyMock;
 
-import android.app.Instrumentation;
 import android.test.InstrumentationTestCase;
 
 import com.google.inject.Binder;
@@ -20,7 +19,7 @@ import com.google.inject.util.Modules;
 abstract public class JelloTestCase extends InstrumentationTestCase implements
 		Module {
 	
-	Module s = null;
+	protected Module s = null;
 	
 	public JelloTestCase() {
 		super();
@@ -29,15 +28,16 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 	public JelloTestCase(final Module s) {
 		super();
 		this.s = s;
+
 	}
 	
-	@Override
-	public void injectInsrumentation(Instrumentation instrumentation) {
-		super.injectInsrumentation(instrumentation);
+	// prepareInjector doesn't show thrown exceptions if is placed somewhere else
+	// that's why super.setUp() call is needed by each test class
+	protected void setUp() {
 		prepareInjector(s);
 	}
 
-	private void prepareInjector(final Module s) {
+	protected void prepareInjector(final Module s) {
 		final HashMap<Class<?>, Object> mocks = new HashMap<Class<?>, Object>();
 
 		Class<?> klass = this.getClass();
@@ -61,6 +61,7 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 
 			klass = klass.getSuperclass();
 		}
+
 		Module m = new Module() {
 
 			@SuppressWarnings("unchecked")
@@ -79,11 +80,11 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 
 		if (extraBindings() != null)
 			m = Modules.combine(extraBindings(), m);
-
-		final Injector injector = Guice.createInjector(m, new CommonBindings(),
+			
+		Injector injector = Guice.createInjector(new CommonBindings(), m,
 				this);
+		
 		injector.injectMembers(this);
-
 	}
 
 	protected Module extraBindings() {

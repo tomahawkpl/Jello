@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <stdlib.h>
+#include <android/log.h>
 #include "common.c"
 
 struct FreeSpaceInfo {
@@ -108,7 +109,6 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 		jshort pageFreeSpaceInfoArg, jshort blockSizeArg) {
 
 	initIDs(env);
-
 	precomputeBits();
 
 	freeSpaceInfosPerPage = freeSpaceInfosPerPageArg;
@@ -456,6 +456,8 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 
 	writeFreeSpaceInfo(env, 0);
 
+	update(env, dis);
+
 
 }
 
@@ -474,6 +476,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 		return -1;
 
 	klass = (*env)->FindClass(env,"com/atteo/jello/space/SpaceManagerNative");
+
+	if (klass == NULL) {
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "klass is NULL");
+		return;
+	}
+
 
 	nm[0].name = "init";
 	nm[0].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/store/ListPage;SSSIS)V";
@@ -501,7 +509,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
 	nm[6].name = "setAreasUsed";
 	nm[6].signature = "(I[BZ)V";
-	nm[6].fnPtr = setPageUsed;
+	nm[6].fnPtr = setAreasUsed;
 
 	nm[7].name = "isBlockUsed";
 	nm[7].signature = "(IS)Z";
@@ -518,6 +526,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[10].name = "totalFreeSpace";
 	nm[10].signature = "()J";
 	nm[10].fnPtr = totalFreeSpace;
+
 
 	(*env)->RegisterNatives(env,klass,nm,11);
 

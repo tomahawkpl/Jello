@@ -3,7 +3,6 @@ package com.atteo.jello.tests.unit.store;
 import java.io.IOException;
 import java.util.Arrays;
 
-import android.content.Context;
 import android.util.Pool;
 
 import com.atteo.jello.store.Page;
@@ -18,21 +17,21 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	@Inject
 	private PagedFile pagedFile;
 
-	@Inject @Named("pageSize")
+	@Inject
+	@Named("pageSize")
 	private short pageSize;
 	@Inject
 	private Pool<Page> pagePool;
 
 	@Override
-	protected Class<PagedFile> classUnderTest() {
+	protected Class<PagedFile> interfaceUnderTest() {
 		return PagedFile.class;
 	}
 
 	public void configure(Binder binder) {
 		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
 				.toInstance((short) 4096);
-		Context context = getInstrumentation().getContext();
-		String path = context.getDatabasePath(
+		String path = getInstrumentation().getContext().getDatabasePath(
 				"testfile").getAbsolutePath();
 		binder.bind(String.class).annotatedWith(Names.named("fullpath"))
 				.toInstance(path);
@@ -124,6 +123,8 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 
 	@Override
 	protected void setUp() {
+		super.setUp();
+		getInstrumentation().getContext().getDatabasePath("test").mkdirs();
 		if (pagedFile.exists())
 			pagedFile.remove();
 		pagedFile.create();
