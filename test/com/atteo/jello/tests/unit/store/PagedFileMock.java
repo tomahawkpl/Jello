@@ -56,13 +56,11 @@ public class PagedFileMock implements PagedFile {
 	public void readPage(final Page page) {
 		System.arraycopy(pages.get(page.getId()).getData(), 0, page.getData(),
 				0, pageSize);
-
 	}
 
 	public void removePages(int count) {
 		if (count > pages.size())
-			;
-		count = pages.size();
+			count = pages.size();
 		for (int i = 0; i < count; i++)
 			pages.remove(pages.size() - 1);
 

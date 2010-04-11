@@ -35,6 +35,8 @@ jobject listPage;
 jfieldID fidListPageId, fidListPageAccessibleData;
 jmethodID midListPageSetNext, midPagedFileReadPage, midPagedFileWritePage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
+jmethodID midRecordGetPagesUsed, midRecordGetPageUsage;
+jfieldID fidPageUsageUsage, fidPageUsagePageId;
 
 unsigned char bitcount (unsigned char n)  {
 	unsigned char count = 0 ;
@@ -57,7 +59,9 @@ void precomputeBits() {
 
 void initIDs(JNIEnv *env) {
 	jclass klass;
+	jclass recordClass;
 	jclass pagedFileClass;
+	jclass pageUsageClass;
 
 	// get PagedFile class
 	pagedFileClass = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
@@ -66,42 +70,65 @@ void initIDs(JNIEnv *env) {
 
 	midPagedFileGetPageCount = (*env)->GetMethodID(env, pagedFileClass,
 			"getPageCount", "()I");
-
 	if (midPagedFileGetPageCount == NULL)
 		return;
 
 	midPagedFileReadPage = (*env)->GetMethodID(env, pagedFileClass,
 			"readPage", "(Lcom/atteo/jello/store/Page;)V");
-
 	if (midPagedFileReadPage == NULL)
 		return;
 
 	midPagedFileWritePage = (*env)->GetMethodID(env, pagedFileClass,
 			"writePage", "(Lcom/atteo/jello/store/Page;)V");
-
 	if (midPagedFileWritePage == NULL)
 		return;
 
 	midPagedFileAddPages = (*env)->GetMethodID(env, pagedFileClass,
 			"addPages", "(I)I");
-
 	if (midPagedFileAddPages == NULL)
 		return;
 
 	midPagedFileRemovePages = (*env)->GetMethodID(env, pagedFileClass,
 			"removePages", "(I)V");
-
 	if (midPagedFileRemovePages == NULL)
 		return;
 
 	klass = (*env)->FindClass(env,"com/atteo/jello/store/ListPage");
-
 	if (klass == NULL)
 		return;
 
 	fidListPageId = (*env)->GetFieldID(env, klass, "id", "I");
 	fidListPageAccessibleData = (*env)->GetFieldID(env, klass, "accessibleData", "[B");
 	midListPageSetNext = (*env)->GetMethodID(env, klass, "setNext", "(I)V");
+
+	recordClass = (*env)->FindClass(env, "com/atteo/jello/Record");
+	if (recordClass == NULL)
+		return;
+
+	midRecordGetPagesUsed = (*env)->GetMethodID(env, recordClass,
+			"getPagesUsed", "()I");
+	if (midRecordGetPagesUsed == NULL)
+		return;
+
+	midRecordGetPageUsage = (*env)->GetMethodID(env, recordClass,
+			"getPageUsage", "(I)Lcom/atteo/jello/PageUsage;");
+	if (midRecordGetPageUsage == NULL)
+		return;
+
+
+	pageUsageClass = (*env)->FindClass(env, "com/atteo/jello/PageUsage");
+	if (pageUsageClass == NULL)
+		return;
+
+	fidPageUsageUsage = (*env)->GetFieldID(env, pageUsageClass,
+			"usage", "[B");
+	if (fidPageUsageUsage == NULL)
+		return;
+
+	fidPageUsagePageId = (*env)->GetFieldID(env, pageUsageClass,
+			"pageId", "I");
+	if (fidPageUsagePageId == NULL)
+		return;
 }
 
 void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject listPageObject,
@@ -205,10 +232,10 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 	pagedFileSize = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount);
 	currentPages = pageCount * freeSpaceInfosPerPage;
 
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
 	if (pagedFileSize >= currentPages) {
 		difference = (pagedFileSize - currentPages) / freeSpaceInfosPerPage + 1;
-//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "difference %d", difference);
+		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "difference %d", difference);
 		addPages(env, dis, difference);
 		//---
 		update(env, dis);
@@ -218,7 +245,7 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 
 	if (pagedFileSize <= currentPages - freeSpaceInfosPerPage) {
 		difference = (currentPages - pagedFileSize) / freeSpaceInfosPerPage;
-//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
+		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
 		removePages(env, dis, difference);
 		return;
 	}
@@ -243,12 +270,8 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jint id) {
 	freeSpaceInfoOffset = getFreeSpaceInfoOffset(id);
 
 
-	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
-				"Page with this id is not known to the Space Manager");
+	if (freeSpaceInfoPage >= pageCount)
 		return JNI_FALSE;
-
-	}
 
 	fsi = &freeSpaceInfo[freeSpaceInfoPage];
 
@@ -359,38 +382,51 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block, jboole
 
 }
 
-void JNICALL setAreasUsed(JNIEnv *env, jclass dis, jint pageId, jbyteArray areas, jboolean used) {
-	int i;
+void JNICALL setRecordUsed(JNIEnv *env, jclass dis, jobject record, jboolean used) {
+	int i,p;
 	int freeSpaceInfoPage;
 	short freeSpaceInfoOffset;
 	short offset;
 	jboolean isCopy;
 	jbyte *areasByte;
+	jbyteArray areas;
 
-	freeSpaceInfoPage = getFreeSpaceInfoPage(pageId);
-	freeSpaceInfoOffset = getFreeSpaceInfoOffset(pageId);
+	int pageId;
+	jobject pageUsage;
 
-	if (freeSpaceInfoPage >= pageCount) {
-		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
-				"Page with this id is not known to the Space Manager");
-		return;
+	int pages = (*env)->CallIntMethod(env, record, midRecordGetPagesUsed);
+
+	for (p=0;p<pages;p++) {
+		pageUsage = (*env)->CallObjectMethod(env, record, midRecordGetPageUsage,p);
+		pageId = (*env)->GetIntField(env, pageUsage, fidPageUsagePageId);
+		areas = (*env)->GetObjectField(env, pageUsage, fidPageUsageUsage);
+
+		freeSpaceInfoPage = getFreeSpaceInfoPage(pageId);
+		freeSpaceInfoOffset = getFreeSpaceInfoOffset(pageId);
+
+		if (freeSpaceInfoPage >= pageCount) {
+			JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
+					"Page with this id is not known to the Space Manager");
+			return;
+		}
+
+
+		offset = freeSpaceInfoOffset * freeSpaceInfoSize;
+
+		areasByte = (*env)->GetByteArrayElements(env, areas, &isCopy);
+
+
+		if (used == JNI_TRUE)
+			for (i=0;i<freeSpaceInfoSize;i++)
+				freeSpaceInfo[freeSpaceInfoPage].data[offset+i] |= areasByte[i];
+		else
+			for (i=0;i<freeSpaceInfoSize;i++)
+				freeSpaceInfo[freeSpaceInfoPage].data[offset+i] &= ~(areasByte[i]);
+
+		(*env)->ReleaseByteArrayElements(env, areas, areasByte, 0);
+
 	}
 
-
-	offset = freeSpaceInfoOffset * freeSpaceInfoSize;
-
-	areasByte = (*env)->GetByteArrayElements(env, areas, &isCopy);
-
-
-	if (used == JNI_TRUE)
-		for (i=0;i<freeSpaceInfoSize;i++)
-			freeSpaceInfo[freeSpaceInfoPage].data[offset+i] |= areasByte[i];
-	else
-		for (i=0;i<freeSpaceInfoSize;i++)
-			freeSpaceInfo[freeSpaceInfoPage].data[offset+i] &= ~(areasByte[i]);
-		
-	(*env)->ReleaseByteArrayElements(env, areas, areasByte, 0);
-	
 }	
 
 jlong JNICALL totalFreeSpace(JNIEnv *env, jclass dis) {
@@ -507,9 +543,9 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[5].signature = "(IZ)V";
 	nm[5].fnPtr = setPageUsed;
 
-	nm[6].name = "setAreasUsed";
-	nm[6].signature = "(I[BZ)V";
-	nm[6].fnPtr = setAreasUsed;
+	nm[6].name = "setRecordUsed";
+	nm[6].signature = "(Lcom/atteo/jello/Record;Z)V";
+	nm[6].fnPtr = setRecordUsed;
 
 	nm[7].name = "isBlockUsed";
 	nm[7].signature = "(IS)Z";

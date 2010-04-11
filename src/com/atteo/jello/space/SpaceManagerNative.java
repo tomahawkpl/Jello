@@ -1,8 +1,7 @@
 package com.atteo.jello.space;
 
 
-import android.util.Log;
-
+import com.atteo.jello.Record;
 import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
@@ -14,7 +13,6 @@ public class SpaceManagerNative implements SpaceManager {
 	// TODO: currently keeps all freeSpaceInfo pages in memory
 	static {
 		System.loadLibrary("SpaceManagerNative");
-		Log.i("jello","spaceManager static");
 	}
 
 	@Inject
@@ -26,12 +24,10 @@ public class SpaceManagerNative implements SpaceManager {
 			@Named("freeSpaceInfoPageCapacity") final short freeSpaceInfoPageCapacity,
 			@Named("blockSize") final short blockSize,
 			@Named("freeSpaceMapPageId") int freeSpaceMapPageId) {
-		Log.i("jello","spaceManager constructor");
 
 		init(pagedFile, listPage, freeSpaceInfosPerPage, freeSpaceInfoSize,
 				freeSpaceInfoPageCapacity, freeSpaceMapPageId,
 				blockSize);
-		Log.i("jello","post init");
 
 	}
 
@@ -58,5 +54,5 @@ public class SpaceManagerNative implements SpaceManager {
 
 	public native void update();
 
-	public native void setAreasUsed(int id, byte[] areas, boolean used);
+	public native void setRecordUsed(Record record, boolean used);
 }

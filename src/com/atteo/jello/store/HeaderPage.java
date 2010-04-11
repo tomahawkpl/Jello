@@ -16,14 +16,14 @@ public class HeaderPage extends Page {
 	private byte[] magic;
 	
 	@Inject
-	private HeaderPage(@Named("pageSize") final short pageSize, @Named("blockSize") final short blockSize,
+	private HeaderPage(@Named("blockSize") final short blockSize,
 			@Named("freeSpaceMapPageId") int freeSpaceMapPageId,
 			@Named("klassManagerPageId") int klassManagerPageId,
 			@Named("fileFormatVersion") int fileFormatVersion,
-			@Named("magic") String magic) {
+			@Named("magic") String magic,
+			@Named("pageSize") short pageSize) {
 		super(pageSize);
 	
-		this.pageSize = pageSize;
 		this.blockSize = blockSize;
 		this.freeSpaceMapPageId = freeSpaceMapPageId;
 		this.klassManagerPageId = klassManagerPageId;

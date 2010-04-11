@@ -79,3 +79,12 @@ LOCAL_MODULE    := AppendOnly
 LOCAL_SRC_FILES := AppendOnly.c
 LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
+
+# --- NextFit
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := NextFit
+LOCAL_SRC_FILES := NextFit.c
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)

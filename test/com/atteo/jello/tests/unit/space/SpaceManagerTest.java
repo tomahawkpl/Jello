@@ -91,7 +91,7 @@ public abstract class SpaceManagerTest extends
 		assertFalse(spaceManager.isPageUsed(3));
 		assertFalse(spaceManager.isPageUsed(4));
 
-		final Page p = new Page((short) 4096);
+		final Page p = new Page(pageSize);
 
 		p.setId(freeSpaceMapPageId);
 		pagedFile.readPage(p);

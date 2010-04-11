@@ -40,6 +40,9 @@ void initIDs(JNIEnv *env) {
 	}
 
 	cls = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
+	if (cls == NULL) {
+		return;
+	}
 	fid = (*env)->GetStaticFieldID(env, cls, "PAGE_ADD_FAILED", "I");
 	if (fid == NULL) {
 		return;
@@ -187,8 +190,7 @@ jint JNICALL addPages(JNIEnv *env, jclass dis, jint count) {
 	else
 		mapFile(env);
 
-
-	return fileLength/pageSize - 1;
+	return pages - 1;
 
 }
 

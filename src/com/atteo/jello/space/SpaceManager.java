@@ -1,5 +1,7 @@
 package com.atteo.jello.space;
 
+import com.atteo.jello.Record;
+
 public interface SpaceManager {
 	void create();
 
@@ -11,7 +13,7 @@ public interface SpaceManager {
 
 	boolean load();
 
-	void setAreasUsed(int id, byte[] areas, boolean used);
+	void setRecordUsed(Record record, boolean used);
 	
 	void setBlockUsed(int id, short block, boolean used);
 

@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 
 import android.util.Poolable;
 
-import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class Page implements Poolable<Page> {
@@ -14,8 +13,7 @@ public class Page implements Poolable<Page> {
 	protected byte accessibleData[] = null;
 	protected ByteBuffer byteBuffer;
 
-	@Inject
-	public Page(@Named("pageSize") final short pageSize) {
+	public Page(@Named("pageSize") short pageSize) {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);
 		byteBuffer.position(headerSize());

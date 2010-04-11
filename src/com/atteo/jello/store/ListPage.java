@@ -3,6 +3,7 @@ package com.atteo.jello.store;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
+
 /**
  * Page which can be organised into single linked lists
  * 
@@ -11,7 +12,7 @@ import com.google.inject.name.Named;
  */
 public class ListPage extends Page {
 	@Inject
-	public ListPage(@Named("pageSize") final short pageSize) {
+	public ListPage(@Named("pageSize") short pageSize) {
 		super(pageSize);
 	}
 

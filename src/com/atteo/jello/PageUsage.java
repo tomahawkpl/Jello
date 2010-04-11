@@ -3,7 +3,7 @@ package com.atteo.jello;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-class PageUsage {
+public class PageUsage {
 		@Inject
 		private PageUsage(@Named("freeSpaceInfoSize") short freeSpaceInfoSize) {
 			usage = new byte[freeSpaceInfoSize];
@@ -11,7 +11,7 @@ class PageUsage {
 			blocksUsed = 0;
 		}
 
-		int pageId;
-		int blocksUsed;
-		byte[] usage;
+		public int pageId;
+		public int blocksUsed;
+		public byte[] usage;
 	}

@@ -1,16 +1,14 @@
 package com.atteo.jello.tests.unit.space;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 
-import android.util.Log;
-
+import com.atteo.jello.PageUsage;
+import com.atteo.jello.Record;
 import com.atteo.jello.space.AppendOnlyCache;
 import com.atteo.jello.space.AppendOnlyCacheNative;
 import com.atteo.jello.space.SpaceManager;
 import com.atteo.jello.space.SpaceManagerNative;
 import com.atteo.jello.space.SpaceManagerPolicy;
-import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.tests.JelloInterfaceTestCase;
 import com.atteo.jello.tests.unit.store.PagedFileMock;
@@ -28,15 +26,15 @@ public abstract class SpaceManagerPolicyTest extends
 	private final short freeSpaceInfoSize = 4;
 	private final int freeSpaceMapPageId = 1;
 	private final int appendOnlyCacheSize = 8;
+	private final int maxRecordPages = 4;
+	private final int maxRecordSize = maxRecordPages * pageSize;
 	
 	// --------------
 
-	@Inject
-	private SpaceManager spaceManager;
+	@Inject	private SpaceManager spaceManager;
+	@Inject	private PagedFile pagedFile;
+	@Inject	private SpaceManagerPolicy policy;
 	
-	@Inject
-	private PagedFile pagedFile;
-
 	@Override
 	protected Class<SpaceManagerPolicy> interfaceUnderTest() {
 		return SpaceManagerPolicy.class;
@@ -56,109 +54,81 @@ public abstract class SpaceManagerPolicyTest extends
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
 		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
 		p.put("appendOnlyCacheSize", String.valueOf(appendOnlyCacheSize));
+		p.put("maxRecordSize", String.valueOf(maxRecordSize));
+		p.put("maxRecordPages", String.valueOf(maxRecordPages));
 
 		
 		Names.bindProperties(binder, p);
 
 	}
 
-	public void testCreate() {
-		final Page p = new Page(pageSize);
-
-		p.setId(freeSpaceMapPageId);
-		pagedFile.readPage(p);
-
-		final ByteBuffer b = ByteBuffer.wrap(p.getData());
-
-		assertEquals(-1, b.getLong(0));
-	}
-
-	public void testFreeSpaceOnPage() {
-		assertEquals(4096, spaceManager.freeSpaceOnPage(0));
-		for (short i = 0; i < 32; i++) {
-			spaceManager.setBlockUsed(0, i, true);
-			assertEquals(4096 - 128 * (i + 1), spaceManager.freeSpaceOnPage(0));
-		}
-		assertEquals(0, spaceManager.freeSpaceOnPage(freeSpaceMapPageId));
-
-	}
-
-	public void testIsBlockUsed() {
-		for (int i = 0; i < 32; i++)
-			assertFalse(spaceManager.isBlockUsed(0, (short) i));
-
-		assertTrue(spaceManager.isPageUsed(1));
-
-		for (int i = 0; i < 32; i++)
-			assertTrue(spaceManager.isBlockUsed(1, (short) i));
-
-	}
-
-	public void testIsPageUsed() {
+	public void testAcquirePage() {
+		assertEquals(5, policy.acquirePage());
+		assertEquals(6,pagedFile.getPageCount());
+		assertTrue(spaceManager.isPageUsed(5));
+		assertEquals(6, policy.acquirePage());
+		assertEquals(7,pagedFile.getPageCount());
+		assertTrue(spaceManager.isPageUsed(6));
+		assertEquals(7,pagedFile.getPageCount());
 		assertFalse(spaceManager.isPageUsed(0));
-		assertTrue(spaceManager.isPageUsed(1));
+		assertEquals(7, policy.acquirePage());
+		assertEquals(8,pagedFile.getPageCount());
+		assertTrue(spaceManager.isPageUsed(7));
+	}
+	
+	public void testReleasePage() {
+		assertEquals(5, policy.acquirePage());
+		assertEquals(6, policy.acquirePage());
+		assertEquals(7,pagedFile.getPageCount());
+		assertTrue(spaceManager.isPageUsed(5));
+		assertTrue(spaceManager.isPageUsed(6));
+		policy.releasePage(5);
+		policy.releasePage(6);
+		assertEquals(2,pagedFile.getPageCount());
 		assertFalse(spaceManager.isPageUsed(2));
-		assertFalse(spaceManager.isPageUsed(3));
-		assertFalse(spaceManager.isPageUsed(4));
-
-		final Page p = new Page((short) 4096);
-
-		p.setId(freeSpaceMapPageId);
-		pagedFile.readPage(p);
-
-		final ByteBuffer b = ByteBuffer.wrap(p.getData());
-
-		b.position(8);
-
-		for (int i = 0; i < 5; i++)
-			assertEquals(0, b.getInt());
-
+		assertFalse(spaceManager.isPageUsed(5));
+		assertFalse(spaceManager.isPageUsed(6));
+		
 	}
 
-	public void testSetBlockUsed() {
-		spaceManager.setBlockUsed(0, (short) 30, true);
-		assertTrue(spaceManager.isBlockUsed(0, (short) 30));
-		assertTrue(spaceManager.isPageUsed(0));
-
-		spaceManager.setBlockUsed(0, (short) 30, false);
-		assertFalse(spaceManager.isBlockUsed(0, (short) 30));
-
+	public void testSimpleAcquireRecord() {
+		Record r = policy.acquireRecord(512);
+		assertEquals(512, recordSize(r));
+		r = policy.acquireRecord(511);
+		assertEquals(512, recordSize(r));
+		r = policy.acquireRecord(4000);
+		assertEquals(4096, recordSize(r));
+		r = policy.acquireRecord(1024);
+		assertEquals(1024, recordSize(r));
 	}
-
-	public void testSetPageUsed() {
-		assertFalse(spaceManager.isPageUsed(0));
-
-		spaceManager.setPageUsed(2, true);
-
-		assertFalse(spaceManager.isPageUsed(0));
-		assertTrue(spaceManager.isPageUsed(1));
-		assertTrue(spaceManager.isPageUsed(2));
-		assertFalse(spaceManager.isPageUsed(3));
-		assertFalse(spaceManager.isPageUsed(4));
-
+	
+	public void testAcquireReleaseRecord() {
+		Record r1 = policy.acquireRecord(512);
+		assertEquals(512, recordSize(r1));
+		Record r2 = policy.acquireRecord(511);
+		assertEquals(512, recordSize(r2));
+		policy.releaseRecord(r1);
+		r1 = policy.acquireRecord(4224);
+		assertEquals(4224, recordSize(r1));
 	}
-
-	public void testTotalFreeSpace() {
-		assertEquals(pageSize * 4, spaceManager.totalFreeSpace());
-		for (short i = 0; i < 32; i++) {
-			spaceManager.setBlockUsed(0, i, true);
-			assertEquals(4 * pageSize - blockSize * (i + 1), spaceManager
-					.totalFreeSpace());
+	
+	private int recordSize(Record r) {
+		int result = 0;
+		int pages = r.getPagesUsed();
+		for (int i=0;i<pages;i++) {
+			PageUsage u = r.getPageUsage(i);
+			byte[] b = u.usage;
+			for (int j=0;j<b.length;j++)
+				for (int k=0;k<Byte.SIZE;k++)
+					if ((b[j] & (1 << k)) != 0)
+						result += blockSize;
+				
 		}
+		return result;
 	}
-
-	public void testUpdate() {
-		pagedFile.addPages(1022);
-		spaceManager.update();
-		assertFalse(spaceManager.isPageUsed(1022));
-		spaceManager.setPageUsed(1022, true);
-		assertTrue(spaceManager.isPageUsed(1022));
-
-	}
-
+	
 	@Override
 	protected void setUp() {
-		Log.i("jello", "setup");
 		super.setUp();
 		if (!pagedFile.exists())
 			pagedFile.create();

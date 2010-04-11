@@ -204,7 +204,6 @@ public class Hybrid implements SpaceManagerPolicy {
 
 		currentFreeSpace += pageSize;
 		currentAverageFreeSpace = averageFreeSpace();
-
 	}
 
 	public void releaseRecordSpace(final Record record) {
