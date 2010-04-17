@@ -78,6 +78,10 @@ public class Jello {
 		
 		return Jello.OPEN_SUCCESS;
 	}
+	
+	public static void setInjector(Injector injector) {
+		Jello.injector = injector;
+	}
 
 	private static Injector createGuiceInjector() {
 		return Guice.createInjector(new JelloModule(fullpath, null));

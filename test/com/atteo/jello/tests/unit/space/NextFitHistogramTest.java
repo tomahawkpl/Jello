@@ -1,15 +1,33 @@
 package com.atteo.jello.tests.unit.space;
 
-import java.io.IOException;
-
-import android.test.InstrumentationTestCase;
-
 import com.atteo.jello.space.NextFitHistogram;
-import com.atteo.jello.space.VanillaHistogram;
+import com.atteo.jello.tests.JelloInterfaceTestCase;
+import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.name.Names;
 
-public class NextFitHistogramTest extends InstrumentationTestCase {
-	private NextFitHistogram nextFitHistogram;
+public abstract class NextFitHistogramTest extends JelloInterfaceTestCase<NextFitHistogram> {
+	
+	private final short pageSize = 4096;
+	private final int nextFitHistogramClasses = 8;
 
+	
+	@Inject private NextFitHistogram nextFitHistogram;
+
+	@Override
+	protected Class<NextFitHistogram> interfaceUnderTest() {
+		return NextFitHistogram.class;
+	}
+
+	public void configure(Binder binder) {
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("nextFitHistogramClasses")).toInstance(
+				nextFitHistogramClasses);
+		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
+				.toInstance(pageSize);
+		
+	}
+	
 	public void testComplex() {
 		nextFitHistogram.update(0, (short) -1, (short) 1024);
 		nextFitHistogram.update(1, (short) -1, (short) 2048);
@@ -49,8 +67,8 @@ public class NextFitHistogramTest extends InstrumentationTestCase {
 	}
 
 	@Override
-	protected void setUp() throws IOException {
-		nextFitHistogram = new VanillaHistogram((short) 4096, 8);
+	protected void setUp() {
+		super.setUp();
 	}
 
 	@Override

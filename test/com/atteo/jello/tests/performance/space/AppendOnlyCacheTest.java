@@ -2,43 +2,49 @@ package com.atteo.jello.tests.performance.space;
 
 import java.io.IOException;
 
-import android.os.Debug;
-import android.test.InstrumentationTestCase;
-import android.test.PerformanceTestCase;
-
 import com.atteo.jello.space.AppendOnlyCache;
-import com.atteo.jello.space.AppendOnlyCacheNative;
+import com.atteo.jello.tests.JelloInterfaceTestCase;
+import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.name.Names;
 
-public class AppendOnlyCacheTest extends InstrumentationTestCase implements
-		PerformanceTestCase {
+public abstract class AppendOnlyCacheTest extends
+		JelloInterfaceTestCase<AppendOnlyCache> {
+	
+	private final int appendOnlyCacheSize = 8;
+	
+	@Inject
 	private AppendOnlyCache appendOnlyCache;
 
-	public boolean isPerformanceOnly() {
-		return true;
+	@Override
+	protected Class<AppendOnlyCache> interfaceUnderTest() {
+		return AppendOnlyCache.class;
 	}
 
-	public int startPerformance(final Intermediates intermediates) {
-
-		return 1;
+	public void configure(Binder binder) {
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("appendOnlyCacheSize")).toInstance(
+				appendOnlyCacheSize);
 	}
 
 	public void testUpdate() throws IOException {
-		final int TESTSIZE = 100;
-		Debug.startMethodTracing("jello/testAppendOnlyCache");
+		final int TESTSIZE = 250;
+
+		startPerformanceTest(true);
+
 		for (int i = 0; i < TESTSIZE; i++) {
 			appendOnlyCache.update(4 * i, (short) 100);
 			appendOnlyCache.update(4 * i + 1, (short) 50);
 			appendOnlyCache.update(4 * i + 2, (short) 200);
 			appendOnlyCache.update(4 * i + 3, (short) 20);
 		}
-		Debug.stopMethodTracing();
 
+		endPerformanceTest();
 	}
 
 	@Override
-	protected void setUp() throws IOException {
-		appendOnlyCache = new AppendOnlyCacheNative(3);
-
+	protected void setUp() {
+		super.setUp();
 	}
 
 	@Override

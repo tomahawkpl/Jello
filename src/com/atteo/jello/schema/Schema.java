@@ -1,8 +1,8 @@
 package com.atteo.jello.schema;
 
+import java.lang.reflect.Field;
+
 public class Schema {
-	int version;
-	int fields;
-	String[] names;
-	String[] types;
+	public int version;
+	public Field[] fields;
 }

@@ -140,6 +140,9 @@ public class PagedFileRAF implements PagedFile {
 	}
 
 	public boolean create() {
+		file.getParentFile().mkdirs();
+		if (!file.getParentFile().exists())
+			return false;
 		try {
 			file.createNewFile();
 		} catch (IOException e) {

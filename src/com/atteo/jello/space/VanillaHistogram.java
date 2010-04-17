@@ -16,7 +16,7 @@ public class VanillaHistogram implements NextFitHistogram {
 
 	@Inject
 	public VanillaHistogram(@Named("pageSize") final short pageSize,
-			@Named("histogramClasses") int histogramClasses) {
+			@Named("nextFitHistogramClasses") int histogramClasses) {
 
 		if (pageSize % histogramClasses != 0)
 			throw new IllegalArgumentException(

@@ -415,7 +415,7 @@
 	</target>
 
 	<target name="viewtraces">
-		<exec executable="${scripts.dir}/list_results.sh">
+		<exec executable="${scripts.dir}/list_results.sh" failonerror="true">
 			<arg value="${trace.local.dir}"/>
 		</exec>
 		<input message="Select trace file:" addproperty="selected_trace"/>

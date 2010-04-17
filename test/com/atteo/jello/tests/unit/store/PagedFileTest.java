@@ -2,24 +2,24 @@ package com.atteo.jello.tests.unit.store;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import android.util.Pool;
 
+import com.atteo.jello.Jello;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.tests.JelloInterfaceTestCase;
 import com.google.inject.Binder;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
 public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	@Inject
 	private PagedFile pagedFile;
 
-	@Inject
-	@Named("pageSize")
-	private short pageSize;
+	private final short pageSize = 4096;
+	
 	@Inject
 	private Pool<Page> pagePool;
 
@@ -29,12 +29,12 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	}
 
 	public void configure(Binder binder) {
-		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
-				.toInstance((short) 4096);
 		String path = getInstrumentation().getContext().getDatabasePath(
 				"testfile").getAbsolutePath();
-		binder.bind(String.class).annotatedWith(Names.named("fullpath"))
-				.toInstance(path);
+		final HashMap<String, String> p = new HashMap<String, String>();
+		p.put("pageSize", String.valueOf(pageSize));
+		p.put("fullpath", String.valueOf(path));
+		Names.bindProperties(binder, p);
 	}
 
 	public void testAddPages() throws IOException {
@@ -124,11 +124,11 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	@Override
 	protected void setUp() {
 		super.setUp();
-		getInstrumentation().getContext().getDatabasePath("test").mkdirs();
 		if (pagedFile.exists())
 			pagedFile.remove();
 		pagedFile.create();
-		pagedFile.open();
+		if (pagedFile.open() == Jello.OPEN_FAILED)
+			fail("pagedFile.open failed");
 	}
 
 	@Override

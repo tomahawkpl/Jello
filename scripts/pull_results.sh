@@ -32,46 +32,25 @@ fi
 
 cd $LOCAL_RESULTS_DIR;
 
+rm *.trace 2> /dev/null
+
 echo -n "Getting trace files from the device... ";
 
-echo "cd $PHONE_RESULTS_DIR && md5sum *.trace > sums.tmp; exit;" | adb shell > /dev/null;
+echo "cd $PHONE_RESULTS_DIR && ls *.trace > traces.tmp; exit;" | adb shell > /dev/null;
 
 
-adb pull $PHONE_RESULTS_DIR/sums.tmp phone_sums.tmp > /dev/null 2>&1;
+adb pull $PHONE_RESULTS_DIR/traces.tmp traces.tmp > /dev/null 2>&1;
 
-if [ ! -e phone_sums.tmp ]; then
+if [ ! -e traces.tmp ]; then
 	echo "FAILED (maybe there are none)";
 	exit 1
 fi
 
-lines=`awk ' END { print NR } ' phone_sums.tmp`
-echo "$lines file(s)";
-
-# Get a list of local files and their md5s
-
-md5sum *.trace > local_sums.tmp 2> /dev/null
-
-lines=`awk ' END { print NR } ' local_sums.tmp`
-echo "$lines local trace file(s) found";
-
-# Save the list of changed files
-
-cat local_sums.tmp phone_sums.tmp | sort -k 2.1 | uniq -u | uniq -f 1 > changed.tmp
-
-lines=`awk ' END { print NR } ' changed.tmp`
-echo "$lines file(s) changed";
-
-
-# Download changed files
+lines=`awk ' END { print NR } ' traces.tmp`
+echo "$lines traces found on device";
 
 if [ $lines != "0" ]; then
-	awk "//{print \$2}" changed.tmp > new.tmp
-fi;
-
-rm local_sums.tmp phone_sums.tmp changed.tmp
-
-if [ $lines != "0" ]; then
-	for file in `cat new.tmp`; do
+	for file in `cat traces.tmp`; do
 		echo -n "Downloading file $file... "
 		adb pull $PHONE_RESULTS_DIR/$file . > /dev/null 2>&1;
 		if [ $? -eq 0 ]; then
@@ -81,3 +60,10 @@ if [ $lines != "0" ]; then
 		fi;
 	done;
 fi;
+
+rm traces.tmp
+
+# Removing file on the device
+
+echo "Removing trace files from the device...";
+echo "cd $PHONE_RESULTS_DIR && rm *.trace; rm traces.tmp; exit;" | adb shell > /dev/null;

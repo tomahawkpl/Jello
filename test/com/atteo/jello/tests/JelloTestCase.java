@@ -7,8 +7,11 @@ import java.util.Set;
 
 import org.easymock.EasyMock;
 
+import android.os.Debug;
 import android.test.InstrumentationTestCase;
+import android.util.Log;
 
+import com.atteo.jello.Jello;
 import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -18,9 +21,11 @@ import com.google.inject.util.Modules;
 
 abstract public class JelloTestCase extends InstrumentationTestCase implements
 		Module {
-	
+
 	protected Module s = null;
-	
+	protected long testStart;
+	protected boolean dumpingTrace = false;
+
 	public JelloTestCase() {
 		super();
 	}
@@ -30,8 +35,9 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 		this.s = s;
 
 	}
-	
-	// prepareInjector doesn't show thrown exceptions if is placed somewhere else
+
+	// prepareInjector doesn't show thrown exceptions if is placed somewhere
+	// else
 	// that's why super.setUp() call is needed by each test class
 	protected void setUp() {
 		prepareInjector(s);
@@ -80,15 +86,32 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 
 		if (extraBindings() != null)
 			m = Modules.combine(extraBindings(), m);
-			
-		Injector injector = Guice.createInjector(new CommonBindings(), m,
-				this);
-		
+
+		Injector injector = Guice.createInjector(new CommonBindings(), m, this);
+
 		injector.injectMembers(this);
+
+		Jello.setInjector(injector);
+
 	}
 
 	protected Module extraBindings() {
 		return null;
 	}
 
+	protected void startPerformanceTest(boolean dumpTrace) {
+		dumpingTrace = dumpTrace;
+		if (dumpTrace)
+			Debug.startMethodTracing("jello/" + this.getClass().getSimpleName() + "." + getName());
+		testStart = System.currentTimeMillis();
+
+	}
+
+	protected void endPerformanceTest() {
+		long testEnd = System.currentTimeMillis();
+		if (dumpingTrace)
+			Debug.stopMethodTracing();
+		Log.i("jello", "Test '" + this.getClass().getSimpleName() + "." + getName() + "' took " + (testEnd - testStart)
+				+ "ms");
+	}
 }
