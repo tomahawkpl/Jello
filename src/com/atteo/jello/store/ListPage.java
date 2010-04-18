@@ -17,7 +17,10 @@ public class ListPage extends Page {
 	}
 
 	public int getNext() {
-		return byteBuffer.getInt(0);
+		return (data[0] << 24)
+        + ((data[1] & 0xFF) << 16)
+        + ((data[2] & 0xFF) << 8)
+        + (data[3] & 0xFF);
 	}
 
 	@Override
@@ -26,7 +29,10 @@ public class ListPage extends Page {
 	}
 
 	public void setNext(final int id) {
-		byteBuffer.putInt(0, id);
+		data[0] = (byte)(id >>> 24);
+		data[1] = (byte)(id >>> 16);
+		data[2] = (byte)(id >>> 8);
+		data[3] = (byte)id;
 	}
 
 }

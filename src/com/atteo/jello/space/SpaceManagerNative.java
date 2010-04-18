@@ -55,4 +55,6 @@ public class SpaceManagerNative implements SpaceManager {
 	public native void update();
 
 	public native void setRecordUsed(Record record, boolean used);
+
+	public native void commit();
 }

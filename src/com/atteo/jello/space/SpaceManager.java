@@ -22,4 +22,6 @@ public interface SpaceManager {
 	long totalFreeSpace();
 
 	void update();
+	
+	void commit();
 }

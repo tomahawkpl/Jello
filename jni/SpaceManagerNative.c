@@ -5,6 +5,7 @@
 
 struct FreeSpaceInfo {
 	int pageId;
+	int dirty;
 	unsigned char *data;
 };
 
@@ -151,26 +152,6 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 }
 
 
-void writeFreeSpaceInfo(JNIEnv *env, int page) {
-	jboolean isCopy;
-	jbyteArray buffer;
-	jbyte *bytes;
-
-	(*env)->SetIntField(env, listPage, fidListPageId, freeSpaceInfo[page].pageId);
-
-	buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
-	bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
-
-	memcpy((void*) bytes, (void*) freeSpaceInfo[page].data, freeSpaceInfoPageCapacity);
-
-	(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
-
-	(*env)->CallVoidMethod(env, listPage, midListPageSetNext,
-			page + 1 < pageCount ? freeSpaceInfo[page+1].pageId : -1);
-	(*env)->CallVoidMethod(env, pagedFile, midPagedFileWritePage, listPage);
-}
-
-
 void addPages(JNIEnv *env, jclass dis, int count) {
 	struct FreeSpaceInfo *newPage;
 	int i;
@@ -179,7 +160,7 @@ void addPages(JNIEnv *env, jclass dis, int count) {
 	lastNewPage = (*env)->CallIntMethod(env, pagedFile, midPagedFileAddPages, count);
 
 
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d pages, new pageCount: %d", count, pageCount);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d pages, new pageCount: %d", count, pageCount + count);
 	if (lastNewPage == -1)
 		return;
 
@@ -190,14 +171,14 @@ void addPages(JNIEnv *env, jclass dis, int count) {
 
 		newPage->pageId = lastNewPage - count + 1 + i;
 		newPage->data = calloc(1, freeSpaceInfoPageCapacity);
+		newPage->dirty = 1;
 
-//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting used: %d", newPage->pageId);
 	}
 
 	pageCount += count;
 
 	for(i=pageCount - count;i<pageCount;i++)
-		setPageUsed(env, dis, i, JNI_TRUE);
+		setPageUsed(env, dis, freeSpaceInfo[i].pageId, JNI_TRUE);
 }
 
 void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
@@ -209,17 +190,20 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 		JNI_ThrowByName(env, "java/lang/IllegalArgumentException",
 				"Trying to remove too many Space Manager pages");
 
-	pageCount -= count;
 
 	for (i=0;i<count;i++) {
-//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting not used: %d", freeSpaceInfo[pageCount + count - i - 1].pageId);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting not used: %d", freeSpaceInfo[pageCount - i - 1].pageId);
 
-		setPageUsed(env, dis, freeSpaceInfo[pageCount + count - i - 1].pageId, JNI_FALSE);
+		setPageUsed(env, dis, freeSpaceInfo[pageCount - i - 1].pageId, JNI_FALSE);
 
-		free(&freeSpaceInfo[pageCount + count - i - 1].data);
-		free(&freeSpaceInfo[pageCount + count - i - 1]);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "1");
+		free(freeSpaceInfo[pageCount - i - 1].data);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "2");
 
 	}
+
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "here");
+	pageCount -= count;
 
 	freeSpaceInfo = realloc(freeSpaceInfo, pageCount);
 
@@ -232,10 +216,10 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 	pagedFileSize = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount);
 	currentPages = pageCount * freeSpaceInfosPerPage;
 
-	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
 	if (pagedFileSize >= currentPages) {
 		difference = (pagedFileSize - currentPages) / freeSpaceInfosPerPage + 1;
-		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "difference %d", difference);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding:%d", difference);
 		addPages(env, dis, difference);
 		//---
 		update(env, dis);
@@ -245,7 +229,7 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 
 	if (pagedFileSize <= currentPages - freeSpaceInfosPerPage) {
 		difference = (currentPages - pagedFileSize) / freeSpaceInfosPerPage;
-		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
 		removePages(env, dis, difference);
 		return;
 	}
@@ -286,6 +270,34 @@ jboolean JNICALL isPageUsed(JNIEnv *env, jclass dis, jint id) {
 
 }
 
+void JNICALL commit(JNIEnv *env, jclass dis) {
+	jboolean isCopy;
+	jbyteArray buffer;
+	jbyte *bytes;
+	int i;
+
+	for (i=0;i<pageCount;i++) {
+		if (freeSpaceInfo[i].dirty == 0)
+			continue;
+
+		(*env)->SetIntField(env, listPage, fidListPageId, freeSpaceInfo[i].pageId);
+
+		buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
+		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
+
+		memcpy((void*) bytes, (void*) freeSpaceInfo[i].data, freeSpaceInfoPageCapacity);
+
+		(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
+
+		(*env)->CallVoidMethod(env, listPage, midListPageSetNext,
+				i + 1 < pageCount ? freeSpaceInfo[i+1].pageId : -1);
+		(*env)->CallVoidMethod(env, pagedFile, midPagedFileWritePage, listPage);
+
+		freeSpaceInfo[i].dirty = 0;
+	}
+
+}
+
 void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
 	int freeSpaceInfoPage;
 	short freeSpaceInfoOffset;
@@ -314,12 +326,11 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
 
 	for (i=0;i<freeSpaceInfoSize;i++) {
 
-		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpaceInfoPage: %d, offset: %d", freeSpaceInfoPage, offset + i);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpaceInfoPage: %d, offset: %d", freeSpaceInfoPage, offset + i);
 		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] = newValue;
 	}
 
-
-	writeFreeSpaceInfo(env, freeSpaceInfoPage);
+	freeSpaceInfo[freeSpaceInfoPage].dirty = 1;
 }
 
 jboolean JNICALL isBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block) {
@@ -378,7 +389,7 @@ void JNICALL setBlockUsed(JNIEnv *env, jclass dis, jint id, jshort block, jboole
 		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] &= ~(1 << block);
 
 
-	writeFreeSpaceInfo(env, freeSpaceInfoPage);
+	freeSpaceInfo[freeSpaceInfoPage].dirty = 1;
 
 }
 
@@ -422,6 +433,8 @@ void JNICALL setRecordUsed(JNIEnv *env, jclass dis, jobject record, jboolean use
 		else
 			for (i=0;i<freeSpaceInfoSize;i++)
 				freeSpaceInfo[freeSpaceInfoPage].data[offset+i] &= ~(areasByte[i]);
+
+		freeSpaceInfo[freeSpaceInfoPage].dirty = 1;
 
 		(*env)->ReleaseByteArrayElements(env, areas, areasByte, 0);
 
@@ -490,9 +503,11 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 
 	setPageUsed(env, dis, pageFreeSpaceInfo, JNI_TRUE);
 
-	writeFreeSpaceInfo(env, 0);
-
 	update(env, dis);
+
+	commit(env, dis);
+
+
 
 
 }
@@ -505,7 +520,7 @@ jboolean JNICALL load(JNIEnv *env, jclass dis) {
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNIEnv* env;
-	JNINativeMethod nm[11];
+	JNINativeMethod nm[12];
 	jclass klass;
 
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
@@ -563,8 +578,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[10].signature = "()J";
 	nm[10].fnPtr = totalFreeSpace;
 
+	nm[11].name = "commit";
+	nm[11].signature = "()V";
+	nm[11].fnPtr = commit;
 
-	(*env)->RegisterNatives(env,klass,nm,11);
+	(*env)->RegisterNatives(env,klass,nm,12);
 
 	(*env)->DeleteLocalRef(env, klass);
 
