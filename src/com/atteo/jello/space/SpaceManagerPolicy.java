@@ -7,7 +7,7 @@ public interface SpaceManagerPolicy {
 
 	public int acquirePage();
 
-	public Record acquireRecord(int length);
+	public void acquireRecord(Record record, int length);
 
 	public void reacquireRecord(Record record, int length);
 

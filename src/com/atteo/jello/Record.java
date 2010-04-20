@@ -12,18 +12,18 @@ public class Record implements Poolable<Record> {
 	private int schemaVersion;
 	private PageUsage[] pages;
 	private int pagesUsed;
-	private int maxRecordPages;
 	
-	@Inject
-	Record(final Injector injector, @Named("maxRecordPages") int maxRecordPages) {
+	@Inject static Injector injector;
+	@Inject static @Named("maxRecordPages") int maxRecordPages;
+	
+	Record() {
 		pages = new PageUsage[maxRecordPages];
 
 		for (int i = 0; i < maxRecordPages; i++)
-			pages[i] = injector.getInstance(PageUsage.class);
+			pages[i] = new PageUsage();
 
 		pagesUsed = 0;
 		
-		this.maxRecordPages = maxRecordPages;
 
 	}
 
@@ -93,6 +93,18 @@ public class Record implements Poolable<Record> {
 		}
 	}
 
+	public void clearUsage() {
+		pagesUsed = 0;
+		for (int i = 0; i < maxRecordPages; i++)
+			if (pages[i].pageId != -1) {
+				pages[i].pageId = -1;
+				int len = pages[i].usage.length;
+				byte[] u = pages[i].usage;
+				for (int j=0;j<len;j++)
+					u[j] = 0;
+			}
+	}
+	
 	public PageUsage getPageUsage(int page) {
 		int p = 0;
 		for (int i = 0; i < maxRecordPages; i++)

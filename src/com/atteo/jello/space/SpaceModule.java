@@ -12,6 +12,7 @@ import com.atteo.jello.store.PageSizeProvider;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -51,7 +52,7 @@ public class SpaceModule implements Module {
 	public void configure(final Binder binder) {
 		blocksPerPage = (short) (pageSize / blockSize);
 		freeSpaceInfoSize = (short) (blocksPerPage / (short) Byte.SIZE);
-		freeSpaceInfoPageCapacity = new ListPage(pageSize).getCapacity();
+		freeSpaceInfoPageCapacity = new ListPage().getCapacity();
 		freeSpaceInfosPerPage = (short) (freeSpaceInfoPageCapacity / freeSpaceInfoSize);
 
 		Names.bindProperties(binder, properties);
@@ -79,7 +80,7 @@ public class SpaceModule implements Module {
 		return p;
 	}
 
-	@Provides
+	@Provides @Singleton
 	Pool<Record> recordPoolProvider(final RecordPoolableManager manager,
 			@Named("recordPoolLimit") final int limit) {
 		return Pools.finitePool(manager, limit);

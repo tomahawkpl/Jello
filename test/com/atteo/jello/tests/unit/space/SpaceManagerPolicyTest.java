@@ -2,6 +2,8 @@ package com.atteo.jello.tests.unit.space;
 
 import java.util.HashMap;
 
+import android.util.Pool;
+
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
 import com.atteo.jello.space.AppendOnlyCache;
@@ -34,6 +36,7 @@ public abstract class SpaceManagerPolicyTest extends
 	@Inject	private SpaceManager spaceManager;
 	@Inject	private PagedFile pagedFile;
 	@Inject	private SpaceManagerPolicy policy;
+	@Inject private Pool<Record> recordPool;
 	
 	@Override
 	protected Class<SpaceManagerPolicy> interfaceUnderTest() {
@@ -92,23 +95,30 @@ public abstract class SpaceManagerPolicyTest extends
 	}
 
 	public void testSimpleAcquireRecord() {
-		Record r = policy.acquireRecord(512);
+		Record r = recordPool.acquire();
+		policy.acquireRecord(r, 512);
 		assertEquals(512, recordSize(r));
-		r = policy.acquireRecord(511);
+		r.clearUsage();
+		policy.acquireRecord(r, 511);
 		assertEquals(512, recordSize(r));
-		r = policy.acquireRecord(4000);
+		r.clearUsage();
+		policy.acquireRecord(r, 4000);
 		assertEquals(4096, recordSize(r));
-		r = policy.acquireRecord(1024);
+		r.clearUsage();
+		policy.acquireRecord(r, 1024);
 		assertEquals(1024, recordSize(r));
 	}
 	
 	public void testAcquireReleaseRecord() {
-		Record r1 = policy.acquireRecord(512);
+		Record r1 = recordPool.acquire();
+		policy.acquireRecord(r1, 512);
 		assertEquals(512, recordSize(r1));
-		Record r2 = policy.acquireRecord(511);
+		Record r2 = recordPool.acquire();
+		policy.acquireRecord(r2, 511);
 		assertEquals(512, recordSize(r2));
 		policy.releaseRecord(r1);
-		r1 = policy.acquireRecord(4224);
+		r1.clearUsage();
+		policy.acquireRecord(r1, 4224);
 		assertEquals(4224, recordSize(r1));
 	}
 	

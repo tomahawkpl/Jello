@@ -23,7 +23,7 @@ public class PagedFileMock implements PagedFile {
 
 	public int addPages(final int count) {
 		for (int i = 0; i < count; i++)
-			pages.add(new Page(pageSize));
+			pages.add(new Page());
 		return pages.size() - 1;
 	}
 

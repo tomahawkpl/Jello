@@ -53,7 +53,7 @@ public abstract class SpaceManagerTest extends
 	}
 
 	public void testCreate() {
-		final Page p = new Page(pageSize);
+		final Page p = new Page();
 
 		p.setId(freeSpaceMapPageId);
 		pagedFile.readPage(p);
@@ -91,7 +91,7 @@ public abstract class SpaceManagerTest extends
 		assertFalse(spaceManager.isPageUsed(3));
 		assertFalse(spaceManager.isPageUsed(4));
 
-		final Page p = new Page(pageSize);
+		final Page p = new Page();
 
 		p.setId(freeSpaceMapPageId);
 		pagedFile.readPage(p);

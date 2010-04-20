@@ -20,9 +20,8 @@ public class HeaderPage extends Page {
 			@Named("freeSpaceMapPageId") int freeSpaceMapPageId,
 			@Named("klassManagerPageId") int klassManagerPageId,
 			@Named("fileFormatVersion") int fileFormatVersion,
-			@Named("magic") String magic,
-			@Named("pageSize") short pageSize) {
-		super(pageSize);
+			@Named("magic") String magic) {
+		super();
 	
 		this.blockSize = blockSize;
 		this.freeSpaceMapPageId = freeSpaceMapPageId;

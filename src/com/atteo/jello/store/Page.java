@@ -13,9 +13,9 @@ public class Page implements Poolable<Page> {
 	protected byte data[] = null;
 	protected byte accessibleData[] = null;
 	protected ByteBuffer byteBuffer;
-
-	@Inject
-	public Page(@Named("pageSize") short pageSize) {
+	protected @Inject @Named("pageSize") static short pageSize;
+	
+	public Page() {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);
 		byteBuffer.position(headerSize());

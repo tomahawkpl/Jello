@@ -4,7 +4,9 @@ import android.util.PoolableManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Singleton;
 
+@Singleton
 public class PagePoolableManager implements PoolableManager<Page> {
 
 	private final Injector injector;

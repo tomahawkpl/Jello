@@ -124,6 +124,7 @@ jint JNICALL acquirePage(JNIEnv *env, jclass dis) {
 	if (id != AppendOnlyCacheNoPage) {
 		(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerSetPageUsed, id, JNI_TRUE);
 		(*env)->CallVoidMethod(env, appendOnlyCache, midAppendOnlyCacheUpdate, id, 0);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "acquired page from cache: %d", id);
 	} else {
 		id = (*env)->CallIntMethod(env, pagedFile, midPagedFileAddPages, 1);
 		if (id == PagedFilePageAddFailed)
@@ -131,6 +132,7 @@ jint JNICALL acquirePage(JNIEnv *env, jclass dis) {
 
 		(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerUpdate);
 		(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerSetPageUsed, id, JNI_TRUE);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "acquired new page: %d", id);
 	}
 
 	return id;
@@ -142,15 +144,13 @@ void removePages(JNIEnv *env) {
 	int count = 0;
 	id = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount) - 1;
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "start");
 	while ((*env)->CallBooleanMethod(env, spaceManager, midSpaceManagerIsPageUsed, id) == JNI_FALSE) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removePages:%d", id);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing empty page: %d", id);
 		count++;
 		(*env)->CallVoidMethod(env, appendOnlyCache, midAppendOnlyCacheUpdate, id, 0);
 		id--;
 	}
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "end %d", count);
 
 	if (count > 0) {
 		(*env)->CallVoidMethod(env, pagedFile, midPagedFileRemovePages, count);
@@ -159,6 +159,7 @@ void removePages(JNIEnv *env) {
 }
 
 void JNICALL releasePage(JNIEnv *env, jclass dis, jint id) {
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "releasing page: %d", id);
 	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerSetPageUsed, id, JNI_FALSE);
 	(*env)->CallVoidMethod(env, appendOnlyCache, midAppendOnlyCacheUpdate, id, pageSize);
 

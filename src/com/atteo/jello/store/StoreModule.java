@@ -8,6 +8,7 @@ import android.util.Pools;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
@@ -16,8 +17,6 @@ public class StoreModule implements Module {
 	private final int pagePoolLimit = 5;
 	private final String fullpath;
 	// --------------
-
-	private Pool<Page> pagePool = null;
 
 	private final HashMap<String, String> properties;
 
@@ -44,12 +43,10 @@ public class StoreModule implements Module {
 		return p;
 	}
 
-	@Provides
+	@Provides @Singleton
 	Pool<Page> pagePoolProvider(final PagePoolableManager manager,
 			@Named("pagePoolLimit") final int limit) {
-		if (pagePool == null)
-			pagePool = Pools.finitePool(manager, limit);
-		return pagePool;
+		return Pools.finitePool(manager, limit);
 	}
 
 

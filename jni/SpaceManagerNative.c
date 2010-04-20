@@ -160,7 +160,7 @@ void addPages(JNIEnv *env, jclass dis, int count) {
 	lastNewPage = (*env)->CallIntMethod(env, pagedFile, midPagedFileAddPages, count);
 
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d pages, new pageCount: %d", count, pageCount + count);
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d pages, new pageCount: %d", count, pageCount + count);
 	if (lastNewPage == -1)
 		return;
 
@@ -192,17 +192,14 @@ void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
 
 
 	for (i=0;i<count;i++) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting not used: %d", freeSpaceInfo[pageCount - i - 1].pageId);
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setting not used: %d", freeSpaceInfo[pageCount - i - 1].pageId);
 
 		setPageUsed(env, dis, freeSpaceInfo[pageCount - i - 1].pageId, JNI_FALSE);
 
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "1");
 		free(freeSpaceInfo[pageCount - i - 1].data);
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "2");
 
 	}
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "here");
 	pageCount -= count;
 
 	freeSpaceInfo = realloc(freeSpaceInfo, pageCount);
@@ -216,10 +213,10 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 	pagedFileSize = (*env)->CallIntMethod(env, pagedFile, midPagedFileGetPageCount);
 	currentPages = pageCount * freeSpaceInfosPerPage;
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pagedFileSize:%d currentPages:%d", pagedFileSize, currentPages);
 	if (pagedFileSize >= currentPages) {
 		difference = (pagedFileSize - currentPages) / freeSpaceInfosPerPage + 1;
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding:%d", difference);
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding:%d", difference);
 		addPages(env, dis, difference);
 		//---
 		update(env, dis);
@@ -229,7 +226,7 @@ void JNICALL update(JNIEnv *env, jclass dis) {
 
 	if (pagedFileSize <= currentPages - freeSpaceInfosPerPage) {
 		difference = (currentPages - pagedFileSize) / freeSpaceInfosPerPage;
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "removing:%d", difference);
 		removePages(env, dis, difference);
 		return;
 	}
@@ -326,7 +323,7 @@ void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
 
 	for (i=0;i<freeSpaceInfoSize;i++) {
 
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpaceInfoPage: %d, offset: %d", freeSpaceInfoPage, offset + i);
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpaceInfoPage: %d, offset: %d", freeSpaceInfoPage, offset + i);
 		freeSpaceInfo[freeSpaceInfoPage].data[offset+i] = newValue;
 	}
 
@@ -411,6 +408,7 @@ void JNICALL setRecordUsed(JNIEnv *env, jclass dis, jobject record, jboolean use
 		pageUsage = (*env)->CallObjectMethod(env, record, midRecordGetPageUsage,p);
 		pageId = (*env)->GetIntField(env, pageUsage, fidPageUsagePageId);
 		areas = (*env)->GetObjectField(env, pageUsage, fidPageUsageUsage);
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setRecordUsed: %d", pageId);
 
 		freeSpaceInfoPage = getFreeSpaceInfoPage(pageId);
 		freeSpaceInfoOffset = getFreeSpaceInfoOffset(pageId);
@@ -425,7 +423,6 @@ void JNICALL setRecordUsed(JNIEnv *env, jclass dis, jobject record, jboolean use
 		offset = freeSpaceInfoOffset * freeSpaceInfoSize;
 
 		areasByte = (*env)->GetByteArrayElements(env, areas, &isCopy);
-
 
 		if (used == JNI_TRUE)
 			for (i=0;i<freeSpaceInfoSize;i++)
@@ -528,10 +525,8 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
 	klass = (*env)->FindClass(env,"com/atteo/jello/space/SpaceManagerNative");
 
-	if (klass == NULL) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "klass is NULL");
+	if (klass == NULL)
 		return;
-	}
 
 
 	nm[0].name = "init";

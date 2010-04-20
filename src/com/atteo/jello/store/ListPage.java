@@ -1,7 +1,5 @@
 package com.atteo.jello.store;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 
 
 /**
@@ -11,9 +9,8 @@ import com.google.inject.name.Named;
  * 
  */
 public class ListPage extends Page {
-	@Inject
-	public ListPage(@Named("pageSize") short pageSize) {
-		super(pageSize);
+	public ListPage() {
+		super();
 	}
 
 	public int getNext() {

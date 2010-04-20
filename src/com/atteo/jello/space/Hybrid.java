@@ -11,9 +11,9 @@ public class Hybrid implements SpaceManagerPolicy {
 		return 0;
 	}
 
-	public Record acquireRecord(int length) {
+	public void acquireRecord(Record record, int length) {
 		// TODO Auto-generated method stub
-		return null;
+		return;
 	}
 
 	public void reacquireRecord(Record record, int length) {

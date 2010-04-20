@@ -4,8 +4,9 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class PageUsage {
-		@Inject
-		private PageUsage(@Named("freeSpaceInfoSize") short freeSpaceInfoSize) {
+		@Inject protected static @Named("freeSpaceInfoSize") short freeSpaceInfoSize;
+		
+		PageUsage() {
 			usage = new byte[freeSpaceInfoSize];
 			pageId = -1;
 			blocksUsed = 0;
