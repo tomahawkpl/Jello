@@ -11,14 +11,14 @@ public class Hybrid implements SpaceManagerPolicy {
 		return 0;
 	}
 
-	public void acquireRecord(Record record, int length) {
+	public boolean acquireRecord(Record record, int length) {
 		// TODO Auto-generated method stub
-		return;
+		return true;
 	}
 
-	public void reacquireRecord(Record record, int length) {
+	public boolean reacquireRecord(Record record, int length) {
 		// TODO Auto-generated method stub
-		return;
+		return true;
 	}
 
 	public void releasePage(int id) {

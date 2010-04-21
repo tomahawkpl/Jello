@@ -408,7 +408,7 @@ void JNICALL setRecordUsed(JNIEnv *env, jclass dis, jobject record, jboolean use
 		pageUsage = (*env)->CallObjectMethod(env, record, midRecordGetPageUsage,p);
 		pageId = (*env)->GetIntField(env, pageUsage, fidPageUsagePageId);
 		areas = (*env)->GetObjectField(env, pageUsage, fidPageUsageUsage);
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setRecordUsed: %d", pageId);
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "setRecordUsed: %d", pageId);
 
 		freeSpaceInfoPage = getFreeSpaceInfoPage(pageId);
 		freeSpaceInfoOffset = getFreeSpaceInfoOffset(pageId);

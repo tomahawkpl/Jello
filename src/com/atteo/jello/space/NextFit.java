@@ -8,8 +8,8 @@ public class NextFit implements SpaceManagerPolicy {
 	}
 	
 	public native int acquirePage();
-	public native void acquireRecord(Record record, int length);
-	public native void reacquireRecord(Record record, int length);
+	public native boolean acquireRecord(Record record, int length);
+	public native boolean reacquireRecord(Record record, int length);
 	public native void releasePage(int id);
 	public native void releaseRecord(Record record);
 }

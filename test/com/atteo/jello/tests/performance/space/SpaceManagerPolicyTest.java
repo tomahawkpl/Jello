@@ -2,6 +2,7 @@ package com.atteo.jello.tests.performance.space;
 
 import java.util.HashMap;
 
+import android.util.Log;
 import android.util.Pool;
 
 import com.atteo.jello.Record;
@@ -143,7 +144,6 @@ public abstract class SpaceManagerPolicyTest extends
 		int TESTSIZE = 100;
 
 		Record r1, r2;
-		int p;
 
 		r1 = recordPool.acquire();
 		r2 = recordPool.acquire();
@@ -151,22 +151,21 @@ public abstract class SpaceManagerPolicyTest extends
 		startPerformanceTest(true);
 
 		policy.acquireRecord(r1, (int) (Math.random() * pageSize));
-		p = policy.acquirePage();
 
 		for (int i = 0; i < TESTSIZE; i++) {
 			r1 = recordPool.acquire();
 			r2 = recordPool.acquire();
 			policy.acquireRecord(r1, (int) (Math.random() * (pageSize / 2)));
-			policy.releasePage(p);
 			policy.acquireRecord(r2, (int) (Math.random() * pageSize));
 			
 			policy.releaseRecord(r1);
 			recordPool.release(r1);
 			r1 = r2;
-			p = policy.acquirePage();
 		}
 
 		endPerformanceTest();
+		
+		Log.i("jello","Average freespace: " + (spaceManager.totalFreeSpace() / pagedFile.getPageCount()));
 
 	}
 
