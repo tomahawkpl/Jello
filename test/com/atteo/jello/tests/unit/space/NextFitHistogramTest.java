@@ -11,7 +11,6 @@ public abstract class NextFitHistogramTest extends JelloInterfaceTestCase<NextFi
 	private final short pageSize = 4096;
 	private final int nextFitHistogramClasses = 8;
 
-	
 	@Inject private NextFitHistogram nextFitHistogram;
 
 	@Override
@@ -25,7 +24,6 @@ public abstract class NextFitHistogramTest extends JelloInterfaceTestCase<NextFi
 				nextFitHistogramClasses);
 		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
 				.toInstance(pageSize);
-		
 	}
 	
 	public void testComplex() {

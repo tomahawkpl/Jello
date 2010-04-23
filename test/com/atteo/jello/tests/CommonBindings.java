@@ -13,13 +13,11 @@ import com.atteo.jello.store.PagePoolableManager;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 
 public class CommonBindings implements Module {
-
-	private Pool<Page> pagePool;
-	private Pool<Record> recordPool;
 
 	public void configure(final Binder binder) {
 		binder.requestStaticInjection(Record.class);
@@ -32,20 +30,16 @@ public class CommonBindings implements Module {
 		Names.bindProperties(binder, p);
 	}
 
-	@Provides
+	@Provides @Singleton
 	Pool<Page> pagePoolProvider(final PagePoolableManager manager,
 			@Named("pagePoolLimit") final int limit) {
-		if (pagePool == null)
-			pagePool = Pools.finitePool(manager, limit);
-		return pagePool;
+		return Pools.finitePool(manager, limit);
 	}
 
-	@Provides
+	@Provides @Singleton
 	Pool<Record> recordPoolProvider(final RecordPoolableManager manager,
 			@Named("recordPoolLimit") final int limit) {
-		if (recordPool == null)
-			recordPool = Pools.finitePool(manager, limit);
-		return recordPool;
+		return Pools.finitePool(manager, limit);
 	}
 
 }

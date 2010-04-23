@@ -8,7 +8,7 @@ import com.google.inject.name.Named;
 
 @Singleton
 public class VanillaHistogram implements NextFitHistogram {
-	private final int classSize;
+	private final short classSize;
 	private final ArrayList<Integer> witnesses;
 	private final ArrayList<Integer> counts;
 	private int count;
@@ -22,7 +22,7 @@ public class VanillaHistogram implements NextFitHistogram {
 			throw new IllegalArgumentException(
 					"histogramClasses should divide pageSize");
 
-		classSize = pageSize / histogramClasses;
+		classSize = (short) (pageSize / histogramClasses);
 
 		histogramClasses++; // empty pages have a separate class
 
@@ -39,7 +39,7 @@ public class VanillaHistogram implements NextFitHistogram {
 
 	}
 
-	public int getClassSize() {
+	public short getClassSize() {
 		return classSize;
 	}
 

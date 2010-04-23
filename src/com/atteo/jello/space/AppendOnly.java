@@ -12,6 +12,8 @@ public class AppendOnly implements SpaceManagerPolicy {
 		System.loadLibrary("AppendOnly");
 	}
 
+	private SpaceManager spaceManager;
+
 	@Inject
 	public AppendOnly(AppendOnlyCache appendOnlyCache,
 			SpaceManager spaceManager, PagedFile pagedFile,
@@ -20,6 +22,8 @@ public class AppendOnly implements SpaceManagerPolicy {
 			@Named("maxRecordSize") int maxRecordSize) {
 		init(appendOnlyCache, spaceManager, pagedFile, pageSize, blockSize,
 				maxRecordSize);
+
+		this.spaceManager = spaceManager;
 
 	}
 
@@ -36,4 +40,12 @@ public class AppendOnly implements SpaceManagerPolicy {
 	public native void releasePage(int id);
 
 	public native void releaseRecord(Record record);
+
+	public void create() {
+		spaceManager.create();
+	}
+
+	public boolean load() {
+		return spaceManager.load();
+	}
 }

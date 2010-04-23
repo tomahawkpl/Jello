@@ -96,16 +96,16 @@ public abstract class SpaceManagerPolicyTest extends
 
 	public void testSimpleAcquireRecord() {
 		Record r = recordPool.acquire();
-		policy.acquireRecord(r, 512);
+		assertTrue(policy.acquireRecord(r, 512));
 		assertEquals(512, recordSize(r));
 		r.clearUsage();
-		policy.acquireRecord(r, 511);
+		assertTrue(policy.acquireRecord(r, 511));
 		assertEquals(512, recordSize(r));
 		r.clearUsage();
-		policy.acquireRecord(r, 4000);
+		assertTrue(policy.acquireRecord(r, 4000));
 		assertEquals(4096, recordSize(r));
 		r.clearUsage();
-		policy.acquireRecord(r, 1024);
+		assertTrue(policy.acquireRecord(r, 1024));
 		assertEquals(1024, recordSize(r));
 	}
 	
@@ -145,7 +145,7 @@ public abstract class SpaceManagerPolicyTest extends
 		pagedFile.open();
 		pagedFile.addPages(5);
 
-		spaceManager.create();
+		policy.create();
 	}
 
 	@Override

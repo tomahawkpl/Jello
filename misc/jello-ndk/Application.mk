@@ -1,3 +1,3 @@
 APP_PROJECT_PATH := 
-APP_MODULES      := PagedFileNative PageSizeProvider SpaceManagerNative AppendOnlyCacheNative SimpleLockManager \
-			BTree AppendOnly NextFit
+APP_MODULES      := PagedFileNative PageSizeProvider SpaceManagerNative SimpleLockManager \
+			BTree AppendOnly AppendOnlyCacheNative NextFit NextFitHistogramNative Hybrid

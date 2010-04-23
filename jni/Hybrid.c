@@ -344,10 +344,10 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
 
-	klass = (*env)->FindClass(env,"com/atteo/jello/space/AppendOnly");
+	klass = (*env)->FindClass(env,"com/atteo/jello/space/Hybrid");
 
 	nm[0].name = "init";
-	nm[0].signature = "(Lcom/atteo/jello/space/AppendOnlyCache;Lcom/atteo/jello/space/SpaceManager;Lcom/atteo/jello/store/PagedFile;SSI)V";
+	nm[0].signature = "(Lcom/atteo/jello/store/PagedFile;SSI)V";
 	nm[0].fnPtr = init;
 
 	nm[1].name = "acquirePage";

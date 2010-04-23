@@ -4,7 +4,7 @@ public interface NextFitHistogram {
 	public static int NO_WITNESS = -1;
 	public static int NO_PAGE = -2;
 
-	public int getClassSize();
+	public short getClassSize();
 
 	public int getWitness(short freeSpace);
 

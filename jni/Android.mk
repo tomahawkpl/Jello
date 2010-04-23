@@ -53,6 +53,14 @@ LOCAL_MODULE    := AppendOnlyCacheNative
 LOCAL_SRC_FILES := AppendOnlyCacheNative.c
 include $(BUILD_SHARED_LIBRARY)
 
+# --- NextFitHistogramNative
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := NextFitHistogramNative
+LOCAL_SRC_FILES := NextFitHistogramNative.c
+include $(BUILD_SHARED_LIBRARY)
+
 # --- SimpleLockManager
 
 include $(CLEAR_VARS)
@@ -86,5 +94,14 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := NextFit
 LOCAL_SRC_FILES := NextFit.c
+LOCAL_LDLIBS := -llog
+include $(BUILD_SHARED_LIBRARY)
+
+# --- Hybrid
+
+include $(CLEAR_VARS)
+
+LOCAL_MODULE    := Hybrid
+LOCAL_SRC_FILES := Hybrid.c
 LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)

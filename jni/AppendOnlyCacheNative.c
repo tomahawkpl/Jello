@@ -13,8 +13,28 @@ struct CacheElement *cache;
 int count;
 int limit;
 int minFreeSpace;
+int AppendOnlyCacheNoPage;
+
+void initIDs(JNIEnv *env) {
+	jclass appendOnlyCacheClass;
+	jfieldID fidAppendOnlyCacheNoPage;
+
+	appendOnlyCacheClass = (*env)->FindClass(env, "com/atteo/jello/space/AppendOnlyCache");
+	if (appendOnlyCacheClass == NULL)
+		return;
+
+	fidAppendOnlyCacheNoPage = (*env)->GetStaticFieldID(env, appendOnlyCacheClass,
+			"NO_PAGE", "I");
+	if (fidAppendOnlyCacheNoPage == NULL)
+		return;
+	AppendOnlyCacheNoPage = (*env)->GetStaticIntField(env, appendOnlyCacheClass, fidAppendOnlyCacheNoPage);
+
+
+}
+
 
 void JNICALL init(JNIEnv *env, jclass dis, jint cacheSize) {
+	initIDs(env);
 	cache = NULL;
 	count = 0;
 	limit = cacheSize;
@@ -30,7 +50,7 @@ jint JNICALL getFreeSpace(JNIEnv *env, jclass dis, jint id) {
 		element = element->next;
 	}
 
-	return -1;
+	return AppendOnlyCacheNoPage;
 
 }
 
@@ -52,16 +72,16 @@ jint JNICALL getBestId(JNIEnv *env, jclass dis, jshort freeSpace) {
 	if (best != NULL)
 		return best->id;
 	else
-		return -1;
+		return AppendOnlyCacheNoPage;
 
 }
 
-jboolean JNICALL isEmpty(JNIEnv *env, jclass dis) {
-	if (count > 0)
-		return (jboolean)0;
-	else
-		return (jboolean)1;
-}
+	jboolean JNICALL isEmpty(JNIEnv *env, jclass dis) {
+		if (count > 0)
+			return (jboolean)0;
+		else
+			return (jboolean)1;
+	}
 
 void removeElem(struct CacheElement *element) {
 	count--;
@@ -121,7 +141,7 @@ void JNICALL update(JNIEnv *env, jclass dis, jint id, jshort freeSpace) {
 	}
 
 	// cache is full
-	
+
 	// updated page has less space than any page in cache
 	if (minFreeSpace != -1 && freeSpace > minFreeSpace)
 		return;
