@@ -88,7 +88,7 @@ void JNICALL init(JNIEnv *env, jclass dis) {
 }
 
 jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, jshort ps) {
-	const jbyte *str;
+	const char *str;
 
 	if (isOpened)
 		JNI_ThrowByName(env, "java/lang/InternalError", "File already opened, close first");

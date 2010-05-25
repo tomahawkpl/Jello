@@ -2,7 +2,7 @@ package com.atteo.jello;
 
 import java.io.IOException;
 
-import com.atteo.jello.space.SpaceManager;
+import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.HeaderPage;
 import com.atteo.jello.store.PagedFile;
 import com.google.inject.Binder;
@@ -17,7 +17,7 @@ import com.google.inject.name.Names;
 public class DatabaseFile implements Module {
 	private final PagedFile pagedFile;
 	private HeaderPage headerPage;
-	private SpaceManager spaceManager;
+	private SpaceManagerPolicy spaceManagerPolicy;
 
 	private KlassManager klassManager;
 	private final Injector injector;
@@ -44,8 +44,8 @@ public class DatabaseFile implements Module {
 		return pagedFile;
 	}
 
-	public SpaceManager getSpaceManager() {
-		return spaceManager;
+	public SpaceManagerPolicy getSpaceManagerPolicy() {
+		return spaceManagerPolicy;
 	}
 
 	public boolean loadHeader() {
@@ -61,8 +61,8 @@ public class DatabaseFile implements Module {
 	}
 
 	public boolean loadStructure() {
-		spaceManager = injector.getInstance(SpaceManager.class);
-		if (!spaceManager.load())
+		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
+		if (!spaceManagerPolicy.load())
 			return false;
 		klassManager = injector.getInstance(KlassManager.class);
 		if (!klassManager.load())
@@ -89,8 +89,8 @@ public class DatabaseFile implements Module {
 		headerPage.setId(headerPageId);
 		pagedFile.writePage(headerPage);
 
-		spaceManager = injector.getInstance(SpaceManager.class);
-		spaceManager.create();
+		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
+		spaceManagerPolicy.create();
 
 		klassManager = injector.getInstance(KlassManager.class);
 		klassManager.create();
@@ -104,8 +104,8 @@ public class DatabaseFile implements Module {
 		binder.bind(Short.class).annotatedWith(Names.named("blockSize"))
 				.toInstance(headerPage.getBlockSize());
 		binder.bind(Integer.class).annotatedWith(
-				Names.named("freeSpaceMapPageId")).toInstance(
-				headerPage.getFreeSpaceMapPageId());
+				Names.named("freeSpaceInfoPageId")).toInstance(
+				headerPage.getFreeSpaceInfoPageId());
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("klassManagerPageId")).toInstance(
 				headerPage.getKlassManagerPageId());
@@ -113,10 +113,10 @@ public class DatabaseFile implements Module {
 				Names.named("fileFormatVersion")).toInstance(
 				headerPage.getFileFormatVersion());
 		
-		int mp = headerPage.getFreeSpaceMapPageId();
+		int mp = headerPage.getFreeSpaceInfoPageId();
 		if (mp < headerPage.getKlassManagerPageId())
 			mp = headerPage.getKlassManagerPageId();
-		mp++;		
+		mp++;
 		
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("minimumPages")).toInstance(mp);

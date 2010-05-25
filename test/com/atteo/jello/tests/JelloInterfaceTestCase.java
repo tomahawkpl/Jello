@@ -11,7 +11,7 @@ public abstract class JelloInterfaceTestCase<T> extends JelloTestCase {
 		Module m = new Module() {
 
 			public void configure(final Binder binder) {
-				binder.bind(interfaceUnderTest()).to(implementation());
+				bindImplementation(binder);
 			}
 
 		};
@@ -24,4 +24,9 @@ public abstract class JelloInterfaceTestCase<T> extends JelloTestCase {
 
 	protected abstract Class<T> interfaceUnderTest();
 	protected abstract Class<? extends T> implementation();
+	
+	protected void bindImplementation(Binder binder) {
+		binder.bind(interfaceUnderTest()).to(implementation());
+	}
+
 }

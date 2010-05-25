@@ -1,14 +1,37 @@
 package com.atteo.jello.tests.unit.space;
 
-import java.io.IOException;
-
-import android.test.InstrumentationTestCase;
-
 import com.atteo.jello.space.AppendOnlyCache;
-import com.atteo.jello.space.AppendOnlyCacheNative;
+import com.atteo.jello.tests.JelloInterfaceTestCase;
+import com.google.inject.Binder;
+import com.google.inject.Inject;
+import com.google.inject.name.Names;
 
-public class AppendOnlyCacheTest extends InstrumentationTestCase {
+public abstract class AppendOnlyCacheTest extends
+		JelloInterfaceTestCase<AppendOnlyCache> {
+	private final int appendOnlyCacheSize = 3;
+
+	@Inject
 	private AppendOnlyCache appendOnlyCache;
+
+	@Override
+	protected Class<AppendOnlyCache> interfaceUnderTest() {
+		return AppendOnlyCache.class;
+	}
+
+	public void configure(Binder binder) {
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("appendOnlyCacheSize")).toInstance(
+				appendOnlyCacheSize);
+	}
+
+	@Override
+	protected void setUp() {
+		super.setUp();
+	}
+
+	@Override
+	protected void tearDown() {
+	}
 
 	public void testOverflow() {
 		appendOnlyCache.update(0, (short) 5);
@@ -67,12 +90,4 @@ public class AppendOnlyCacheTest extends InstrumentationTestCase {
 		assertTrue(appendOnlyCache.isEmpty());
 	}
 
-	@Override
-	protected void setUp() throws IOException {
-		appendOnlyCache = new AppendOnlyCacheNative(3);
-	}
-
-	@Override
-	protected void tearDown() {
-	}
 }

@@ -14,7 +14,7 @@ public class JelloModule implements Module {
 	private final String magic = "JelloDatabase";
 	
 	private int headerPageId = 0;
-	private int freeSpaceMapPageId = 1;
+	private int freeSpaceInfoPageId = 1;
 	private int klassManagerPageId = 2;
 	private int minimumPages;
 	// --------------
@@ -29,11 +29,11 @@ public class JelloModule implements Module {
 		if (properties != null)
 			this.properties.putAll(properties);
 		
-		headerPageId = Integer.valueOf(properties.get("headerPageId"));
-		freeSpaceMapPageId = Integer.valueOf(properties.get("freeSpaceMapPageId"));
-		klassManagerPageId = Integer.valueOf(properties.get("klassManagerPageId"));
+		headerPageId = Integer.valueOf(this.properties.get("headerPageId"));
+		freeSpaceInfoPageId = Integer.valueOf(this.properties.get("freeSpaceInfoPageId"));
+		klassManagerPageId = Integer.valueOf(this.properties.get("klassManagerPageId"));
 		
-		minimumPages = Math.min(freeSpaceMapPageId, klassManagerPageId);
+		minimumPages = Math.min(freeSpaceInfoPageId, klassManagerPageId);
 		minimumPages++;
 		
 		properties.put("minimumPages", String.valueOf(minimumPages));
@@ -52,7 +52,7 @@ public class JelloModule implements Module {
 		p.put("magic", String.valueOf(magic));
 
 		p.put("headerPageId", String.valueOf(headerPageId));
-		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
+		p.put("freeSpaceInfoPageId", String.valueOf(freeSpaceInfoPageId));
 		p.put("klassManagerPageId", String.valueOf(klassManagerPageId));
 		p.put("minimumPages", String.valueOf(minimumPages));
 		return p;

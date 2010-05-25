@@ -6,11 +6,8 @@ import android.util.Pool;
 
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
-import com.atteo.jello.space.AppendOnlyCache;
-import com.atteo.jello.space.AppendOnlyCacheNative;
-import com.atteo.jello.space.SpaceManager;
-import com.atteo.jello.space.SpaceManagerNative;
 import com.atteo.jello.space.SpaceManagerPolicy;
+import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.tests.JelloInterfaceTestCase;
 import com.atteo.jello.tests.unit.store.PagedFileMock;
@@ -21,19 +18,18 @@ import com.google.inject.name.Names;
 public abstract class SpaceManagerPolicyTest extends
 		JelloInterfaceTestCase<SpaceManagerPolicy> {
 	// ---- SETTINGS
+	private final int klassIndexPageId = 3;
 	private final short pageSize = 4096;
 	private final short blockSize = 128;
 	private final short freeSpaceInfosPerPage = 1023;
 	private final short freeSpaceInfoPageCapacity = 4092;
 	private final short freeSpaceInfoSize = 4;
-	private final int freeSpaceMapPageId = 1;
-	private final int appendOnlyCacheSize = 8;
+	private final int freeSpaceInfoPageId = 1;
 	private final int maxRecordPages = 4;
 	private final int maxRecordSize = maxRecordPages * pageSize;
 	
 	// --------------
 
-	@Inject	private SpaceManager spaceManager;
 	@Inject	private PagedFile pagedFile;
 	@Inject	private SpaceManagerPolicy policy;
 	@Inject private Pool<Record> recordPool;
@@ -44,19 +40,21 @@ public abstract class SpaceManagerPolicyTest extends
 	}
 
 	public void configure(final Binder binder) {
+		binder.requestStaticInjection(Record.class);
+		binder.requestStaticInjection(Page.class);
+		binder.requestStaticInjection(PageUsage.class);
+		
 		binder.bind(PagedFile.class).to(PagedFileMock.class);
-		binder.bind(SpaceManager.class).to(SpaceManagerNative.class);
-		binder.bind(AppendOnlyCache.class).to(AppendOnlyCacheNative.class);
 		
 		final HashMap<String, String> p = new HashMap<String, String>();
+		p.put("klassIndexPageId", String.valueOf(klassIndexPageId));
 		p.put("blockSize", String.valueOf(blockSize));
 		p.put("pageSize", String.valueOf(pageSize));
 		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
 		p.put("freeSpaceInfoPageCapacity", String
 				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
-		p.put("appendOnlyCacheSize", String.valueOf(appendOnlyCacheSize));
+		p.put("freeSpaceInfoPageId", String.valueOf(freeSpaceInfoPageId));
 		p.put("maxRecordSize", String.valueOf(maxRecordSize));
 		p.put("maxRecordPages", String.valueOf(maxRecordPages));
 
@@ -68,29 +66,21 @@ public abstract class SpaceManagerPolicyTest extends
 	public void testAcquirePage() {
 		assertEquals(5, policy.acquirePage());
 		assertEquals(6,pagedFile.getPageCount());
-		assertTrue(spaceManager.isPageUsed(5));
 		assertEquals(6, policy.acquirePage());
 		assertEquals(7,pagedFile.getPageCount());
-		assertTrue(spaceManager.isPageUsed(6));
 		assertEquals(7,pagedFile.getPageCount());
-		assertFalse(spaceManager.isPageUsed(0));
 		assertEquals(7, policy.acquirePage());
 		assertEquals(8,pagedFile.getPageCount());
-		assertTrue(spaceManager.isPageUsed(7));
 	}
 	
 	public void testReleasePage() {
 		assertEquals(5, policy.acquirePage());
 		assertEquals(6, policy.acquirePage());
 		assertEquals(7,pagedFile.getPageCount());
-		assertTrue(spaceManager.isPageUsed(5));
-		assertTrue(spaceManager.isPageUsed(6));
 		policy.releasePage(5);
 		policy.releasePage(6);
 		assertEquals(2,pagedFile.getPageCount());
-		assertFalse(spaceManager.isPageUsed(2));
-		assertFalse(spaceManager.isPageUsed(5));
-		assertFalse(spaceManager.isPageUsed(6));
+
 		
 	}
 

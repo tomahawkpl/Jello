@@ -5,10 +5,12 @@ package com.atteo.jello.store;
 /**
  * Page which can be organised into single linked lists
  * 
- * @author tomahawk
  * 
  */
 public class ListPage extends Page {
+	public static final int NO_MORE_PAGES = -1;
+
+	
 	public ListPage() {
 		super();
 	}
@@ -22,7 +24,7 @@ public class ListPage extends Page {
 
 	@Override
 	public short headerSize() {
-		return Integer.SIZE;
+		return Integer.SIZE / Byte.SIZE;
 	}
 
 	public void setNext(final int id) {

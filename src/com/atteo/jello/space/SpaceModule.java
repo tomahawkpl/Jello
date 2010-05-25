@@ -46,7 +46,6 @@ public class SpaceModule implements Module {
 		
 		pageSize = new PageSizeProvider().get();
 		maxRecordSize = maxRecordPages * pageSize;
-		
 	}
 
 	public void configure(final Binder binder) {

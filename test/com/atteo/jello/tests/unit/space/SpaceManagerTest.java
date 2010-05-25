@@ -20,7 +20,7 @@ public abstract class SpaceManagerTest extends
 	private final short freeSpaceInfosPerPage = 1023;
 	private final short freeSpaceInfoPageCapacity = 4092;
 	private final short freeSpaceInfoSize = 4;
-	private final int freeSpaceMapPageId = 1;
+	private final int freeSpaceInfoPageId = 1;
 
 	// --------------
 
@@ -35,7 +35,7 @@ public abstract class SpaceManagerTest extends
 		return SpaceManager.class;
 	}
 
-	public void configure(final Binder binder) {
+	public void configure(final Binder binder) {		
 		binder.bind(PagedFile.class).to(PagedFileMock.class);
 
 		final HashMap<String, String> p = new HashMap<String, String>();
@@ -45,7 +45,7 @@ public abstract class SpaceManagerTest extends
 		p.put("freeSpaceInfoPageCapacity", String
 				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
+		p.put("freeSpaceInfoPageId", String.valueOf(freeSpaceInfoPageId));
 
 		
 		Names.bindProperties(binder, p);
@@ -55,7 +55,7 @@ public abstract class SpaceManagerTest extends
 	public void testCreate() {
 		final Page p = new Page();
 
-		p.setId(freeSpaceMapPageId);
+		p.setId(freeSpaceInfoPageId);
 		pagedFile.readPage(p);
 
 		final ByteBuffer b = ByteBuffer.wrap(p.getData());
@@ -69,7 +69,7 @@ public abstract class SpaceManagerTest extends
 			spaceManager.setBlockUsed(0, i, true);
 			assertEquals(4096 - 128 * (i + 1), spaceManager.freeSpaceOnPage(0));
 		}
-		assertEquals(0, spaceManager.freeSpaceOnPage(freeSpaceMapPageId));
+		assertEquals(0, spaceManager.freeSpaceOnPage(freeSpaceInfoPageId));
 
 	}
 
@@ -93,7 +93,7 @@ public abstract class SpaceManagerTest extends
 
 		final Page p = new Page();
 
-		p.setId(freeSpaceMapPageId);
+		p.setId(freeSpaceInfoPageId);
 		pagedFile.readPage(p);
 
 		final ByteBuffer b = ByteBuffer.wrap(p.getData());

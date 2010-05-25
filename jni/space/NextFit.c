@@ -14,7 +14,8 @@ int lastAcquired;
 
 jmethodID midNextFitHistogramUpdate, midNextFitHistogramGetWitness;
 jmethodID midSpaceManagerSetPageUsed, midSpaceManagerIsPageUsed, midSpaceManagerUpdate, midSpaceManagerIsBlockUsed,
-	midSpaceManagerSetRecordUsed, midSpaceManagerFreeSpaceOnPage, midSpaceManagerCreate, midSpaceManagerLoad;
+	midSpaceManagerSetRecordUsed, midSpaceManagerFreeSpaceOnPage, midSpaceManagerCreate, midSpaceManagerLoad,
+	midSpaceManagerCommit;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
 jmethodID midRecordSetChunkUsed, midRecordGetPagesUsed, midRecordGetPageUsage, midRecordClearUsage;
 jfieldID fidPageUsagePageId;
@@ -22,7 +23,6 @@ jfieldID fidSpaceManagerPolicyAcquireFailed;
 jfieldID fidPagedFilePageAddFailed;
 
 void initIDs(JNIEnv *env) {
-	jclass klass;
 	jclass nextFitHistogramClass;
 	jclass pagedFileClass;
 	jclass spaceManagerClass;
@@ -99,6 +99,11 @@ void initIDs(JNIEnv *env) {
 	midSpaceManagerLoad = (*env)->GetMethodID(env, spaceManagerClass,
 			"load", "()Z");
 	if (midSpaceManagerLoad == NULL)
+		return;
+
+	midSpaceManagerCommit = (*env)->GetMethodID(env, spaceManagerClass,
+			"commit", "()V");
+	if (midSpaceManagerCommit == NULL)
 		return;
 
 	midSpaceManagerIsBlockUsed = (*env)->GetMethodID(env, spaceManagerClass,
@@ -178,7 +183,6 @@ void initIDs(JNIEnv *env) {
 
 void JNICALL init(JNIEnv *env, jclass dis, jobject histogram, jobject file, jobject manager,
 		jshort pageSizeArg, jshort blockSizeArg, jint maxRecordSizeArg) {
-	int pages, free, i;
 	initIDs(env);
 	pagedFile = (*env)->NewGlobalRef(env,file);
 	spaceManager = (*env)->NewGlobalRef(env,manager);
@@ -293,6 +297,8 @@ jint JNICALL acquirePage(JNIEnv *env, jclass dis) {
 
 	lastAcquired = (id + 1) % pages;
 
+	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
+
 	return id;
 }
 
@@ -301,6 +307,8 @@ void JNICALL releasePage(JNIEnv *env, jclass dis, jint id) {
 	(*env)->CallVoidMethod(env, nextFitHistogram, midNextFitHistogramUpdate, id, 0, pageSize);
 
 	removePages(env);
+
+	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
 }
 
 jboolean JNICALL acquireRecord(JNIEnv *env, jclass dis, jobject record, jint length) {
@@ -394,6 +402,9 @@ jboolean JNICALL acquireRecord(JNIEnv *env, jclass dis, jobject record, jint len
 	}
 
 	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerSetRecordUsed, record, JNI_TRUE);
+
+	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
+
 	return JNI_TRUE;
 
 }
@@ -422,7 +433,10 @@ void JNICALL releaseRecord(JNIEnv *env, jclass dis, jobject record) {
 		(*env)->CallVoidMethod(env, nextFitHistogram, midNextFitHistogramUpdate, pageId, oldSpace[i], newSpace);
 	}
 
+//	free(oldSpace);
+
 	removePages(env);
+	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
 
 }
 

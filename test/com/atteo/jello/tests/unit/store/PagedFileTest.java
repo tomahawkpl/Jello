@@ -29,6 +29,8 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	}
 
 	public void configure(Binder binder) {
+		binder.requestStaticInjection(Page.class);
+
 		String path = getInstrumentation().getContext().getDatabasePath(
 				"testfile").getAbsolutePath();
 		final HashMap<String, String> p = new HashMap<String, String>();

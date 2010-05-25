@@ -19,7 +19,6 @@ jmethodID midRecordSetChunkUsed, midRecordGetPagesUsed, midRecordGetPageUsage, m
 jfieldID fidPageUsagePageId;
 
 void initIDs(JNIEnv *env) {
-	jclass klass;
 	jclass appendOnlyCacheClass;
 	jclass spaceManagerClass;
 	jclass pagedFileClass;

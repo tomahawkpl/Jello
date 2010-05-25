@@ -7,6 +7,6 @@ public interface Index {
 	public void load(int pageId);
 	public void insert(Record record);
 	public void update(Record record);
-	public Record find(int id);
-	public void delete(Record record);
+	public boolean find(Record record);
+	public void remove(int id);
 }

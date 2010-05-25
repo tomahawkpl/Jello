@@ -10,6 +10,8 @@ public class RecordTest extends JelloTestCase {
 	@Inject Record record;
 
 	public void configure(Binder binder) {
+		binder.requestStaticInjection(Record.class);	
+
 		binder.bind(Integer.class).annotatedWith(Names.named("maxRecordPages")).toInstance(4);
 		binder.bind(Short.class).annotatedWith(Names.named("freeSpaceInfoSize")).toInstance((short)4);
 	}

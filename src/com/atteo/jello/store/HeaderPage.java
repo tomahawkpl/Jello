@@ -9,7 +9,7 @@ public class HeaderPage extends Page {
 	private short pageSize;
 	private short blockSize;
 	
-	private int freeSpaceMapPageId;
+	private int freeSpaceInfoPageId;
 	private int klassManagerPageId;
 	
 	private int fileFormatVersion;
@@ -17,14 +17,14 @@ public class HeaderPage extends Page {
 	
 	@Inject
 	private HeaderPage(@Named("blockSize") final short blockSize,
-			@Named("freeSpaceMapPageId") int freeSpaceMapPageId,
+			@Named("freeSpaceInfoPageId") int freeSpaceInfoPageId,
 			@Named("klassManagerPageId") int klassManagerPageId,
 			@Named("fileFormatVersion") int fileFormatVersion,
 			@Named("magic") String magic) {
 		super();
 	
 		this.blockSize = blockSize;
-		this.freeSpaceMapPageId = freeSpaceMapPageId;
+		this.freeSpaceInfoPageId = freeSpaceInfoPageId;
 		this.klassManagerPageId = klassManagerPageId;
 		this.fileFormatVersion = fileFormatVersion;
 		this.magic = magic.getBytes();
@@ -33,7 +33,7 @@ public class HeaderPage extends Page {
 		byteBuffer.putInt(fileFormatVersion);
 		byteBuffer.putShort(pageSize);
 		byteBuffer.putShort(blockSize);
-		byteBuffer.putInt(freeSpaceMapPageId);
+		byteBuffer.putInt(freeSpaceInfoPageId);
 		byteBuffer.putInt(klassManagerPageId);
 	}
 
@@ -46,7 +46,7 @@ public class HeaderPage extends Page {
 		fileFormatVersion = byteBuffer.getInt();
 		pageSize = byteBuffer.getShort();
 		blockSize = byteBuffer.getShort();
-		freeSpaceMapPageId = byteBuffer.getInt();
+		freeSpaceInfoPageId = byteBuffer.getInt();
 		klassManagerPageId = byteBuffer.getInt();
 		
 		return true;
@@ -64,8 +64,8 @@ public class HeaderPage extends Page {
 		return blockSize;
 	}
 	
-	public int getFreeSpaceMapPageId() {
-		return freeSpaceMapPageId;
+	public int getFreeSpaceInfoPageId() {
+		return freeSpaceInfoPageId;
 	}
 	
 	public int getKlassManagerPageId() {

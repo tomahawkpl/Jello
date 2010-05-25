@@ -511,8 +511,36 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 
 
 jboolean JNICALL load(JNIEnv *env, jclass dis) {
-	(*env)->SetIntField(env, listPage, fidListPageId, pageFreeSpaceInfo);
-	(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
+	int i;
+	int nextPageId;
+	jbyteArray buffer;
+	jbyte *bytes;
+	jboolean isCopy;
+	pageCount = 0;
+	nextPageId = pageFreeSpaceInfo;
+
+	i = 0;
+	while (nextPageId != -1) {
+		pageCount++;
+		freeSpaceInfo = realloc(freeSpaceInfo, pageCount);
+		(*env)->SetIntField(env, listPage, fidListPageId, nextPageId);
+		(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
+		nextPageId = (*env)->GetIntField(env, listPage, fidListPageId);
+
+		buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
+		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
+
+		memcpy((void*) freeSpaceInfo[i].data, (void*) bytes, freeSpaceInfoPageCapacity);
+
+		(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
+
+		freeSpaceInfo[i].dirty = 0;
+		i++;
+	}
+
+
+	return JNI_TRUE;
+
 }
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {

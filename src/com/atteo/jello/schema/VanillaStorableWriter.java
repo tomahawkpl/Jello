@@ -62,7 +62,6 @@ public class VanillaStorableWriter implements StorableWriter {
 							+ ((String) field.get(storable)).getBytes().length;
 					continue;
 				}
-
 			}
 
 			result = new byte[space];

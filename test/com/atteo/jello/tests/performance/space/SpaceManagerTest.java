@@ -20,7 +20,7 @@ public abstract class SpaceManagerTest extends
 	private final short freeSpaceInfosPerPage = 1023;
 	private final short freeSpaceInfoPageCapacity = 4092;
 	private final short freeSpaceInfoSize = 4;
-	private final int freeSpaceMapPageId = 1;
+	private final int freeSpaceInfoPageId = 1;
 	private final int maxRecordPages = 4;
 
 	// --------------
@@ -52,7 +52,7 @@ public abstract class SpaceManagerTest extends
 		p.put("freeSpaceInfoPageCapacity", String
 				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
+		p.put("freeSpaceInfoPageId", String.valueOf(freeSpaceInfoPageId));
 
 		Names.bindProperties(binder, p);
 	}

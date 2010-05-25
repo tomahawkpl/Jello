@@ -6,12 +6,16 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.name.Named;
 
+/*
+ * This class is really messy and should be rewritten
+ */
 public class Record implements Poolable<Record> {
 	private Record nextPoolable;
 	private int id;
 	private int schemaVersion;
 	private PageUsage[] pages;
 	private int pagesUsed;
+	private byte[] data;
 	
 	@Inject static Injector injector;
 	@Inject static @Named("maxRecordPages") int maxRecordPages;
@@ -21,7 +25,7 @@ public class Record implements Poolable<Record> {
 
 		for (int i = 0; i < maxRecordPages; i++)
 			pages[i] = new PageUsage();
-
+		
 		pagesUsed = 0;
 		
 
@@ -120,5 +124,20 @@ public class Record implements Poolable<Record> {
 
 	public int getPagesUsed() {
 		return pagesUsed;
+	}
+	
+	public void setPagesUsed(int pagesUsed) {
+		clearUsage();
+		this.pagesUsed = pagesUsed;
+		for (int i=0;i<pagesUsed;i++)
+			pages[i].pageId = 0;
+	}
+	
+	public byte[] getData() {
+		return data;
+	}
+	
+	public void setData(byte[] data) {
+		this.data = data;
 	}
 }

@@ -1,6 +1,8 @@
+#ifndef _COMMON_C
+#define _COMMON_C
+
 #include <jni.h>
 #include <unistd.h>
-
 
 void JNI_ThrowByName(JNIEnv *env, const char *name, const char *msg)
 {
@@ -15,7 +17,7 @@ void JNI_ThrowByName(JNIEnv *env, const char *name, const char *msg)
 
 jlong getStaticLongField(JNIEnv *env, const char *className, const char *fieldName) {
 	jfieldID fid;
-	jclass klass;
+	jclass klass = NULL;
 
 	klass = (*env)->FindClass(env,klass);
 
@@ -29,3 +31,5 @@ jlong getStaticLongField(JNIEnv *env, const char *className, const char *fieldNa
 	return (*env)->GetStaticLongField(env, klass, fid);
 
 }
+
+#endif

@@ -1,23 +1,13 @@
 package com.atteo.jello.tests;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
-
-import org.easymock.EasyMock;
-
 import android.os.Debug;
 import android.test.InstrumentationTestCase;
 import android.util.Log;
 
 import com.atteo.jello.Jello;
-import com.google.inject.Binder;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.google.inject.TypeLiteral;
-import com.google.inject.util.Modules;
 
 abstract public class JelloTestCase extends InstrumentationTestCase implements
 		Module {
@@ -44,7 +34,7 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 	}
 
 	protected void prepareInjector(final Module s) {
-		final HashMap<Class<?>, Object> mocks = new HashMap<Class<?>, Object>();
+/*		final HashMap<Class<?>, Object> mocks = new HashMap<Class<?>, Object>();
 
 		Class<?> klass = this.getClass();
 
@@ -82,13 +72,15 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 				}
 			}
 
-		};
+		};*/
 
-		if (extraBindings() != null)
-			m = Modules.combine(extraBindings(), m);
+		Module m = null, extra;
+		extra = extraBindings();
+		
+		if (extra != null)
+			m = extra;
 
 		Injector injector = Guice.createInjector(new CommonBindings(), m, this);
-
 		injector.injectMembers(this);
 
 		Jello.setInjector(injector);
@@ -104,7 +96,6 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 		if (dumpTrace)
 			Debug.startMethodTracing("jello/" + this.getClass().getSimpleName() + "." + getName());
 		testStart = System.currentTimeMillis();
-
 	}
 
 	protected void endPerformanceTest() {

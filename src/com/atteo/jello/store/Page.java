@@ -2,6 +2,7 @@ package com.atteo.jello.store;
 
 import java.nio.ByteBuffer;
 
+import android.util.Log;
 import android.util.Poolable;
 
 import com.google.inject.Inject;
@@ -18,6 +19,7 @@ public class Page implements Poolable<Page> {
 	public Page() {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);
+		Log.i("jello","pageSize: " + pageSize + " header: " + headerSize());
 		byteBuffer.position(headerSize());
 		accessibleData = byteBuffer.slice().array();
 	}

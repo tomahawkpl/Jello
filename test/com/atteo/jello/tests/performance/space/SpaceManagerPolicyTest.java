@@ -5,10 +5,12 @@ import java.util.HashMap;
 import android.util.Log;
 import android.util.Pool;
 
+import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
 import com.atteo.jello.space.SpaceManager;
 import com.atteo.jello.space.SpaceManagerNative;
 import com.atteo.jello.space.SpaceManagerPolicy;
+import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.atteo.jello.store.PagedFileNative;
 import com.atteo.jello.tests.JelloInterfaceTestCase;
@@ -34,7 +36,7 @@ public abstract class SpaceManagerPolicyTest extends
 	private final short freeSpaceInfosPerPage = 127;
 	private final short freeSpaceInfoPageCapacity = 4092;
 	private final short freeSpaceInfoSize = 16;
-	private final int freeSpaceMapPageId = 1;
+	private final int freeSpaceInfoPageId = 1;
 	private final int maxRecordPages = 4;
 	private final int maxRecordSize = maxRecordPages * pageSize;
 
@@ -46,6 +48,10 @@ public abstract class SpaceManagerPolicyTest extends
 	}
 
 	public void configure(Binder binder) {
+		binder.requestStaticInjection(Page.class);
+		binder.requestStaticInjection(PageUsage.class);
+		binder.requestStaticInjection(Record.class);
+		
 		binder.bind(PagedFile.class).to(PagedFileNative.class);
 		binder.bind(SpaceManager.class).to(SpaceManagerNative.class);
 
@@ -61,7 +67,7 @@ public abstract class SpaceManagerPolicyTest extends
 		p.put("freeSpaceInfoPageCapacity", String
 				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		p.put("freeSpaceMapPageId", String.valueOf(freeSpaceMapPageId));
+		p.put("freeSpaceInfoPageId", String.valueOf(freeSpaceInfoPageId));
 
 		Names.bindProperties(binder, p);
 	}
@@ -76,7 +82,7 @@ public abstract class SpaceManagerPolicyTest extends
 
 		pagedFile.addPages(2);
 
-		spaceManager.create();
+		policy.create();
 
 	}
 

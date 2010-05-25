@@ -26,6 +26,15 @@ public abstract class NextFitHistogramTest extends JelloInterfaceTestCase<NextFi
 				.toInstance(pageSize);
 	}
 	
+	@Override
+	protected void setUp() {
+		super.setUp();
+	}
+
+	@Override
+	protected void tearDown() {
+	}
+	
 	public void testComplex() {
 		nextFitHistogram.update(0, (short) -1, (short) 1024);
 		nextFitHistogram.update(1, (short) -1, (short) 2048);
@@ -62,14 +71,5 @@ public abstract class NextFitHistogramTest extends JelloInterfaceTestCase<NextFi
 		assertEquals(0, nextFitHistogram.getWitness((short) 512));
 		assertEquals(0, nextFitHistogram.getWitness((short) 4096));
 
-	}
-
-	@Override
-	protected void setUp() {
-		super.setUp();
-	}
-
-	@Override
-	protected void tearDown() {
 	}
 }

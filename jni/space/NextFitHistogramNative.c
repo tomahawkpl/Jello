@@ -60,6 +60,10 @@ jint JNICALL getClassSize(JNIEnv *env, jclass dis) {
 	return classSize;
 }
 
+int classFor(int freeSpace) {
+	return freeSpace / classSize;
+}
+
 jint JNICALL getWitness(JNIEnv *env, jclass dis, jshort freeSpace) {
 	int loc = classFor(freeSpace);
 	int found = 0;
@@ -105,9 +109,6 @@ void JNICALL update(JNIEnv *env, jclass dis, jint id, short previousFreeSpace, s
 	count++;
 }
 
-int classFor(int freeSpace) {
-	return freeSpace / classSize;
-}
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {

@@ -23,10 +23,10 @@ public class SpaceManagerNative implements SpaceManager {
 			@Named("freeSpaceInfosPerPage") final short freeSpaceInfosPerPage,
 			@Named("freeSpaceInfoPageCapacity") final short freeSpaceInfoPageCapacity,
 			@Named("blockSize") final short blockSize,
-			@Named("freeSpaceMapPageId") int freeSpaceMapPageId) {
+			@Named("freeSpaceInfoPageId") int freeSpaceInfoPageId) {
 
 		init(pagedFile, listPage, freeSpaceInfosPerPage, freeSpaceInfoSize,
-				freeSpaceInfoPageCapacity, freeSpaceMapPageId,
+				freeSpaceInfoPageCapacity, freeSpaceInfoPageId,
 				blockSize);
 
 	}
@@ -37,7 +37,7 @@ public class SpaceManagerNative implements SpaceManager {
 
 	public native void init(PagedFile pagedFile, ListPage listPage,
 			short freeSpaceInfosPerPage, short freeSpaceInfoSize,
-			short freeSpaceInfoPageCapacity, int freeSpaceMapPageId,
+			short freeSpaceInfoPageCapacity, int freeSpaceInfoPageId,
 			short blockSize);
 
 	public native boolean isBlockUsed(int id, short block);
