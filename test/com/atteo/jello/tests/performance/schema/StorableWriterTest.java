@@ -28,10 +28,12 @@ public abstract class StorableWriterTest extends JelloInterfaceTestCase<Storable
 	public void testTinyWrite() {
 		Storable s = new TestClassTiny();
 		
+		byte data[] = new byte[16384];
+		
 		startPerformanceTest(true);
 		
 		for (int i=0;i<10;i++)
-			writer.writeStorable(s, s.getSchema());
+			writer.writeStorable(data, s, s.getSchema());
 		
 		endPerformanceTest();
 	}
@@ -39,10 +41,12 @@ public abstract class StorableWriterTest extends JelloInterfaceTestCase<Storable
 	public void testMediumWrite() {
 		Storable s = new TestClassMedium();
 		
+		byte data[] = new byte[16384];
+		
 		startPerformanceTest(true);
 		
 		for (int i=0;i<10;i++)
-			writer.writeStorable(s, s.getSchema());
+			writer.writeStorable(data, s, s.getSchema());
 		
 		endPerformanceTest();
 	}

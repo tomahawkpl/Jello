@@ -14,12 +14,6 @@ public class Jello {
 	public static final int OPEN_SUCCESS = 2;
 
 	private static DatabaseFile dbFile;
-	private static final int DEVELOPMENT = 1;
-	private static final int PRODUCTION = 0;
-	private static final int TEST = 2;
-	private static final int DEBUG = 3;
-
-	private static int environment;
 	private static String fullpath;
 
 	static Injector injector;
@@ -32,8 +26,7 @@ public class Jello {
 		return fullpath;
 	}
 
-	public static int open(final Context context, final String filename,
-			final int environment) {
+	public static int open(final Context context, final String filename) {
 		final File file = context.getDatabasePath(filename);
 		fullpath = file.getAbsolutePath();
 
@@ -44,17 +37,19 @@ public class Jello {
 
 		if (isNew)
 			try {
+				file.getParentFile().mkdirs();
 				file.createNewFile();
 			} catch (final IOException e) {
 				e.printStackTrace();
 				return Jello.OPEN_FAILED;
 			}
 
-		Jello.environment = environment;
 		loadEnvironment();
 
 		dbFile = injector.getInstance(DatabaseFile.class);
 
+		dbFile.open();
+		
 		if (isNew)
 			if (dbFile.createStructure())
 				return Jello.OPEN_SUCCESS;
@@ -66,19 +61,18 @@ public class Jello {
 
 		injector = injector.createChildInjector(dbFile);
 
-		
 		// recreate dbFile in case pageSize or other basic settings
 		// read from the file have values different that the defaults
 		dbFile = injector.getInstance(DatabaseFile.class);
 		if (!dbFile.loadHeader())
 			return Jello.OPEN_FAILED;
-		
+
 		if (!dbFile.loadStructure())
 			return Jello.OPEN_FAILED;
-		
+
 		return Jello.OPEN_SUCCESS;
 	}
-	
+
 	public static void setInjector(Injector injector) {
 		Jello.injector = injector;
 	}
@@ -88,14 +82,7 @@ public class Jello {
 	}
 
 	private static void loadEnvironment() {
-		switch (environment) {
-		case PRODUCTION:
-		case DEVELOPMENT:
-		case TEST:
-		case DEBUG:
-			injector = createGuiceInjector();
-			break;
+		injector = createGuiceInjector();
 
-		}
 	}
 }

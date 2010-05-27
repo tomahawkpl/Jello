@@ -1,5 +1,6 @@
 package com.atteo.jello.store;
 
+
 public interface PagedFile {
 	public static int PAGE_ADD_FAILED = -1;
 

@@ -5,7 +5,7 @@ import com.google.inject.Provider;
 public class PageSizeProvider implements Provider<Short> {
 	private short pageSize = -1;
 	static {
-		System.loadLibrary("OSInfo");
+		System.loadLibrary("PageSizeProvider");
 	}
 
 	native private short getPageSize();

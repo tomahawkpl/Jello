@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
+#include <android/log.h>
 #include "common.c"
 
 int pagedFileFD;
@@ -107,9 +108,11 @@ jint JNICALL openNative(JNIEnv *env, jclass dis, jstring fullpath, jboolean ro, 
 
 	if (pagedFileFD == -1) {
 		JNI_ThrowByName(env, "java/io/IOException", "Couldn't open database file");
+		return -1;
 	}
 
 	fileLength = getFileLength();
+
 
 	if (fileLength > 0 && fileLength % pageSize != 0) {
 		fileLength = ((fileLength / pageSize) + 1) * pageSize;

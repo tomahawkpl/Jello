@@ -38,36 +38,13 @@ public class VanillaStorableWriter implements StorableWriter {
 
 	}
 
-	public byte[] writeStorable(Storable storable, Schema schema) {
+	public int writeStorable(byte data[], Storable storable, Schema schema) {
 		Field[] fields = schema.fields;
 		Field field;
 
-		byte[] result = null;
-
 		int l = fields.length;
-
-		int space = 0;
-
+		ByteBuffer buffer = ByteBuffer.wrap(data);	
 		try {
-
-			for (int i = 0; i < l; i++) {
-				field = fields[i];
-				Class<?> type = field.getType();
-				if (type == Integer.TYPE) {
-					space += Integer.SIZE / Byte.SIZE;;
-					continue;
-				}
-				if (type == String.class) {
-					space += Integer.SIZE / Byte.SIZE
-							+ ((String) field.get(storable)).getBytes().length;
-					continue;
-				}
-			}
-
-			result = new byte[space];
-
-			ByteBuffer buffer = ByteBuffer.wrap(result);
-
 			for (int i = 0; i < l; i++) {
 				field = fields[i];
 				Class<?> type = field.getType();
@@ -86,7 +63,7 @@ public class VanillaStorableWriter implements StorableWriter {
 			e.printStackTrace();
 		}
 
-		return result;
+		return buffer.position();
 	}
 
 }

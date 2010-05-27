@@ -30,11 +30,12 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := PagedFileNative
 LOCAL_SRC_FILES := store/PagedFileNative.c
+LOCAL_LDLIBS := -llog
 
 include $(BUILD_SHARED_LIBRARY)
 
 
-# --- OSInfo
+# --- PageSizeProvider
 
 include $(CLEAR_VARS)
 

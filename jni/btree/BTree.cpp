@@ -14,6 +14,7 @@ BTree::BTree(short leafCapacity, short nodeCapacity) {
 }
 
 void BTree::add(int id, RecordInfo *record) {
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree add id: %d", id);
 	if (root == NULL) {
 		__android_log_print(ANDROID_LOG_INFO, "Jello",  "new leaf as root: %d", leafCapacity);
 		root = new BTreeLeaf(leafCapacity);
@@ -30,24 +31,68 @@ void BTree::add(int id, RecordInfo *record) {
 	BTreeLeaf *leaf = (BTreeLeaf*)e;
 
 	if (!leaf->add(id, record)) {
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Not enough space in leaf");
 		BTreeLeaf *newLeaf = new BTreeLeaf(leafCapacity);
 		int oldMinId = leaf->getMinId();
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Splitting");
 		leaf->split(newLeaf);
-		if (!leaf->add(id, record)) {
+		BTreeLeaf *addTo;
+		if (leaf->getMinId() == -1 || id > leaf->getMinId())
+			addTo = leaf;
+		else
+			addTo = newLeaf;
+
+		if (!addTo->add(id, record)) {
 			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Leaf add FAILED!");
 			return;
 		}
 
 		if (leaf->getParent() == NULL) {
-			leaf->setParent(new BTreeNode(nodeCapacity));
-			leaf->getParent()->addChild(leaf);
-		} else
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "This leaf's parent is NULL, creating new node");
+			BTreeNode *node = new BTreeNode(nodeCapacity);
+			node->addChild(leaf->getMinId(), leaf);
+		} else if (oldMinId != leaf->getMinId()) {
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Updating parent");
 			leaf->getParent()->updateChild(oldMinId,leaf->getMinId());
+		}
 
-		leaf->getParent()->addChild(newLeaf);
-
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Adding new node to parent");
+		addToNode(leaf->getParent(), newLeaf);
 	}
 
+}
+
+void BTree::addToNode(BTreeNode *node, BTreeElement *child) {
+	if (!node->addChild(child->getMinId(), child)) {
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Node is full");
+		BTreeNode *newNode = new BTreeNode(nodeCapacity);
+		int oldMinId = node->getMinId();
+		node->split(newNode);
+
+		BTreeNode *addTo;
+		if (node->getMinId() == -1 || child->getMinId() > node->getMinId())
+			addTo = node;
+		else
+			addTo = newNode;
+
+		if (!addTo->addChild(child->getMinId(), child)) {
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Node add FAILED!");
+			return;
+		}
+		
+		if (node->getParent() == NULL) {
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "This node's parent is null");
+			BTreeNode *parent = new BTreeNode(nodeCapacity);
+			parent->addChild(node->getMinId(), node);
+			root = parent;
+		} else if (oldMinId != node->getMinId()) {
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Updating parent");
+			node->getParent()->updateChild(oldMinId,node->getMinId());
+		}
+
+		addToNode(node->getParent(), newNode);
+	}
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "Added new node to parent");
 }
 
 void BTree::update(int id, RecordInfo *record) {
@@ -83,13 +128,13 @@ void BTree::update(int id, RecordInfo *record) {
 		}
 
 		if (leaf->getParent() == NULL) {
-			leaf->setParent(new BTreeNode(nodeCapacity));
-			leaf->getParent()->addChild(leaf);
+			BTreeNode *node = new BTreeNode(nodeCapacity);
+			node->addChild(leaf->getMinId(), leaf);
 		} else
 			if (oldMinId != leaf->getMinId())
 				leaf->getParent()->updateChild(oldMinId, leaf->getMinId());
 
-		leaf->getParent()->addChild(newLeaf);
+		leaf->getParent()->addChild(leaf->getMinId(), newLeaf);
 	}
 
 	mergeLeaf(leaf);
@@ -97,6 +142,10 @@ void BTree::update(int id, RecordInfo *record) {
 }
 
 RecordInfo *BTree::find(int id) {
+//	root->debug();
+//	return NULL;
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree find id: %d", id);
+
 	BTreeElement *e = root;
 
 	if (e == NULL)
@@ -108,6 +157,7 @@ RecordInfo *BTree::find(int id) {
 			return NULL;
 	}
 
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "found leaf: %d", e->getMinId());
 	return ((BTreeLeaf*)e)->get(id);
 
 }
@@ -134,13 +184,15 @@ void BTree::remove(int id) {
 		leaf->getParent()->updateChild(oldMinId, leaf->getMinId());
 	}
 
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pre merge");
+
 	mergeLeaf(leaf);
 }
 
 void BTree::mergeLeaf(BTreeLeaf *leaf) {
 	if (leaf->getLeft() != NULL && leaf->getLeft()->getFreeSpace() + leaf->getFreeSpace() >= leafCapacity) {
 		__android_log_print(ANDROID_LOG_INFO, "Jello",  "merging with left");
-		leaf->getParent()->removeChild(leaf);
+		leaf->getParent()->removeChild(leaf->getMinId());
 		int oldMinId = leaf->getLeft()->getMinId();
 		leaf->getLeft()->join(leaf);
 		leaf->getParent()->updateChild(oldMinId, leaf->getLeft()->getMinId());
@@ -149,7 +201,7 @@ void BTree::mergeLeaf(BTreeLeaf *leaf) {
 
 	if (leaf->getRight() != NULL && leaf->getRight()->getFreeSpace() + leaf->getFreeSpace() >= leafCapacity) {
 		__android_log_print(ANDROID_LOG_INFO, "Jello",  "merging with right");
-		leaf->getParent()->removeChild(leaf);
+		leaf->getParent()->removeChild(leaf->getMinId());
 		int oldMinId = leaf->getRight()->getMinId();
 		leaf->getRight()->join(leaf);
 		leaf->getParent()->updateChild(oldMinId, leaf->getRight()->getMinId());

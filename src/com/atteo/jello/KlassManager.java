@@ -12,6 +12,7 @@ public interface KlassManager {
 	public boolean isKlassManaged(Class<? extends Storable> klass);
 	public void removeKlass(Class<? extends Storable> klass);
 	
+	public int getIdFor(Class<? extends Storable> klass);
 	public SchemaManager getSchemaManagerFor(Class<? extends Storable> klass);
 	public Index getIndexFor(Class<? extends Storable> klass);
 }

@@ -3,6 +3,8 @@ package com.atteo.jello.tests.unit.store;
 import java.util.ArrayList;
 
 import com.atteo.jello.Jello;
+import com.atteo.jello.PageUsage;
+import com.atteo.jello.Record;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;

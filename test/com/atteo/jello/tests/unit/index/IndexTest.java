@@ -22,8 +22,8 @@ import com.google.inject.name.Names;
 public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 
 	// ---- SETTINGS
-	private final short bTreeLeafCapacity = 4084;
-	private final short bTreeNodeCapacity = 4092;
+	private final short bTreeLeafCapacity = 32;
+	private final short bTreeNodeCapacity = 16;
 
 	private final short pageSize = 4096;
 	private final short blockSize = 128;
@@ -79,17 +79,30 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	}
 	
 	public void testInsert() {
+		int TESTSIZE = 100;
 		Record record = recordPool.acquire();
-		record.setId(5);
 		record.setChunkUsed(100, (short)2, (short)4, true);
+		for (int i=0;i<TESTSIZE;i++) {
+			record.setId(i);
+			record.setSchemaVersion(i);
+			index.insert(record);
+		}
+		
 		Record read = recordPool.acquire();
-		read.setId(5);
-		assertFalse(index.find(read));
-		index.insert(record);
-		assertTrue(index.find(read));
-		assertEquals(record.getId(), read.getId());
-		assertEquals(record.getPagesUsed(), read.getPagesUsed());
-		assertEquals(record.getSchemaVersion(), read.getSchemaVersion());
+//		index.find(read);
+		
+		for (int i=0;i<TESTSIZE;i++) {
+			read.clearUsage();
+			read.setId(i);
+			assertTrue(index.find(read));
+			assertEquals(i, read.getId());
+			assertEquals(1, read.getPagesUsed());
+			assertEquals(i, read.getSchemaVersion());
+		}
+		
+		record.setId(TESTSIZE);
+		assertFalse(index.find(record));
+	
 	}
 	
 	public void testDelete() {

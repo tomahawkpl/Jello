@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import android.util.Pool;
+
 import com.atteo.jello.schema.Schema;
 import com.atteo.jello.transaction.TransactionManager;
 import com.google.inject.Inject;
@@ -16,19 +18,26 @@ abstract public class Storable {
 	static protected boolean isManaged, isSchemaManaged;
 	
 	@Inject static protected TransactionManager transactionManager;
+	@Inject static protected Pool<Record> recordPool;
 	
-	protected int id;
+	protected Record record;
 	
 	protected Storable() {
 		if (thisClass == null)
 			thisClass = this.getClass();
 
+		if (comparator == null)
+			comparator = new FieldComparator();
+		
 		if (schema == null)
 			schema = createClassSchema();
 		
-		if (comparator == null)
-			comparator = new FieldComparator();
+		this.record = recordPool.acquire();
 
+	}
+	
+	protected void finalize() {
+		recordPool.release(this.record);
 	}
 	
 	public Class<? extends Storable> getStorableClass() {
@@ -61,7 +70,7 @@ abstract public class Storable {
 		return schema;
 	}
 	
-	class FieldComparator implements Comparator<Field> {
+	private class FieldComparator implements Comparator<Field> {
 		public int compare(Field field1, Field field2) {
 			return field1.getName().compareTo(field2.getName());
 		}
@@ -71,11 +80,27 @@ abstract public class Storable {
 		return schema;
 	}
 	
+	public int getId() {
+		return record.getId();
+	}
+	
+	public void setId(int id) {
+		this.record.setId(id);
+	}
+	
+	public Record getRecord() {
+		return record;
+	}
+	
+	public void setRecord(Record record) {
+		this.record = record;
+	}
+	
 	public void save() {
 		transactionManager.performInsertTransaction(this);		
 	}
 
-	public void load() {
-
+	public boolean load() {
+		return transactionManager.performFindTransaction(this);
 	}
 }

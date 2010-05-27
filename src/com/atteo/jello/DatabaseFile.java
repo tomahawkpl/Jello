@@ -1,7 +1,5 @@
 package com.atteo.jello;
 
-import java.io.IOException;
-
 import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.HeaderPage;
 import com.atteo.jello.store.PagedFile;
@@ -28,7 +26,7 @@ public class DatabaseFile implements Module {
 	@Inject
 	private DatabaseFile(final Injector injector, final PagedFile pagedFile,
 			@Named("headerPageId") int headerPageId,
-			@Named("minimumPages") int minimumPages) throws IOException {
+			@Named("minimumPages") int minimumPages) {
 
 		this.injector = injector;
 		this.pagedFile = pagedFile;

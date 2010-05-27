@@ -25,7 +25,9 @@ public abstract class StorableWriterTest extends JelloInterfaceTestCase<Storable
 		tc.field3 = "test1";
 		tc.field4 = "testfield2";
 		
-		byte[] data = writer.writeStorable(tc, tc.getSchema());
+		byte data[] = new byte[16384];
+		
+		writer.writeStorable(data, tc, tc.getSchema());
 		
 		TestClass tc2 = new TestClass();
 		writer.readStorable(data, tc2, tc.getSchema());

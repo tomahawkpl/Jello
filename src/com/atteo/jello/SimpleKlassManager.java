@@ -49,6 +49,7 @@ public class SimpleKlassManager implements KlassManager {
 		klassInfo.schemaManagerPageId = spaceManagerPolicy.acquirePage();
 		klassInfo.indexPageId = spaceManagerPolicy.acquirePage();
 		klassInfo.name = klass.getCanonicalName();
+		klassInfo.nextId = 0;
 		klasses.add(klassInfo);
 	}
 
@@ -60,7 +61,7 @@ public class SimpleKlassManager implements KlassManager {
 		for (int i=0;i<l;i++) {
 			KlassInfo info = klasses.get(i);
 			int nameLength = info.name.length();
-			if (free < nameLength + 12) {
+			if (free < nameLength + 16) {
 				if (currentPage + 1 >= pageIds.size())
 					pageIds.add(spaceManagerPolicy.acquirePage());
 				listPage.setNext(pageIds.get(currentPage+1));
@@ -74,12 +75,13 @@ public class SimpleKlassManager implements KlassManager {
 				klassesOnPage = 0;
 			}
 			
-			free -= nameLength + 12;
+			free -= nameLength + 16;
 			klassesOnPage++;
 			buffer.putInt(nameLength);
 			buffer.put(info.name.getBytes());
 			buffer.putInt(info.schemaManagerPageId);
 			buffer.putInt(info.indexPageId);
+			buffer.putInt(info.nextId);
 		}
 		
 		listPage.setNext(ListPage.NO_MORE_PAGES);
@@ -142,6 +144,7 @@ public class SimpleKlassManager implements KlassManager {
 			info.name = new String(listPage.getData(),buffer.position(),l);
 			info.schemaManagerPageId = buffer.getInt();
 			info.indexPageId = buffer.getInt();
+			info.nextId = buffer.getInt();
 			klasses.add(info);
 		}
 	}
@@ -179,8 +182,21 @@ public class SimpleKlassManager implements KlassManager {
 		String name;
 		int schemaManagerPageId;
 		int indexPageId;
+		int nextId;
 		SchemaManager schemaManager;
 		Index index;
+	}
+
+	public int getIdFor(Class<? extends Storable> klass) {
+		int l = klasses.size();
+		for (int i = 0; i < l; i++) {
+			KlassInfo storedKlass = klasses.get(i);
+			if (klass.getCanonicalName().equals(storedKlass.name)) {
+				storedKlass.nextId++;
+				return storedKlass.nextId;
+			}
+		}
+		throw new IllegalArgumentException("Class is not managed");
 	}
 
 }

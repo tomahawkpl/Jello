@@ -9,15 +9,17 @@ template<typename T> class AVLTree;
 
 class BTreeNode : public BTreeElement {
 	private:
-		int freeSpace;
 		AVLTree<ChildInfo> *children;
 	public:
 		BTreeNode(int nodeCapacity);
 		~BTreeNode();
 		BTreeElement *getSubNodeFor(int id);
-		void addChild(BTreeElement *child);
+		bool addChild(int id, BTreeElement *child);
 		void updateChild(int oldMinId, int minId);
-		void removeChild(BTreeElement *child);
+		void removeChild(int id);
+		void split(BTreeNode *node);
+		void merge(BTreeNode *node);
+		void debug();
 		
 };
 

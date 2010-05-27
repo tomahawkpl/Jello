@@ -2,6 +2,7 @@
 
 class BTreeElement;
 class BTreeLeaf;
+class BTreeNode;
 struct RecordInfo;
 
 class BTree {
@@ -10,6 +11,7 @@ class BTree {
 		short leafCapacity, nodeCapacity;
 
 		void mergeLeaf(BTreeLeaf *leaf);
+		void addToNode(BTreeNode *node, BTreeElement *child);
 	public:
 		BTree(short leafCapacity, short nodeCapacity);
 		void add(int id, RecordInfo *record);

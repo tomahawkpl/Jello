@@ -26,13 +26,15 @@ public class StoreModule implements Module {
 		this.properties = getDefaultProperties();
 		if (properties != null)
 			this.properties.putAll(properties);
-
 	}
 
 	public void configure(final Binder binder) {
 		Names.bindProperties(binder, properties);
 		binder.bind(Short.class).annotatedWith(Names.named("pageSize")).toProvider(PageSizeProvider.class);
 		binder.bind(PagedFile.class).to(PagedFileNative.class);
+		
+		binder.requestStaticInjection(Page.class);
+
 	}
 
 	private HashMap<String, String> getDefaultProperties() {

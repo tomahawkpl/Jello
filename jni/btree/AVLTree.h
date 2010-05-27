@@ -41,8 +41,12 @@ class AVLTree {
 		AVLTreeNode<T> *getSmallest();
 		AVLTreeNode<T> *extractSmallest();
 		T *find(int recordId);
+		T *findHigher(int recordId);
 		void update(int recordId, T *content, AVLTreeNode<T> *node);
 		int getCount();
+		void debug(bool follow);
+		void debugNode(AVLTreeNode<T> *node);
+		void printNode(AVLTreeNode<T> *node);
 
 
 };
