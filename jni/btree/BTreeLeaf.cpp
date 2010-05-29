@@ -12,7 +12,6 @@ BTreeLeaf::BTreeLeaf(short freeSpace) {
 	minId = -1;
 	records = new AVLTree<RecordInfo>();
 	this->freeSpace = freeSpace;
-	right = left = NULL;
 	parent = NULL;
 }
 
@@ -26,13 +25,16 @@ bool BTreeLeaf::add(int id, RecordInfo *record) {
 
 	count++;
 	
-	if (id < minId || minId == -1)
+	if (id < minId || minId == -1) {
+		if (parent != NULL)
+			parent->updateChild(minId, id);
 		minId = id;
+	}
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "minId: %d", minId);
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "minId: %d", minId);
 	freeSpace -=  8 + record->length;
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d to leaf, new count: %d, new freeSpace: %d", id, 
-			count, freeSpace);
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "adding %d to leaf, new count: %d, new freeSpace: %d", id, 
+//			count, freeSpace);
 	records->add(id,record);
 	return true;
 }
@@ -51,7 +53,9 @@ bool BTreeLeaf::update(int id, RecordInfo *record) {
 
 void BTreeLeaf::remove(int id) {
 	int len = records->find(id)->length;
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "minId: %d (remove)", minId);
 	if (records->remove(id)) {
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "remove succeded");
 		count--;
 		freeSpace += 8 + len;
 		if (id == minId) {
@@ -60,7 +64,9 @@ void BTreeLeaf::remove(int id) {
 				minId = -1;
 			else
 				minId = smallest->recordId;
-			__android_log_print(ANDROID_LOG_INFO, "Jello",  "minId: %d", minId);
+			if (parent != NULL)
+				parent->updateChild(id , minId);
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "minId: %d (remove)", minId);
 		}
 	}
 }
@@ -71,10 +77,12 @@ RecordInfo *BTreeLeaf::get(int id) {
 }
 
 void BTreeLeaf::split(BTreeLeaf *leaf) {
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  " - Splitting leaf");
 	int free = leaf->getFreeSpace();
 	int target = free/2;
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  " - Split target: %d", target);
+	int oldMinId = minId;
+
 	while(free > target) {
 		AVLTreeNode<RecordInfo> *n = records->extractSmallest();
 		count--;
@@ -82,6 +90,7 @@ void BTreeLeaf::split(BTreeLeaf *leaf) {
 		free -= 8 + n->content->length;
 		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Moving: %d", n->recordId);
 		leaf->add(n->recordId, n->content);
+
 	}
 
 	AVLTreeNode<RecordInfo> *n = records->getSmallest();
@@ -90,39 +99,36 @@ void BTreeLeaf::split(BTreeLeaf *leaf) {
 		minId = -1;
 	else
 		minId = n->recordId;
+
+	if (parent != NULL)
+		parent->updateChild(oldMinId, minId);
+
+
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "minId: %d", minId);
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  " - Split done");
 }
 
-void BTreeLeaf::join(BTreeLeaf *leaf) {
-	AVLTreeNode<RecordInfo> *n = records->extractSmallest();
+void BTreeLeaf::join(BTreeElement *leaf) {
+	AVLTree<RecordInfo> *r = ((BTreeLeaf*)leaf)->getAVLTree();
+	AVLTreeNode<RecordInfo> *n = r->extractSmallest();
 
 	while (n != NULL) {
 		this->add(n->recordId, n->content);
-		n = records->extractSmallest();
+		n = r->extractSmallest();
 	}
 }
 
-BTreeLeaf *BTreeLeaf::getRight() {
-	return right;
-}
-
-BTreeLeaf *BTreeLeaf::getLeft() {
-	return left;
-}
-
-
-void BTreeLeaf::setRight(BTreeLeaf *leaf) {
-	this->right = leaf;
-}
-
-void BTreeLeaf::setLeft(BTreeLeaf *leaf) {
-	this->left = leaf;
+AVLTree<RecordInfo> *BTreeLeaf::getAVLTree() {
+	return records;
 }
 
 void BTreeLeaf::debug() {
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== Leaf (%d), minId: %d, parent: %d", this, minId, parent);
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "   left: %d, right: %d", left, right);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== Leaf (%d), minId: %d, parent: %d, freeSpace: %d",
+			this, minId, parent, freeSpace);
+	if (parent != NULL)
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "   left: %d, right: %d",
+				parent->getAVLTree()->findLeft(minId), parent->getAVLTree()->findRight(minId));
 
 	records->debug(false);
 }
+

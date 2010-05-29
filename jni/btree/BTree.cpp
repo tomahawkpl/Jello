@@ -3,6 +3,8 @@
 #include "BTreeNode.h"
 #include "BTreeLeaf.h"
 #include "RecordInfo.h"
+#include "ChildInfo.h"
+#include "AVLTree.h"
 
 #include <android/log.h>
 #include <stdlib.h>
@@ -13,10 +15,14 @@ BTree::BTree(short leafCapacity, short nodeCapacity) {
 	this->nodeCapacity = nodeCapacity;
 }
 
+BTree::~BTree() {
+	delete root;
+}
+
 void BTree::add(int id, RecordInfo *record) {
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree add id: %d", id);
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree add id: %d", id);
 	if (root == NULL) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "new leaf as root: %d", leafCapacity);
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "new leaf as root: %d", leafCapacity);
 		root = new BTreeLeaf(leafCapacity);
 	}
 
@@ -31,10 +37,10 @@ void BTree::add(int id, RecordInfo *record) {
 	BTreeLeaf *leaf = (BTreeLeaf*)e;
 
 	if (!leaf->add(id, record)) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Not enough space in leaf");
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Not enough space in leaf");
 		BTreeLeaf *newLeaf = new BTreeLeaf(leafCapacity);
 		int oldMinId = leaf->getMinId();
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Splitting");
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Splitting");
 		leaf->split(newLeaf);
 		BTreeLeaf *addTo;
 		if (leaf->getMinId() == -1 || id > leaf->getMinId())
@@ -43,20 +49,18 @@ void BTree::add(int id, RecordInfo *record) {
 			addTo = newLeaf;
 
 		if (!addTo->add(id, record)) {
-			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Leaf add FAILED!");
+//			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Leaf add FAILED!");
 			return;
 		}
 
 		if (leaf->getParent() == NULL) {
-			__android_log_print(ANDROID_LOG_INFO, "Jello",  "This leaf's parent is NULL, creating new node");
+//			__android_log_print(ANDROID_LOG_INFO, "Jello",  "This leaf's parent is NULL, creating new node");
 			BTreeNode *node = new BTreeNode(nodeCapacity);
 			node->addChild(leaf->getMinId(), leaf);
-		} else if (oldMinId != leaf->getMinId()) {
-			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Updating parent");
-			leaf->getParent()->updateChild(oldMinId,leaf->getMinId());
+			root = node;
 		}
 
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Adding new node to parent");
+//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "Adding new node to parent");
 		addToNode(leaf->getParent(), newLeaf);
 	}
 
@@ -85,17 +89,14 @@ void BTree::addToNode(BTreeNode *node, BTreeElement *child) {
 			BTreeNode *parent = new BTreeNode(nodeCapacity);
 			parent->addChild(node->getMinId(), node);
 			root = parent;
-		} else if (oldMinId != node->getMinId()) {
-			__android_log_print(ANDROID_LOG_INFO, "Jello",  "Updating parent");
-			node->getParent()->updateChild(oldMinId,node->getMinId());
 		}
-
 		addToNode(node->getParent(), newNode);
 	}
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "Added new node to parent");
 }
 
 void BTree::update(int id, RecordInfo *record) {
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "Update: %d", id);
 	BTreeElement *e = root;
 
 	if (e == NULL)
@@ -124,26 +125,25 @@ void BTree::update(int id, RecordInfo *record) {
 				__android_log_print(ANDROID_LOG_INFO, "Jello",  "Leaf add FAILED!");
 				return;
 			}
-
 		}
 
 		if (leaf->getParent() == NULL) {
 			BTreeNode *node = new BTreeNode(nodeCapacity);
 			node->addChild(leaf->getMinId(), leaf);
-		} else
-			if (oldMinId != leaf->getMinId())
-				leaf->getParent()->updateChild(oldMinId, leaf->getMinId());
+		}
 
-		leaf->getParent()->addChild(leaf->getMinId(), newLeaf);
-	}
-
-	mergeLeaf(leaf);
+		addToNode(leaf->getParent(), newLeaf);
+	} else
+		mergeNode(leaf);
 
 }
 
+void BTree::debug() {
+	if (root != NULL)
+		root->debug();
+}
+
 RecordInfo *BTree::find(int id) {
-//	root->debug();
-//	return NULL;
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree find id: %d", id);
 
 	BTreeElement *e = root;
@@ -163,6 +163,7 @@ RecordInfo *BTree::find(int id) {
 }
 
 void BTree::remove(int id) {
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "Remove: %d", id);
 	BTreeElement *e = root;
 
 	if (e == NULL)
@@ -178,34 +179,107 @@ void BTree::remove(int id) {
 	BTreeLeaf *leaf = ((BTreeLeaf*)e);
 	int oldMinId = leaf->getMinId();
 
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "found leaf: %d", leaf->getMinId());
 	leaf->remove(id);
-
-	if (leaf->getParent() != NULL && oldMinId != leaf->getMinId()) {
-		leaf->getParent()->updateChild(oldMinId, leaf->getMinId());
-	}
 
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "pre merge");
 
-	mergeLeaf(leaf);
+	mergeNode(leaf);
+
+	//	removeNode(leaf);
 }
 
-void BTree::mergeLeaf(BTreeLeaf *leaf) {
-	if (leaf->getLeft() != NULL && leaf->getLeft()->getFreeSpace() + leaf->getFreeSpace() >= leafCapacity) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "merging with left");
-		leaf->getParent()->removeChild(leaf->getMinId());
-		int oldMinId = leaf->getLeft()->getMinId();
-		leaf->getLeft()->join(leaf);
-		leaf->getParent()->updateChild(oldMinId, leaf->getLeft()->getMinId());
-		delete leaf;
+void BTree::mergeNode(BTreeElement *node) {
+	if (node->getCount() == 0) {
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "node %d is empty", node);
+		if (node->getParent() != NULL) {
+			node->getParent()->removeChild(node->getMinId());
+			mergeNode(node->getParent());
+		} else
+			root = NULL;
+
+		delete node;
+		return;
 	}
 
-	if (leaf->getRight() != NULL && leaf->getRight()->getFreeSpace() + leaf->getFreeSpace() >= leafCapacity) {
-		__android_log_print(ANDROID_LOG_INFO, "Jello",  "merging with right");
-		leaf->getParent()->removeChild(leaf->getMinId());
-		int oldMinId = leaf->getRight()->getMinId();
-		leaf->getRight()->join(leaf);
-		leaf->getParent()->updateChild(oldMinId, leaf->getRight()->getMinId());
-		delete leaf;
+	if (node == root && node->getCount() == 1 && node->type == BTreeElement::ELEMENT_NODE) {
+		root = ((BTreeNode*)node)->getSmallest();
+		root->setParent(NULL);
+		delete node;
+		return;
 	}
 
+	/*
+	   __android_log_print(ANDROID_LOG_INFO, "Jello",  "merge1 %d", node);
+	   if (node == root) {
+	   if (node->getCount() == 0) {
+	   root = NULL;
+	   delete node;
+	   return;
+	   }
+	   if (node->getCount() == 1 && node->type == BTreeElement::ELEMENT_NODE) {
+	   root = ((BTreeNode*)node)->getSmallest();
+	   root->setParent(NULL);
+	   delete node;
+	   return;
+	   }
+	   return;
+	   }
+
+	   __android_log_print(ANDROID_LOG_INFO, "Jello",  "merge2 %d", node->getMinId());
+	   BTreeElement *right = NULL;
+	   BTreeElement *left= NULL;
+
+	   ChildInfo *i = ((BTreeNode*)node->getParent())->getAVLTree()->findLeft(node->getMinId());
+	   if (i != NULL)
+	   left = i->child;
+
+	   __android_log_print(ANDROID_LOG_INFO, "Jello",  "merge3 %d", i);
+
+	   i = ((BTreeNode*)node->getParent())->getAVLTree()->findRight(node->getMinId());
+	   if (i != NULL)
+	   right = i->child;
+	   __android_log_print(ANDROID_LOG_INFO, "Jello",  "merge4");
+
+
+	   if (left != NULL && left->getFreeSpace() + node->getFreeSpace() >= nodeCapacity) {
+	   __android_log_print(ANDROID_LOG_INFO, "Jello",  "merging with left");
+	   node->getParent()->removeChild(node->getMinId());
+	   int oldMinId = left->getMinId();
+	   left->join(node);
+	   node->getParent()->updateChild(oldMinId, left->getMinId());
+	   if (node->getParent() != NULL)
+	   mergeNode(node->getParent());
+	   delete node;
+	   return;
+	   }
+
+	   if (right != NULL && right->getFreeSpace() + node->getFreeSpace() >= nodeCapacity) {
+	   __android_log_print(ANDROID_LOG_INFO, "Jello",  "merging with right");
+	   node->getParent()->removeChild(node->getMinId());
+	   int oldMinId = right->getMinId();
+	   right->join(node);
+	   node->getParent()->updateChild(oldMinId, right->getMinId());
+	   if (node->getParent() != NULL)
+	   mergeNode(node->getParent());
+	   delete node;
+	   return;
+	   }
+	   */
 }
+
+	void BTree::removeNode(BTreeElement *node) {
+		if (node->getCount())
+			return;
+
+		if (node == root)
+			root = NULL;
+
+		if (node->getParent() != NULL) {
+			node->getParent()->removeChild(node->getMinId());
+			removeNode(node->getParent());
+		}
+
+
+		delete node;
+	}

@@ -65,8 +65,8 @@ void convertRecordInfoToRecord(JNIEnv *env, jobject record, RecordInfo *recordIn
 	bytesToInt(schemaVersion, recordInfo->data);
 	bytesToInt(pagesUsed, recordInfo->data + 4);
 	env->SetIntField(record, fidRecordId, id);
-	env->SetIntField(record, fidRecordPagesUsed, pagesUsed);
 	env->SetIntField(record, fidRecordSchemaVersion, schemaVersion);
+	env->SetIntField(record, fidRecordPagesUsed, pagesUsed);
 	env->CallVoidMethod(record, midRecordSetPagesUsed, pagesUsed);
 
 	int pos = 8;
@@ -180,10 +180,15 @@ void JNICALL update(JNIEnv *env, jclass dis, jobject record) {
 	tree->update(id, recordInfo);
 }
 
+void JNICALL debug(JNIEnv *env, jclass dis) {
+	tree->debug();
+}
+
+
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv* env;
-	JNINativeMethod nm[7];
+	JNINativeMethod nm[8];
 	jclass klass;
 	if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
@@ -220,7 +225,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[6].signature = "(ISS)V";
 	nm[6].fnPtr = (void*)init;
 
-	env->RegisterNatives(klass,nm,7);
+	nm[7].name = "debug";
+	nm[7].signature = "()V";
+	nm[7].fnPtr = (void*)debug;
+
+	env->RegisterNatives(klass,nm,8);
 
 	return JNI_VERSION_1_4;
 }

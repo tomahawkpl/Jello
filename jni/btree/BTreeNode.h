@@ -14,11 +14,13 @@ class BTreeNode : public BTreeElement {
 		BTreeNode(int nodeCapacity);
 		~BTreeNode();
 		BTreeElement *getSubNodeFor(int id);
+		AVLTree<ChildInfo> *getAVLTree();
 		bool addChild(int id, BTreeElement *child);
 		void updateChild(int oldMinId, int minId);
 		void removeChild(int id);
+		BTreeElement *getSmallest();
 		void split(BTreeNode *node);
-		void merge(BTreeNode *node);
+		void join(BTreeElement *node);
 		void debug();
 		
 };

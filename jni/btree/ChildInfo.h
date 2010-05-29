@@ -5,6 +5,6 @@ class BTreeElement;
 
 struct ChildInfo {
 	BTreeElement *child;
+	~ChildInfo();
 };
-
 #endif

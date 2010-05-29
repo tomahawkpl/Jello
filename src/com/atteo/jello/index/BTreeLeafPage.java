@@ -8,24 +8,9 @@ public class BTreeLeafPage extends BTreePage {
 		super();
 	}
 
-	public int getLeft() {
-		return getByteValue(1);
-	}
-	
-	public int getRight() {
-		return getByteValue(2);
-	}
-
 	@Override
 	public short headerSize() {
-		return (Integer.SIZE / Byte.SIZE) * 3;
+		return (Integer.SIZE / Byte.SIZE) * 1;
 	}
 
-	public void setLeft(final int id) {
-		setByteValue(id, 1);
-	}
-	
-	public void setRight(final int id) {
-		setByteValue(id, 2);
-	}
 }

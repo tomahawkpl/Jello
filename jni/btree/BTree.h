@@ -10,12 +10,15 @@ class BTree {
 		BTreeElement *root;
 		short leafCapacity, nodeCapacity;
 
-		void mergeLeaf(BTreeLeaf *leaf);
+		void mergeNode(BTreeElement *node);
+		void removeNode(BTreeElement *node);
 		void addToNode(BTreeNode *node, BTreeElement *child);
 	public:
 		BTree(short leafCapacity, short nodeCapacity);
+		~BTree();
 		void add(int id, RecordInfo *record);
 		void update(int id, RecordInfo *record);
 		RecordInfo* find(int id);
 		void remove(int id);
+		void debug();
 };

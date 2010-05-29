@@ -37,4 +37,6 @@ public class BTree implements Index {
 	public native boolean find(Record record);
 
 	public native void update(Record record);
+	
+	public native void debug();
 }
