@@ -8,8 +8,9 @@ import com.atteo.jello.Storable;
 public class VanillaStorableWriter implements StorableWriter {
 
 	public void readStorable(byte[] data, Storable storable, Schema schema) {
-		Field[] fields = schema.fields;
-		Field field;
+		int[] fields = schema.fields;
+		String names[] = schema.names;
+		int field;
 
 		int l = fields.length;
 
@@ -18,14 +19,22 @@ public class VanillaStorableWriter implements StorableWriter {
 		try {
 			for (int i = 0; i < l; i++) {
 				field = fields[i];
-				Class<?> type = field.getType();
-				if (type == Integer.TYPE) {
-					field.set(storable, buffer.getInt());
+				Field f = null;
+				try {
+					f = storable.getStorableClass().getField(names[i]);
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				} catch (NoSuchFieldException e) {
+					e.printStackTrace();
 				}
-				if (type == String.class) {
+				
+				if (field == Schema.FIELD_INT) {
+					f.set(storable, buffer.getInt());
+				}
+				if (field == Schema.FIELD_STRING) {
 					int strLen = buffer.getInt();
 					int pos = buffer.position();
-					field.set(storable, new String(data, pos,
+					f.set(storable, new String(data, pos,
 							strLen));
 					buffer.position(pos + strLen);
 				}
@@ -39,19 +48,27 @@ public class VanillaStorableWriter implements StorableWriter {
 	}
 
 	public int writeStorable(byte data[], Storable storable, Schema schema) {
-		Field[] fields = schema.fields;
-		Field field;
+		int fields[] = schema.fields;
+		String names[] = schema.names;
+		int field;
 
 		int l = fields.length;
 		ByteBuffer buffer = ByteBuffer.wrap(data);	
 		try {
 			for (int i = 0; i < l; i++) {
 				field = fields[i];
-				Class<?> type = field.getType();
-				if (type == Integer.TYPE)
-					buffer.putInt(field.getInt(storable));
-				if (type == String.class) {
-					String str = (String) field.get(storable);
+				Field f = null;
+				try {
+					f = storable.getStorableClass().getField(names[i]);
+				} catch (SecurityException e) {
+					e.printStackTrace();
+				} catch (NoSuchFieldException e) {
+					e.printStackTrace();
+				}
+				if (field == Schema.FIELD_INT)
+					buffer.putInt(f.getInt(storable));
+				if (field == Schema.FIELD_STRING) {
+					String str = (String) f.get(storable);
 					byte[] b = str.getBytes();
 					buffer.putInt(b.length);
 					buffer.put(b);

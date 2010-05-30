@@ -1,5 +1,6 @@
 package com.atteo.jello;
 
+import com.atteo.jello.klass.KlassManager;
 import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.HeaderPage;
 import com.atteo.jello.store.PagedFile;

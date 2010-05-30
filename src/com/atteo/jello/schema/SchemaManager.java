@@ -3,7 +3,7 @@ package com.atteo.jello.schema;
 
 public interface SchemaManager {
 	public void create();
-	public void load();
+	public boolean load();
 	public void commit();
 	
 	public int addSchema(Schema schema);

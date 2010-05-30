@@ -144,7 +144,7 @@ void BTree::debug() {
 }
 
 RecordInfo *BTree::find(int id) {
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree find id: %d", id);
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree find id: %d", id);
 
 	BTreeElement *e = root;
 
@@ -157,7 +157,7 @@ RecordInfo *BTree::find(int id) {
 			return NULL;
 	}
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "found leaf: %d", e->getMinId());
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "found leaf: %d", e->getMinId());
 	return ((BTreeLeaf*)e)->get(id);
 
 }

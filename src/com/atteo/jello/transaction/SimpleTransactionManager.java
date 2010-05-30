@@ -2,11 +2,11 @@ package com.atteo.jello.transaction;
 
 import android.util.Pool;
 
-import com.atteo.jello.KlassManager;
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
 import com.atteo.jello.Storable;
 import com.atteo.jello.index.Index;
+import com.atteo.jello.klass.KlassManager;
 import com.atteo.jello.schema.Schema;
 import com.atteo.jello.schema.SchemaManager;
 import com.atteo.jello.schema.StorableWriter;
@@ -24,7 +24,9 @@ public class SimpleTransactionManager implements TransactionManager {
 	private int freeSpaceInfoSize, blockSize;
 	private Pool<Page> pagePool;
 	private byte[] data;
+	Page page;
 
+	
 	@Inject
 	public SimpleTransactionManager(StorableWriter storableWriter,
 			SpaceManagerPolicy spaceManagerPolicy, KlassManager klassManager,
@@ -41,6 +43,8 @@ public class SimpleTransactionManager implements TransactionManager {
 		this.pagePool = pagePool;
 		
 		this.data = new byte[maxRecordSize];
+		
+		page = pagePool.acquire();
 	}
 
 	public void performDeleteTransaction(Storable storable) {
@@ -49,20 +53,18 @@ public class SimpleTransactionManager implements TransactionManager {
 	}
 
 	public boolean performFindTransaction(Storable storable) {
-		Class<? extends Storable> klass = storable.getStorableClass();
-
-		if (!klassManager.isKlassManaged(klass))
+		if (!klassManager.isKlassManaged(storable.getClassName()))
 			return false;
 
 		Record record = storable.getRecord();
 
-		Index index = klassManager.getIndexFor(klass);
+		Index index = klassManager.getIndexFor(storable.getClassName());
 		if (!index.find(record))
 			return false;
 
 		readRecord(record, data);
 
-		SchemaManager schemaManager = klassManager.getSchemaManagerFor(klass);
+		SchemaManager schemaManager = klassManager.getSchemaManagerFor(storable.getClassName());
 		Schema schema = schemaManager.getSchema(record.getSchemaVersion());
 
 		storableWriter.readStorable(data, storable, schema);
@@ -71,7 +73,6 @@ public class SimpleTransactionManager implements TransactionManager {
 	}
 
 	public void performInsertTransaction(Storable storable) {
-		Class<? extends Storable> klass = storable.getStorableClass();
 		Schema schema = storable.getSchema();
 		int len = storableWriter.writeStorable(data, storable, schema);
 
@@ -79,15 +80,15 @@ public class SimpleTransactionManager implements TransactionManager {
 
 		spaceManagerPolicy.acquireRecord(record, len);
 
-		if (!klassManager.isKlassManaged(klass))
-			klassManager.addKlass(klass);
+		if (!klassManager.isKlassManaged(storable.getClassName()))
+			klassManager.addKlass(storable.getClassName());
 
-		SchemaManager schemaManager = klassManager.getSchemaManagerFor(klass);
+		SchemaManager schemaManager = klassManager.getSchemaManagerFor(storable.getClassName());
 		record.setSchemaVersion(schemaManager.addSchema(schema));
 
-		record.setId(klassManager.getIdFor(klass));
+		record.setId(klassManager.getIdFor(storable.getClassName()));
 
-		Index index = klassManager.getIndexFor(klass);
+		Index index = klassManager.getIndexFor(storable.getClassName());
 		index.insert(record);
 
 		writeRecord(record, data);
@@ -95,7 +96,6 @@ public class SimpleTransactionManager implements TransactionManager {
 	}
 
 	public void performUpdateTransaction(Storable storable) {
-		Class<? extends Storable> klass = storable.getStorableClass();
 		Schema schema = storable.getSchema();
 		int len = storableWriter.writeStorable(data, storable, schema);
 
@@ -103,12 +103,12 @@ public class SimpleTransactionManager implements TransactionManager {
 
 		spaceManagerPolicy.reacquireRecord(record, len);
 
-		SchemaManager schemaManager = klassManager.getSchemaManagerFor(klass);
+		SchemaManager schemaManager = klassManager.getSchemaManagerFor(storable.getClassName());
 		record.setSchemaVersion(schemaManager.addSchema(schema));
 
-		record.setId(klassManager.getIdFor(klass));
+		record.setId(klassManager.getIdFor(storable.getClassName()));
 
-		Index index = klassManager.getIndexFor(klass);
+		Index index = klassManager.getIndexFor(storable.getClassName());
 		index.insert(record);
 
 		writeRecord(record, data);
@@ -130,7 +130,7 @@ public class SimpleTransactionManager implements TransactionManager {
 
 			for (int j = 0; j < freeSpaceInfoSize; j++) {
 				for (int k = 0; k < Byte.SIZE; k++)
-					if ((usage.usage[j] & 1 << k) == 1) {
+					if ((usage.usage[j] & 1 << k) != 0) {
 						System.arraycopy(pageData, (j * Byte.SIZE + k)
 								* blockSize, data, position, blockSize);
 						position += blockSize;
@@ -146,8 +146,6 @@ public class SimpleTransactionManager implements TransactionManager {
 		int u = record.getPagesUsed();
 		int position = 0;
 
-		Page page = pagePool.acquire();
-
 		for (int i = 0; i < u; i++) {
 			PageUsage usage = record.getPageUsage(i);
 
@@ -158,7 +156,7 @@ public class SimpleTransactionManager implements TransactionManager {
 
 			for (int j = 0; j < freeSpaceInfoSize; j++) {
 				for (int k = 0; k < Byte.SIZE; k++)
-					if ((usage.usage[j] & 1 << k) == 1) {
+					if ((usage.usage[j] & 1 << k) != 0) {
 						System.arraycopy(data, position, pageData, (j
 								* Byte.SIZE + k)
 								* blockSize, blockSize);
@@ -171,7 +169,5 @@ public class SimpleTransactionManager implements TransactionManager {
 
 		}
 		
-		pagePool.release(page);
-
 	}
 }

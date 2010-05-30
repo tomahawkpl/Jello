@@ -1,4 +1,4 @@
-package com.atteo.jello;
+package com.atteo.jello.klass;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -42,13 +42,13 @@ public class SimpleKlassManager implements KlassManager {
 
 	}
 
-	public void addKlass(Class<? extends Storable> klass) {
+	public void addKlass(String klassName) {
 		KlassInfo klassInfo = new KlassInfo();
 		klassInfo.index = null;
 		klassInfo.schemaManager = null;
 		klassInfo.schemaManagerPageId = spaceManagerPolicy.acquirePage();
 		klassInfo.indexPageId = spaceManagerPolicy.acquirePage();
-		klassInfo.name = klass.getCanonicalName();
+		klassInfo.name = klassName;
 		klassInfo.nextId = 0;
 		klasses.add(klassInfo);
 	}
@@ -103,10 +103,10 @@ public class SimpleKlassManager implements KlassManager {
 		pagedFile.writePage(listPage);
 	}
 
-	public SchemaManager getSchemaManagerFor(Class<? extends Storable> klass) {
+	public SchemaManager getSchemaManagerFor(String klassName) {
 		int l = klasses.size();
 		for (int i = 0; i < l; i++)
-			if (klass.getCanonicalName().equals(klasses.get(i).name)) {
+			if (klassName.equals(klasses.get(i).name)) {
 				if (klasses.get(i).schemaManager == null)
 					klasses.get(i).schemaManager = schemaManagerFactory.create(klasses.get(i).indexPageId);
 				return klasses.get(i).schemaManager;
@@ -142,6 +142,7 @@ public class SimpleKlassManager implements KlassManager {
 			KlassInfo info = new KlassInfo();
 			l = buffer.getInt();
 			info.name = new String(listPage.getData(),buffer.position(),l);
+			buffer.position(buffer.position() + l);
 			info.schemaManagerPageId = buffer.getInt();
 			info.indexPageId = buffer.getInt();
 			info.nextId = buffer.getInt();
@@ -149,27 +150,27 @@ public class SimpleKlassManager implements KlassManager {
 		}
 	}
 	
-	public void removeKlass(Class<? extends Storable> klass) {
+	public void removeKlass(String klassName) {
 		int l = klasses.size();
 		for (int i = 0; i < l; i++)
-			if (klass.getCanonicalName().equals(klasses.get(i).name)) {
+			if (klassName.equals(klasses.get(i).name)) {
 				klasses.remove(i);
 				break;
 			}
 	}
 
-	public boolean isKlassManaged(Class<? extends Storable> klass) {
+	public boolean isKlassManaged(String klassName) {
 		int l = klasses.size();
 		for (int i = 0; i < l; i++)
-			if (klass.getCanonicalName().equals(klasses.get(i).name))
+			if (klassName.equals(klasses.get(i).name))
 				return true;
 		return false;
 	}
 
-	public Index getIndexFor(Class<? extends Storable> klass) {
+	public Index getIndexFor(String klassName) {
 		int l = klasses.size();
 		for (int i = 0; i < l; i++)
-			if (klass.getCanonicalName().equals(klasses.get(i).name)) {
+			if (klassName.equals(klasses.get(i).name)) {
 				if (klasses.get(i).index == null)
 					klasses.get(i).index = indexFactory.create(klasses.get(i).indexPageId);
 				return klasses.get(i).index;
@@ -187,13 +188,13 @@ public class SimpleKlassManager implements KlassManager {
 		Index index;
 	}
 
-	public int getIdFor(Class<? extends Storable> klass) {
+	public int getIdFor(String klassName) {
 		int l = klasses.size();
 		for (int i = 0; i < l; i++) {
 			KlassInfo storedKlass = klasses.get(i);
-			if (klass.getCanonicalName().equals(storedKlass.name)) {
+			if (klassName.equals(storedKlass.name)) {
 				storedKlass.nextId++;
-				return storedKlass.nextId;
+				return storedKlass.nextId - 1;
 			}
 		}
 		throw new IllegalArgumentException("Class is not managed");

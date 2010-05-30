@@ -15,20 +15,30 @@ public class SimpleJelloTest extends JelloTestCase {
 	}
 
 	public void testInsert() {
+		int TESTSIZE = 100;
+		
 		assertEquals(Jello.OPEN_SUCCESS, Jello.open(this.getInstrumentation()
 				.getContext(), "testfile"));
+		
+		startPerformanceTest(true);
+		for (int i = 0; i < TESTSIZE; i++) {
+			TestObject object = new TestObject();
+			object.name = "person";
+			object.age = i;
+			object.save();
+		}
 
-		TestObject object = new TestObject();
-		object.name = "person";
-		object.age = 25;
-		object.save();
-
+		endPerformanceTest();
+		
 		TestObject read = new TestObject();
-		read.setId(object.getId());
+		for (int i = 0; i < TESTSIZE; i++) {
+			read.setId(i);
+			assertTrue(read.load());
+			assertEquals("person", read.name);
+			assertEquals(i, read.age);
+		}
 
-		assertTrue(read.load());
-		assertEquals(object.name, read.name);
-		assertEquals(object.age, read.age);
+		Jello.close();
 	}
 
 	private class TestObject extends Storable {

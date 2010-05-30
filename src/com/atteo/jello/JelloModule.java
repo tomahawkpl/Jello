@@ -6,6 +6,8 @@ import android.util.Pool;
 import android.util.Pools;
 
 import com.atteo.jello.index.IndexModule;
+import com.atteo.jello.klass.KlassManager;
+import com.atteo.jello.klass.SimpleKlassManager;
 import com.atteo.jello.schema.SchemaModule;
 import com.atteo.jello.space.SpaceModule;
 import com.atteo.jello.store.PageSizeProvider;

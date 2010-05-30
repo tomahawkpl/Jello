@@ -11,7 +11,6 @@ public class Page implements Poolable<Page> {
 	private Page nextPoolable = null;
 	protected int id;
 	protected byte data[] = null;
-	protected byte accessibleData[] = null;
 	protected ByteBuffer byteBuffer;
 	protected @Inject @Named("pageSize") static short pageSize;
 	
@@ -19,15 +18,14 @@ public class Page implements Poolable<Page> {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);
 		byteBuffer.position(headerSize());
-		accessibleData = byteBuffer.slice().array();
 	}
 
 	public short getCapacity() {
-		return (short) accessibleData.length;
+		return (short) (pageSize - headerSize());
 	}
 
 	public byte[] getData() {
-		return accessibleData;
+		return data;
 	}
 
 	public int getId() {
@@ -48,5 +46,36 @@ public class Page implements Poolable<Page> {
 
 	public void setNextPoolable(final Page element) {
 		nextPoolable = element;
+	}
+	
+	public void reset() {
+		byteBuffer.position(headerSize());
+	}
+	
+	public void advance(int i) {
+		byteBuffer.position(byteBuffer.position() + i);
+	}
+	
+	public void position(int position) {
+		byteBuffer.position(headerSize() + position);
+	}
+	
+	public void putString(String string) {
+		byteBuffer.put(string.getBytes());
+	}
+
+	public String getString(int length) {
+		String result = new String(data, byteBuffer
+				.position(), length);
+		advance(length);
+		return result;
+	}
+	
+	public void putInt(int value) {
+		byteBuffer.putInt(value);
+	}
+	
+	public int getInt() {
+		return byteBuffer.getInt();
 	}
 }

@@ -1,7 +1,7 @@
 package com.atteo.jello.tests.unit;
 
-import com.atteo.jello.KlassManager;
-import com.atteo.jello.SimpleKlassManager;
+import com.atteo.jello.klass.KlassManager;
+import com.atteo.jello.klass.SimpleKlassManager;
 
 public class SimpleKlassManagerTest extends KlassManagerTest {
 

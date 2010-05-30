@@ -13,6 +13,7 @@ import com.google.inject.Inject;
 
 abstract public class Storable {
 	static protected Schema schema = null;
+	static protected String klassName = null;
 	static protected Class<? extends Storable> thisClass = null;
 	static protected FieldComparator comparator;
 	static protected boolean isManaged, isSchemaManaged;
@@ -33,7 +34,7 @@ abstract public class Storable {
 			schema = createClassSchema();
 		
 		this.record = recordPool.acquire();
-
+		klassName = thisClass.getCanonicalName();
 	}
 	
 	protected void finalize() {
@@ -42,6 +43,10 @@ abstract public class Storable {
 	
 	public Class<? extends Storable> getStorableClass() {
 		return thisClass;
+	}
+	
+	public String getClassName() {
+		return klassName;
 	}
 	
 	private Schema createClassSchema() {
@@ -63,10 +68,19 @@ abstract public class Storable {
 			k = k.getSuperclass();
 		}
 		
-		schema.fields = new Field[fields.size()];
-		schema.fields = fields.toArray(schema.fields);
-		Arrays.sort(schema.fields, comparator);
+		int l = fields.size();
+		Field f[] = new Field[l];
+		f = fields.toArray(f);
+		Arrays.sort(f, comparator);
 
+		schema.fields = new int[l];
+		schema.names = new String[l];
+		
+		for (int i=0;i<l;i++) {
+			schema.fields[i] = Schema.getFieldType(f[i].getClass());
+			schema.names[i] = f[i].getName();
+		}
+		
 		return schema;
 	}
 	

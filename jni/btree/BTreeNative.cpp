@@ -64,7 +64,6 @@ void convertRecordInfoToRecord(JNIEnv *env, jobject record, RecordInfo *recordIn
 	int pagesUsed, schemaVersion;
 	bytesToInt(schemaVersion, recordInfo->data);
 	bytesToInt(pagesUsed, recordInfo->data + 4);
-	env->SetIntField(record, fidRecordId, id);
 	env->SetIntField(record, fidRecordSchemaVersion, schemaVersion);
 	env->SetIntField(record, fidRecordPagesUsed, pagesUsed);
 	env->CallVoidMethod(record, midRecordSetPagesUsed, pagesUsed);

@@ -25,9 +25,9 @@ public class SchemaManagerMock implements SchemaManager {
 		return null;
 	}
 
-	public void load() {
+	public boolean load() {
 		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	public void removeSchema(int version) {

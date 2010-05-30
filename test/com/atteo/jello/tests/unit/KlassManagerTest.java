@@ -2,11 +2,11 @@ package com.atteo.jello.tests.unit;
 
 import java.util.HashMap;
 
-import com.atteo.jello.KlassManager;
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
 import com.atteo.jello.Storable;
 import com.atteo.jello.index.IndexFactory;
+import com.atteo.jello.klass.KlassManager;
 import com.atteo.jello.schema.SchemaManagerFactory;
 import com.atteo.jello.space.NextFit;
 import com.atteo.jello.space.NextFitHistogram;
@@ -82,8 +82,9 @@ public abstract class KlassManagerTest extends JelloInterfaceTestCase<KlassManag
 	}
 	
 	public void testAddKlass() {
-		klassManager.addKlass(TestClass.class);
-		assertTrue(klassManager.isKlassManaged(TestClass.class));
+		String className = new TestClass().getClassName();
+		klassManager.addKlass(className);
+		assertTrue(klassManager.isKlassManaged(className));
 	}
 	
 	@Override
