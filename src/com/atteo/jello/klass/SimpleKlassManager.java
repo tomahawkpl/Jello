@@ -1,6 +1,5 @@
 package com.atteo.jello.klass;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import com.atteo.jello.index.Index;
@@ -21,8 +20,7 @@ public class SimpleKlassManager implements KlassManager {
 	private IndexFactory indexFactory;
 	private SchemaManagerFactory schemaManagerFactory;
 	private PagedFile pagedFile;
-	private ByteBuffer buffer;
-		
+	
 	@Inject
 	public SimpleKlassManager(IndexFactory indexFactory, SchemaManagerFactory schemaManagerFactory,
 			@Named("klassManagerPageId") int klassManagerPageId,
@@ -30,7 +28,6 @@ public class SimpleKlassManager implements KlassManager {
 		pageIds = new ArrayList<Integer>();
 		pageIds.add(klassManagerPageId);
 		this.listPage = listPage;
-		buffer = ByteBuffer.wrap(listPage.getData());
 
 		this.spaceManagerPolicy = spaceManagerPolicy;
 
@@ -57,7 +54,8 @@ public class SimpleKlassManager implements KlassManager {
 		int klassesOnPage = 0;
 		int currentPage = 0;
 		int l = klasses.size();
-		int free = listPage.getCapacity();
+		int free = listPage.getCapacity() - 4;
+		listPage.position(4);
 		for (int i=0;i<l;i++) {
 			KlassInfo info = klasses.get(i);
 			int nameLength = info.name.length();
@@ -66,28 +64,28 @@ public class SimpleKlassManager implements KlassManager {
 					pageIds.add(spaceManagerPolicy.acquirePage());
 				listPage.setNext(pageIds.get(currentPage+1));
 				listPage.setId(pageIds.get(currentPage));
-				buffer.position(0);
-				buffer.putInt(klassesOnPage);
+				listPage.reset();
+				listPage.putInt(klassesOnPage);
 				pagedFile.writePage(listPage);
 				currentPage++;
-				buffer.position(4);
+				listPage.position(4);
 				free = listPage.getCapacity();
 				klassesOnPage = 0;
 			}
 			
 			free -= nameLength + 16;
 			klassesOnPage++;
-			buffer.putInt(nameLength);
-			buffer.put(info.name.getBytes());
-			buffer.putInt(info.schemaManagerPageId);
-			buffer.putInt(info.indexPageId);
-			buffer.putInt(info.nextId);
+			listPage.putInt(nameLength);
+			listPage.putString(info.name);
+			listPage.putInt(info.schemaManagerPageId);
+			listPage.putInt(info.indexPageId);
+			listPage.putInt(info.nextId);
 		}
 		
 		listPage.setNext(ListPage.NO_MORE_PAGES);
 		listPage.setId(pageIds.get(currentPage));
-		buffer.position(0);
-		buffer.putInt(klassesOnPage);
+		listPage.position(0);
+		listPage.putInt(klassesOnPage);
 		pagedFile.writePage(listPage);
 		
 		for (int i=currentPage+1;i<pageIds.size();i++) {
@@ -99,7 +97,8 @@ public class SimpleKlassManager implements KlassManager {
 	public void create() {
 		listPage.setNext(ListPage.NO_MORE_PAGES);
 		listPage.setId(pageIds.get(0));
-		buffer.putInt(0);
+		listPage.reset();
+		listPage.putInt(0);
 		pagedFile.writePage(listPage);
 	}
 
@@ -120,7 +119,6 @@ public class SimpleKlassManager implements KlassManager {
 		listPage.setId(pageIds.get(0));
 		pagedFile.readPage(listPage);
 		next = listPage.getNext();
-		
 		readKlassesFromPage(listPage);
 		
 		while(next != ListPage.NO_MORE_PAGES) {
@@ -136,16 +134,16 @@ public class SimpleKlassManager implements KlassManager {
 	}
 
 	private void readKlassesFromPage(ListPage page) {
-		int klassesOnPage = buffer.getInt();
+		page.reset();
+		int klassesOnPage = page.getInt();
 		int l;
 		for (int i=0;i<klassesOnPage;i++) {
 			KlassInfo info = new KlassInfo();
-			l = buffer.getInt();
-			info.name = new String(listPage.getData(),buffer.position(),l);
-			buffer.position(buffer.position() + l);
-			info.schemaManagerPageId = buffer.getInt();
-			info.indexPageId = buffer.getInt();
-			info.nextId = buffer.getInt();
+			l = page.getInt();
+			info.name = page.getString(l);
+			info.schemaManagerPageId = page.getInt();
+			info.indexPageId = page.getInt();
+			info.nextId = page.getInt();
 			klasses.add(info);
 		}
 	}

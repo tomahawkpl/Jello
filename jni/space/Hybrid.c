@@ -44,7 +44,7 @@ jobject pagedFile;
 jobject listPage;
 
 
-jfieldID fidListPageId, fidListPageAccessibleData;
+jfieldID fidListPageId, fidListPageData;
 jmethodID midListPageSetNext, midPagedFileReadPage, midPagedFileWritePage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
 jmethodID midRecordGetPagesUsed, midRecordGetPageUsage;
@@ -173,7 +173,7 @@ void initIDs(JNIEnv *env) {
 		return;
 
 	fidListPageId = (*env)->GetFieldID(env, listPageClass, "id", "I");
-	fidListPageAccessibleData = (*env)->GetFieldID(env, listPageClass, "accessibleData", "[B");
+	fidListPageData = (*env)->GetFieldID(env, listPageClass, "data", "[B");
 	midListPageSetNext = (*env)->GetMethodID(env, listPageClass, "setNext", "(I)V");
 }
 
@@ -351,7 +351,7 @@ void freeSpaceInfoCommit(JNIEnv *env) {
 
 		(*env)->SetIntField(env, listPage, fidListPageId, freeSpaceInfo[i].pageId);
 
-		buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
+		buffer = (*env)->GetObjectField(env, listPage, fidListPageData);
 		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
 		memcpy((void*) bytes, (void*) freeSpaceInfo[i].data, freeSpaceInfoPageCapacity);
@@ -853,7 +853,7 @@ jboolean JNICALL load(JNIEnv *env, jclass dis) {
 		(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
 		nextPageId = (*env)->GetIntField(env, listPage, fidListPageId);
 
-		buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
+		buffer = (*env)->GetObjectField(env, listPage, fidListPageData);
 		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
 
 		memcpy((void*) freeSpaceInfo[i].data, (void*) bytes, freeSpaceInfoPageCapacity);

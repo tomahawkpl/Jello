@@ -96,6 +96,14 @@ abstract public class SchemaManagerTest extends
 
 		assertNull(schemaManager.getSchema(0));
 	}
+	
+	public void testEmptyCommit() {
+		schemaManager.create();
+		schemaManager.commit();
+		schemaManager.load();
+
+		assertNull(schemaManager.getSchema(0));
+	}
 
 	public void testLoad() {
 		int TESTSIZE = 150;

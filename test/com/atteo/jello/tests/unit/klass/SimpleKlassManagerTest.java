@@ -1,4 +1,4 @@
-package com.atteo.jello.tests.unit;
+package com.atteo.jello.tests.unit.klass;
 
 import com.atteo.jello.klass.KlassManager;
 import com.atteo.jello.klass.SimpleKlassManager;
