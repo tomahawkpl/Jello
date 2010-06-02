@@ -2,19 +2,20 @@
 #define _BTREENODE_H
 
 #include "BTreeElement.h"
+#include <stdlib.h>
 
 struct ChildInfo;
 class BTreeElement;
-template<typename T> class AVLTree;
+class AVLTree;
 
 class BTreeNode : public BTreeElement {
 	private:
-		AVLTree<ChildInfo> *children;
+		AVLTree *children;
 	public:
 		BTreeNode(int nodeCapacity);
 		~BTreeNode();
 		BTreeElement *getSubNodeFor(int id);
-		AVLTree<ChildInfo> *getAVLTree();
+		AVLTree *getAVLTree();
 		bool addChild(int id, BTreeElement *child);
 		void updateChild(int oldMinId, int minId);
 		void removeChild(int id);
@@ -22,6 +23,9 @@ class BTreeNode : public BTreeElement {
 		void split(BTreeNode *node);
 		void join(BTreeElement *node);
 		void debug();
+
+		static BTreeNode *fromBytes(uint8_t *bytes, int bTreeNodeCapacity);
+		int commit();
 		
 };
 

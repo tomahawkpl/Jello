@@ -21,8 +21,8 @@ public class IndexModule implements Module {
 	
 	public IndexModule(final HashMap<String, String> properties) {
 		int pageSize = new PageSizeProvider().get();
-		bTreeLeafCapacity = (short) (pageSize - 12);
-		bTreeNodeCapacity = (short) (pageSize - 4);
+		bTreeLeafCapacity = (short) (pageSize - 16);
+		bTreeNodeCapacity = (short) (pageSize - 16);
 		
 		this.properties = getDefaultProperties();
 		if (properties != null)

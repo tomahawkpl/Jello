@@ -20,7 +20,8 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := BTree
 LOCAL_SRC_FILES := btree/BTreeNative.cpp btree/BTree.cpp btree/BTreeLeaf.cpp btree/AVLTree.cpp \
-	btree/BTreeElement.cpp btree/BTreeNode.cpp btree/ChildInfo.cpp
+	btree/BTreeElement.cpp btree/BTreeNode.cpp btree/ChildInfo.cpp btree/PageIds.cpp btree/misc.cpp \
+	btree/RecordInfo.cpp btree/ChildInfoFactory.cpp btree/RecordInfoFactory.cpp
 LOCAL_LDLIBS := -llog
 include $(BUILD_SHARED_LIBRARY)
 

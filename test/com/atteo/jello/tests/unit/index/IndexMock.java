@@ -5,7 +5,7 @@ import com.atteo.jello.index.Index;
 
 public class IndexMock implements Index {
 
-	public void create(int pageId) {
+	public void create() {
 		// TODO Auto-generated method stub
 
 	}
@@ -20,9 +20,9 @@ public class IndexMock implements Index {
 
 	}
 
-	public void load(int pageId) {
+	public boolean load() {
 		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	public void remove(int id) {
@@ -33,6 +33,11 @@ public class IndexMock implements Index {
 	public void update(Record record) {
 		// TODO Auto-generated method stub
 
+	}
+
+	public void commit() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

@@ -2,19 +2,20 @@
 #define _BTREELEAF_H
 
 #include "BTreeNode.h"
+#include <stdlib.h>
 
 struct RecordInfo;
-template<typename T> class AVLTree;
+class AVLTree;
 
 class BTreeLeaf : public BTreeElement {
 	private:
 	
-		AVLTree<RecordInfo> *records;
+		AVLTree *records;
 
 	public:
 		BTreeLeaf(short freeSpace);
 		~BTreeLeaf();
-		AVLTree<RecordInfo> *getAVLTree();
+		AVLTree *getAVLTree();
 		bool add(int id, RecordInfo *record);
 		bool update(int id, RecordInfo *record);
 		void remove(int id);
@@ -23,6 +24,9 @@ class BTreeLeaf : public BTreeElement {
 		void join(BTreeElement *leaf);
 		void setLeft(BTreeLeaf *leaf);
 		void debug();
+
+		static BTreeLeaf *fromBytes(uint8_t *bytes, int leafCapacity);
+		int commit();
 
 };
 

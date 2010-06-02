@@ -8,7 +8,7 @@ class BTreeElement {
 	protected:
 		BTreeNode *parent;
 		int minId;
-		short freeSpace;
+		int freeSpace;
 		int count;
 //		BTreeElement *left;
 //		BTreeElement *right;
@@ -18,11 +18,15 @@ class BTreeElement {
 		static const int ELEMENT_LEAF = 2;
 		int type;
 
-		int getMinId();
 		BTreeNode *getParent();
 		void setParent(BTreeNode *parent);
-		short getFreeSpace();
+		int getMinId();
+		int getFreeSpace();
 		int getCount();
+
+		void setMinId(int minId);
+		void setFreeSpace(int freeSpace);
+		void setCount(int count);
 
 //		BTreeElement *getRight();
 //		BTreeElement *getLeft();
@@ -31,6 +35,7 @@ class BTreeElement {
 
 		virtual void join(BTreeElement *node) = 0;
 		virtual void debug();
+		virtual int commit() = 0;
 
 
 };

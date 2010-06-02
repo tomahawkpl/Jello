@@ -49,4 +49,6 @@ public class Hybrid implements SpaceManagerPolicy {
 	public native void create();
 
 	public native boolean load();
+	
+	public native void commit();
 }

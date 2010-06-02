@@ -23,8 +23,8 @@ import com.google.inject.name.Names;
 public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 
 	// ---- SETTINGS
-	private final short bTreeLeafCapacity = 4092;
-	private final short bTreeNodeCapacity = 4092;
+	private final short bTreeLeafCapacity = 4096;
+	private final short bTreeNodeCapacity = 4096;
 
 	private final short pageSize = 4096;
 	private final short blockSize = 128;
@@ -35,7 +35,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	private final int maxRecordPages = 4;
 	private final int maxRecordSize = maxRecordPages * pageSize;
 	private final int nextFitHistogramClasses = 8;
-	protected final int klassIndexPageId = 3;
+	protected int klassIndexPageId;
 	// --------------
 
 	private @Inject
@@ -43,6 +43,11 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	private Index index;
 	private @Inject
 	Pool<Record> recordPool;
+
+	@Inject
+	private PagedFile pagedFile;
+	@Inject
+	private SpaceManagerPolicy spaceManagerPolicy;
 
 	@Override
 	protected Class<Index> interfaceUnderTest() {
@@ -91,7 +96,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 			record.setSchemaVersion(i);
 			index.insert(record);
 		}
-
+		
 		Record read = recordPool.acquire();
 
 		for (int i = 0; i < TESTSIZE; i++) {
@@ -108,7 +113,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	}
 
 	public void testDelete() {
-		int TESTSIZE = 3000;
+		int TESTSIZE = 2000;
 		Record record = recordPool.acquire();
 		record.setChunkUsed(99, (short) 2, (short) 4, true);
 		for (int i = 0; i < TESTSIZE; i++) {
@@ -163,7 +168,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	}
 
 	public void testDelete2() {
-		int TESTSIZE = 3000;
+		int TESTSIZE = 2000;
 
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 
@@ -202,7 +207,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	}
 
 	public void testUpdate() {
-		int TESTSIZE = 1000;
+		int TESTSIZE = 2000;
 
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 
@@ -234,7 +239,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 	}
 
 	public void testUpdate2() {
-		int TESTSIZE = 1000;
+		int TESTSIZE = 2000;
 
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 
@@ -288,7 +293,7 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 			ids.add(i);
 			assertTrue(index.find(record));
 			assertEquals(i, record.getId());
-			assertEquals((i%2)+1, record.getPagesUsed());
+			assertEquals((i % 2) + 1, record.getPagesUsed());
 			assertEquals(i, record.getSchemaVersion());
 		}
 
@@ -306,9 +311,9 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 			ids.add(i);
 			assertTrue(index.find(record));
 			assertEquals(i, record.getId());
-			assertEquals((i%2)+1, record.getPagesUsed());
+			assertEquals((i % 2) + 1, record.getPagesUsed());
 			assertEquals(i, record.getSchemaVersion());
-			
+
 			// delete
 			int r = (int) (Math.random() * ids.size());
 			index.remove(ids.get(r));
@@ -332,9 +337,9 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 				record.clearUsage();
 				record.setChunkUsed(99, (short) 2, (short) 4, true);
 			}
-				
+
 			index.update(record);
-			
+
 			assertTrue(index.find(record));
 			assertEquals(id, record.getId());
 			assertEquals(t, record.getPagesUsed());
@@ -343,9 +348,85 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 
 	}
 
+	public void testCreate() {
+		index.create();
+		index.load();
+		Record record = recordPool.acquire();
+		record.setId(0);
+		assertFalse(index.find(record));
+	}
+
+	public void testCommit() {
+		int TESTSIZE = 2000;
+		Record record = recordPool.acquire();
+		record.setChunkUsed(100, (short) 2, (short) 4, true);
+		for (int i = 0; i < TESTSIZE; i++) {
+			record.setId(i);
+			record.setSchemaVersion(i);
+			index.insert(record);
+		}
+
+		index.commit();
+
+		Index newIndex = indexFactory.create(klassIndexPageId);
+
+		newIndex.load();
+
+		//((BTree) newIndex).debug();
+
+		Record read = recordPool.acquire();
+
+		for (int i = 0; i < TESTSIZE; i++) {
+			read.clearUsage();
+			read.setId(i);
+			assertTrue(newIndex.find(read));
+			assertEquals(i, read.getId());
+			assertEquals(1, read.getPagesUsed());
+			assertEquals(i, read.getSchemaVersion());
+		}
+
+		record.setId(TESTSIZE);
+		assertFalse(newIndex.find(record));
+
+		for (int i = 0; i < TESTSIZE / 2; i++) {
+			newIndex.remove(i);
+		}
+
+		newIndex.commit();
+
+		Index index = indexFactory.create(klassIndexPageId);
+
+		index.load();
+
+		read = recordPool.acquire();
+
+		for (int i = TESTSIZE / 2; i < TESTSIZE; i++) {
+			read.clearUsage();
+			read.setId(i);
+			assertTrue(index.find(read));
+			assertEquals(i, read.getId());
+			assertEquals(1, read.getPagesUsed());
+			assertEquals(i, read.getSchemaVersion());
+		}
+
+		record.setId(TESTSIZE);
+		assertFalse(index.find(record));
+
+	}
+
 	protected void setUp() {
 		super.setUp();
 
+		if (pagedFile.exists())
+			pagedFile.remove();
+
+		pagedFile.create();
+		pagedFile.open();
+		pagedFile.addPages(10);
+
+		spaceManagerPolicy.create();
+
+		klassIndexPageId = spaceManagerPolicy.acquirePage();
 		index = indexFactory.create(klassIndexPageId);
 	}
 

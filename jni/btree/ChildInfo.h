@@ -3,8 +3,16 @@
 
 class BTreeElement;
 
-struct ChildInfo {
-	BTreeElement *child;
-	~ChildInfo();
+#include <stdlib.h>
+#include "NodeContent.h"
+
+class ChildInfo : public NodeContent {
+	public:
+		BTreeElement *child;
+		~ChildInfo();
+
+		int getLength();
+		void toBytes(uint8_t *bytes);
+		void fromBytes(uint8_t *bytes, int length, BTreeElement *parent);
 };
 #endif

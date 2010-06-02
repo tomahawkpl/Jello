@@ -7,6 +7,7 @@ public interface SpaceManagerPolicy {
 
 	public void create();
 	public boolean load();
+	public void commit();
 	
 	public int acquirePage();
 

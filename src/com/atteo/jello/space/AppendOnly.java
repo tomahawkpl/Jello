@@ -48,4 +48,8 @@ public class AppendOnly implements SpaceManagerPolicy {
 	public boolean load() {
 		return spaceManager.load();
 	}
+	
+	public void commit() {
+		spaceManager.commit();
+	}
 }

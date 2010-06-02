@@ -5,6 +5,8 @@
 #include "RecordInfo.h"
 #include "ChildInfo.h"
 #include "BTreeElement.h"
+#include "misc.h"
+#include "NodeContentFactory.h"
 
 
 inline int
@@ -13,7 +15,8 @@ MIN(int a, int b) { return  (a < b) ? a : b; }
 inline int
 MAX(int a, int b) { return  (a > b) ? a : b; }
 
-template <typename T> void AVLTreeNode<T>::updateHeight() {
+
+void AVLTreeNode::updateHeight() {
 	int oldHeight = height;
 	int a = 0;
 	balance = 0;
@@ -33,12 +36,13 @@ template <typename T> void AVLTreeNode<T>::updateHeight() {
 
 }
 
-template <typename T> AVLTree<T>::AVLTree() {
+AVLTree::AVLTree(NodeContentFactory *factory) {
 	count = 0;
 	root = NULL;
+	this->factory = factory;
 }
 
-template <typename T> void AVLTree<T>::freeNode(AVLTreeNode<T> *node) {
+void AVLTree::freeNode(AVLTreeNode *node) {
 	if (node != NULL) {
 		freeNode(node->left);
 		freeNode(node->right);
@@ -48,14 +52,15 @@ template <typename T> void AVLTree<T>::freeNode(AVLTreeNode<T> *node) {
 
 }
 
-template <typename T> AVLTree<T>::~AVLTree() {
+AVLTree::~AVLTree() {
 	freeNode(root);
 }
 
-template <typename T> void AVLTree<T>::add(int recordId, T *content) {
+void AVLTree::add(int recordId, NodeContent *content) {
 	count++;
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]adding to AVL tree node %d, new count: %d", recordId, count);
-	AVLTreeNode<T> *node = new AVLTreeNode<T>();
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]adding to AVL tree node %d, new count: %d",
+//			recordId, count);
+	AVLTreeNode *node = new AVLTreeNode();
 	node->recordId = recordId;
 	node->content = content;
 	node->left = NULL;
@@ -69,8 +74,8 @@ template <typename T> void AVLTree<T>::add(int recordId, T *content) {
 		return;
 	}
 
-	AVLTreeNode<T> *n = root;
-	AVLTreeNode<T> *prev = NULL;
+	AVLTreeNode *n = root;
+	AVLTreeNode *prev = NULL;
 
 //	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]searching for a good place");
 	while(n != NULL) {
@@ -100,9 +105,9 @@ template <typename T> void AVLTree<T>::add(int recordId, T *content) {
 
 }
 
-template <typename T> bool AVLTree<T>::remove(int recordId) {
+bool AVLTree::remove(int recordId) {
 //	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]remove %d", recordId);
-	AVLTreeNode<T> *node = findNode(recordId);
+	AVLTreeNode *node = findNode(recordId);
 	if (node != NULL) {
 		count--;
 //		__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]removing node");
@@ -117,7 +122,7 @@ template <typename T> bool AVLTree<T>::remove(int recordId) {
 	return false;
 }
 
-template <typename T> void AVLTree<T>::removeNode(AVLTreeNode<T> *node) {
+void AVLTree::removeNode(AVLTreeNode *node) {
 	if (node == root) {
 //		__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]removeNode (root): %d", node->recordId);
 		if (node->left == NULL && node->right == NULL) {
@@ -135,7 +140,7 @@ template <typename T> void AVLTree<T>::removeNode(AVLTreeNode<T> *node) {
 			return;
 		}
 
-		AVLTreeNode<T> *prev = NULL, *n = node->left;
+		AVLTreeNode *prev = NULL, *n = node->left;
 
 		while(n != NULL) {
 			prev = n;
@@ -191,7 +196,7 @@ template <typename T> void AVLTree<T>::removeNode(AVLTreeNode<T> *node) {
 		return;
 	}
 
-	AVLTreeNode<T> *prev = NULL, *n = node->left;
+	AVLTreeNode *prev = NULL, *n = node->left;
 
 	while(n != NULL) {
 		prev = n;
@@ -218,14 +223,14 @@ template <typename T> void AVLTree<T>::removeNode(AVLTreeNode<T> *node) {
 		node->parent->left = prev;
 	else
 		node->parent->right = prev;
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL] 3");
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL] 3");
 
 	prev->updateHeight();
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL] remove done");
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL] remove done");
 }
 
-template <typename T> AVLTreeNode<T> *AVLTree<T>::getSmallest() {
-	AVLTreeNode<T> *prev = NULL, *node = root;
+AVLTreeNode *AVLTree::getSmallest() {
+	AVLTreeNode *prev = NULL, *node = root;
 
 	if (node == NULL)
 		return NULL;
@@ -239,8 +244,8 @@ template <typename T> AVLTreeNode<T> *AVLTree<T>::getSmallest() {
 
 }
 
-template <typename T> AVLTreeNode<T> *AVLTree<T>::extractSmallest() {
-	AVLTreeNode<T> *prev = NULL, *node = root;
+AVLTreeNode *AVLTree::extractSmallest() {
+	AVLTreeNode *prev = NULL, *node = root;
 
 	if (node == NULL)
 		return NULL;
@@ -261,8 +266,8 @@ template <typename T> AVLTreeNode<T> *AVLTree<T>::extractSmallest() {
 
 }
 
-template <typename T> AVLTreeNode<T> *AVLTree<T>::findNode(int recordId) {
-	AVLTreeNode<T> *node = root;
+AVLTreeNode *AVLTree::findNode(int recordId) {
+	AVLTreeNode *node = root;
 
 	if (node == NULL)
 		return NULL;
@@ -280,9 +285,9 @@ template <typename T> AVLTreeNode<T> *AVLTree<T>::findNode(int recordId) {
 	return node;
 }
 
-template <typename T> T *AVLTree<T>::find(int recordId) {
-	//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]AVL find");
-	AVLTreeNode<T> *node = findNode(recordId);
+NodeContent *AVLTree::find(int recordId) {
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]AVL find");
+	AVLTreeNode *node = findNode(recordId);
 
 	if (node != NULL)
 		return node->content;
@@ -290,8 +295,8 @@ template <typename T> T *AVLTree<T>::find(int recordId) {
 		return NULL;
 }
 
-template <typename T> T *AVLTree<T>::findHigher(int recordId) {
-	AVLTreeNode<T> *prev = NULL, *node = root;
+NodeContent *AVLTree::findHigher(int recordId) {
+	AVLTreeNode *prev = NULL, *node = root;
 
 	if (node == NULL) {
 		return NULL;
@@ -315,8 +320,8 @@ template <typename T> T *AVLTree<T>::findHigher(int recordId) {
 
 }
 
-template <typename T> T *AVLTree<T>::findLeft(int recordId) {
-	AVLTreeNode<T> *prev = NULL, *node = root;
+NodeContent *AVLTree::findLeft(int recordId) {
+	AVLTreeNode *prev = NULL, *node = root;
 
 	if (node == NULL) {
 		return NULL;
@@ -338,8 +343,8 @@ template <typename T> T *AVLTree<T>::findLeft(int recordId) {
 		return NULL;
 }
 
-template <typename T> T *AVLTree<T>::findRight(int recordId) {
-	AVLTreeNode<T> *prev = NULL, *node = root;
+NodeContent *AVLTree::findRight(int recordId) {
+	AVLTreeNode *prev = NULL, *node = root;
 
 	if (node == NULL) {
 		return NULL;
@@ -361,16 +366,16 @@ template <typename T> T *AVLTree<T>::findRight(int recordId) {
 		return NULL;
 }
 
-template <typename T> void AVLTree<T>::update(int recordId, T *content, AVLTreeNode<T> *node) {
+void AVLTree::update(int recordId, NodeContent *content, AVLTreeNode *node) {
 	delete node->content;
 	node->content = content;
 }
 
 
-template <typename T> void AVLTree<T>::rebalance(AVLTreeNode<T> *node) {
+void AVLTree::rebalance(AVLTreeNode *node) {
 	int b = node->balance;
-	AVLTreeNode<T> *parent = node->parent;
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]rebalancing node %d, balance: %d", node->recordId, b);
+	AVLTreeNode *parent = node->parent;
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]rebalancing node %d, balance: %d", node->recordId, b);
 	if (b < -1) {
 		if (node->left->balance == 1)
 			rotateRightTwice(node);
@@ -384,13 +389,13 @@ template <typename T> void AVLTree<T>::rebalance(AVLTreeNode<T> *node) {
 	}
 
 	if(parent != NULL) {
-//		__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]rebalancing parent");
+	//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "[AVL]rebalancing parent");
 		rebalance(parent);
 	}
 }
 
-template <typename T> void AVLTree<T>::rotateLeft(AVLTreeNode<T> *&node) {
-	AVLTreeNode<T> *oldRoot = node;
+void AVLTree::rotateLeft(AVLTreeNode *&node) {
+	AVLTreeNode *oldRoot = node;
 
 	node = node->right;
 	oldRoot->right = node->left;
@@ -416,13 +421,13 @@ template <typename T> void AVLTree<T>::rotateLeft(AVLTreeNode<T> *&node) {
 		root = node;
 }
 
-template <typename T> void AVLTree<T>::rotateLeftTwice(AVLTreeNode<T> *&node) {
+void AVLTree::rotateLeftTwice(AVLTreeNode *&node) {
 	rotateRight(node->right);
 	rotateLeft(node);
 }
 
-template <typename T> void AVLTree<T>::rotateRight(AVLTreeNode<T> *&node) {
-	AVLTreeNode<T> *oldRoot = node;
+void AVLTree::rotateRight(AVLTreeNode *&node) {
+	AVLTreeNode *oldRoot = node;
 
 	node = node->left;
 	oldRoot->left = node->right;
@@ -448,13 +453,94 @@ template <typename T> void AVLTree<T>::rotateRight(AVLTreeNode<T> *&node) {
 		root = node;
 }
 
-template <typename T> void AVLTree<T>::rotateRightTwice(AVLTreeNode<T> *&node) {
+void AVLTree::rotateRightTwice(AVLTreeNode *&node) {
 	debug(false);
 	rotateLeft(node->left);
 	rotateRight(node);
 }
 
-template <typename T> void AVLTree<T>::debug(bool follow) {
+int AVLTree::nodeToBytes(uint8_t *bytes, AVLTreeNode *node) {
+	int len = 0;
+
+	if (node == NULL) {
+		intToBytes(-1, bytes);
+		return 4;
+	}
+
+	intToBytes(node->recordId, bytes);
+	intToBytes(node->height, bytes + 4);
+	intToBytes(node->balance, bytes + 8);
+	intToBytes(node->content->getLength(), bytes + 12);
+	node->content->toBytes(bytes + 16);
+
+	len += 16 + node->content->getLength();
+
+	len += nodeToBytes(bytes + len, node->left);
+	len += nodeToBytes(bytes + len, node->right);
+
+	return len;
+}
+
+void AVLTree::commit(uint8_t *bytes) {
+	nodeToBytes(bytes, root);
+}
+
+AVLTreeNode *AVLTree::nodeFromBytes(uint8_t *bytes, int &read, BTreeElement *parent) {
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "nodeFromBytes (%d)", bytes);
+	int id;
+	bytesToInt(id, bytes);
+
+	if (id == -1) {
+		read = 4;
+		return NULL;
+	}
+
+	count++;
+	AVLTreeNode *node = new AVLTreeNode();
+	node->content = factory->create();
+	node->recordId = id;
+	bytesToInt(node->height, bytes + 4);
+	bytesToInt(node->balance, bytes + 8);
+	int len;
+	bytesToInt(len, bytes + 12);
+	node->content->fromBytes(bytes+16, len, parent);
+
+	read = 16 + len;
+
+	int r;
+	AVLTreeNode *left = nodeFromBytes(bytes + read, r, parent);
+	read += r;
+
+	if (left != NULL) {
+		node->left = left;
+		left->parent = node;
+	} else
+		node->left = NULL;
+
+	AVLTreeNode *right = nodeFromBytes(bytes + read, r, parent);
+	read += r;
+
+	if (right != NULL) {
+		node->right = right;
+		right->parent = node;
+	} else
+		node->right = NULL;
+
+	return node;
+
+
+}
+
+void AVLTree::fromBytes(uint8_t *bytes, BTreeElement *parent) {
+//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "fromBytes (%d)", bytes);
+	int r;
+	root = nodeFromBytes(bytes, r, parent);
+
+	if (root != NULL)
+		root->parent = NULL;
+}
+
+void AVLTree::debug(bool follow) {
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "   AVLTree contents (count: %d)", count);
 
 	if (root != NULL)
@@ -473,7 +559,7 @@ template <typename T> void AVLTree<T>::debug(bool follow) {
 }
 
 
-template <typename T> void AVLTree<T>::printNode(AVLTreeNode<T> *node) {
+void AVLTree::printNode(AVLTreeNode *node) {
 	__android_log_print(ANDROID_LOG_INFO, "Jello",  "   (%d) recordId: %d, parent: %d, height:%d, content:%d", node,
 			node->recordId, node->parent, node->height, node->content);
 	if (node->left != NULL)
@@ -483,7 +569,7 @@ template <typename T> void AVLTree<T>::printNode(AVLTreeNode<T> *node) {
 
 }
 
-template <typename T> void AVLTree<T>::debugNode(AVLTreeNode<T> *node) {
+void AVLTree::debugNode(AVLTreeNode *node) {
 	((ChildInfo*)node->content)->child->debug();
 	if (node->left != NULL)
 		debugNode(node->left);
@@ -492,6 +578,4 @@ template <typename T> void AVLTree<T>::debugNode(AVLTreeNode<T> *node) {
 
 }
 
-template class AVLTree<RecordInfo>;
-template class AVLTree<ChildInfo>;
 

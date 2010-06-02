@@ -1,10 +1,16 @@
 #ifndef _AVLTREE_H
 #define _AVLTREE_H
 
-template<typename T>
+#include <stdlib.h>
+
+class NodeContent;
+class NodeContentFactory;
+class BTreeElement;
+
 struct AVLTreeNode {
 	int recordId;
-	T *content;
+
+	NodeContent *content;
 
 	AVLTreeNode *parent;
 
@@ -18,37 +24,42 @@ struct AVLTreeNode {
 	
 };
 
-template<typename T>
 class AVLTree {
 	private:
 		int count;
-		AVLTreeNode<T> *root;
+		AVLTreeNode *root;
+		NodeContentFactory *factory;
 
-		void removeNode(AVLTreeNode<T> *node);
-		void freeNode(AVLTreeNode<T> *node);
+		void removeNode(AVLTreeNode *node);
+		void freeNode(AVLTreeNode *node);
 
-		void rebalance(AVLTreeNode<T> *node);
-		void rotateRight(AVLTreeNode<T> *&node);
-		void rotateLeft(AVLTreeNode<T> *&node);
-		void rotateRightTwice(AVLTreeNode<T> *&node);
-		void rotateLeftTwice(AVLTreeNode<T> *&node);
+		void rebalance(AVLTreeNode *node);
+		void rotateRight(AVLTreeNode *&node);
+		void rotateLeft(AVLTreeNode *&node);
+		void rotateRightTwice(AVLTreeNode *&node);
+		void rotateLeftTwice(AVLTreeNode *&node);
 	public:
-		AVLTree();
+		AVLTree(NodeContentFactory *factory);
 		~AVLTree();
-		void add(int recordId, T *node);
+		void add(int recordId, NodeContent *node);
 		bool remove(int recordId);
-		AVLTreeNode<T> *findNode(int recordId);
-		AVLTreeNode<T> *getSmallest();
-		AVLTreeNode<T> *extractSmallest();
-		T *find(int recordId);
-		T *findHigher(int recordId);
-		T *findRight(int recordId);
-		T *findLeft(int recordId);
-		void update(int recordId, T *content, AVLTreeNode<T> *node);
+		AVLTreeNode *findNode(int recordId);
+		AVLTreeNode *getSmallest();
+		AVLTreeNode *extractSmallest();
+		NodeContent *find(int recordId);
+		NodeContent *findHigher(int recordId);
+		NodeContent *findRight(int recordId);
+		NodeContent *findLeft(int recordId);
+		void update(int recordId, NodeContent *content, AVLTreeNode *node);
 		int getCount();
 		void debug(bool follow);
-		void debugNode(AVLTreeNode<T> *node);
-		void printNode(AVLTreeNode<T> *node);
+		void debugNode(AVLTreeNode *node);
+		void printNode(AVLTreeNode *node);
+
+		int nodeToBytes(uint8_t *bytes, AVLTreeNode *node);
+		AVLTreeNode *nodeFromBytes(uint8_t *bytes, int &read, BTreeElement *parent);
+		void commit(uint8_t *bytes);
+		void fromBytes(uint8_t *bytes, BTreeElement *parent);
 
 
 };

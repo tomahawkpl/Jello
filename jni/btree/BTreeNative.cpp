@@ -5,6 +5,8 @@
 #include "BTree.h"
 #include "RecordInfo.h"
 
+#include "misc.h"
+
 BTree *tree;
 
 int freeSpaceInfoSize;
@@ -13,26 +15,14 @@ jfieldID fidRecordId, fidRecordPagesUsed, fidRecordSchemaVersion;
 jmethodID midRecordGetPageUsage, midRecordSetPagesUsed;
 jfieldID fidPageUsagePageId, fidPageUsageUsage;
 
-void intToBytes(int i, unsigned char *data) {
-	data[0] = i >> 0 & 0xFF;
-	data[1] = i >> 8 & 0xFF;
-	data[2] = i >> 16 & 0xFF;
-	data[3] = i >> 24 & 0xFF;
-}
 
-void bytesToInt(int &i, unsigned char *data) {
-	i = 0;
-	i = data[3];
-	i = (i << 8) | data[2];
-	i = (i << 8) | data[1];
-	i = (i << 8) | data[0];
-}
+int bTreeLeafCapacity, bTreeNodeCapacity;
 
 void convertRecordToRecordInfo(JNIEnv *env, jobject record, RecordInfo *recordInfo) {
 	int pagesUsed = env->GetIntField(record, fidRecordPagesUsed);
 	int schemaVersion = env->GetIntField(record, fidRecordSchemaVersion);
 	recordInfo->length = 8 + pagesUsed * (4 + freeSpaceInfoSize);
-	recordInfo->data = (unsigned char*)malloc(recordInfo->length);
+	recordInfo->data = (uint8_t*)malloc(recordInfo->length);
 	intToBytes(schemaVersion, recordInfo->data);
 	intToBytes(pagesUsed, recordInfo->data + 4);
 
@@ -94,56 +84,63 @@ void convertRecordInfoToRecord(JNIEnv *env, jobject record, RecordInfo *recordIn
 void initIDs(JNIEnv *env) {
 	jclass klass;
 
-	klass = env->FindClass("com/atteo/jello/Record");
-	if (klass == NULL)
-		return;
+	 klass = env->FindClass("com/atteo/jello/Record");
+	 if (klass == NULL)
+		 return;
 
-	fidRecordId = env->GetFieldID(klass, "id", "I");
-	if (fidRecordId == NULL)
-		return;
+	 fidRecordId = env->GetFieldID(klass, "id", "I");
+	 if (fidRecordId == NULL)
+		 return;
 
-	fidRecordPagesUsed = env->GetFieldID(klass, "pagesUsed", "I");
-	if (fidRecordPagesUsed == NULL)
-		return;
+	 fidRecordPagesUsed = env->GetFieldID(klass, "pagesUsed", "I");
+	 if (fidRecordPagesUsed == NULL)
+		 return;
 
-	midRecordGetPageUsage = env->GetMethodID(klass, "getPageUsage", "(I)Lcom/atteo/jello/PageUsage;");
-	if (midRecordGetPageUsage == NULL)
-		return;
+	 midRecordGetPageUsage = env->GetMethodID(klass, "getPageUsage", "(I)Lcom/atteo/jello/PageUsage;");
+	 if (midRecordGetPageUsage == NULL)
+		 return;
 
-	midRecordSetPagesUsed = env->GetMethodID(klass, "setPagesUsed", "(I)V");
-	if (midRecordSetPagesUsed == NULL)
-		return;
+	 midRecordSetPagesUsed = env->GetMethodID(klass, "setPagesUsed", "(I)V");
+	 if (midRecordSetPagesUsed == NULL)
+		 return;
 
-	fidRecordSchemaVersion = env->GetFieldID(klass, "schemaVersion", "I");
-	if (fidRecordSchemaVersion == NULL)
-		return;
+	 fidRecordSchemaVersion = env->GetFieldID(klass, "schemaVersion", "I");
+	 if (fidRecordSchemaVersion == NULL)
+		 return;
 
-	klass = env->FindClass("com/atteo/jello/PageUsage");
-	if (klass == NULL)
-		return;
+	 klass = env->FindClass("com/atteo/jello/PageUsage");
+	 if (klass == NULL)
+		 return;
 
-	fidPageUsagePageId = env->GetFieldID(klass, "pageId", "I");
-	if (fidPageUsagePageId == NULL)
-		return;
+	 fidPageUsagePageId = env->GetFieldID(klass, "pageId", "I");
+	 if (fidPageUsagePageId == NULL)
+		 return;
 
-	fidPageUsageUsage = env->GetFieldID(klass, "usage", "[B");
-	if (fidPageUsageUsage == NULL)
-		return;
+	 fidPageUsageUsage = env->GetFieldID(klass, "usage", "[B");
+	 if (fidPageUsageUsage == NULL)
+		 return;
+
+
 }
 
-void JNICALL init(JNIEnv *env, jclass dis,
-		int freeSpaceInfoSizeArg, short bTreeLeafCapacity, short bTreeNodeCapacity) {
+void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFile, jobject pagePoolProxy, jobject spaceManagerPolicy,
+		int freeSpaceInfoSizeArg, int bTreeLeafCapacityArg, int bTreeNodeCapacityArg, int klassIndexPageId) {
 	initIDs(env);
 	freeSpaceInfoSize = freeSpaceInfoSizeArg;
 
-	tree = new BTree(bTreeLeafCapacity, bTreeNodeCapacity);
+	bTreeLeafCapacity = bTreeLeafCapacityArg;
+	bTreeNodeCapacity = bTreeNodeCapacityArg;
+
+	tree = new BTree(bTreeLeafCapacity, bTreeNodeCapacity, pagedFile, pagePoolProxy, spaceManagerPolicy, env,
+			klassIndexPageId);
 }
 
-
-void JNICALL create(JNIEnv *env, jclass dis, jint id) {
+jboolean JNICALL load(JNIEnv *env, jclass dis) {
+	return tree->load();
 }
 
-void JNICALL load(JNIEnv *env, jclass dis, jint id) {
+void JNICALL commit(JNIEnv *env, jclass dis) {
+	tree->commit();
 }
 
 void JNICALL remove(JNIEnv *env, jclass dis, jint id) {
@@ -164,7 +161,7 @@ jboolean JNICALL find(JNIEnv *env, jclass dis, jobject record) {
 	RecordInfo *recordInfo = tree->find(id);
 	if (recordInfo == NULL)
 		return JNI_FALSE;
-	
+
 	convertRecordInfoToRecord(env, record, recordInfo);
 
 	return JNI_TRUE;
@@ -187,7 +184,7 @@ void JNICALL debug(JNIEnv *env, jclass dis) {
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv* env;
-	JNINativeMethod nm[8];
+	JNINativeMethod nm[9];
 	jclass klass;
 	if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
@@ -196,13 +193,13 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	klass = env->FindClass("com/atteo/jello/index/BTree");
 	/* register methods with (*env)->RegisterNatives */
 
-	nm[0].name = "create";
-	nm[0].signature = "(I)V";
-	nm[0].fnPtr = (void*)create;
+	nm[0].name = "load";
+	nm[0].signature = "()Z";
+	nm[0].fnPtr = (void*)load;
 
-	nm[1].name = "load";
-	nm[1].signature = "(I)V";
-	nm[1].fnPtr = (void*)load;
+	nm[1].name = "commit";
+	nm[1].signature = "()V";
+	nm[1].fnPtr = (void*)commit;
 
 	nm[2].name = "remove";
 	nm[2].signature = "(I)V";
@@ -221,7 +218,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[5].fnPtr = (void*)update;
 
 	nm[6].name = "init";
-	nm[6].signature = "(ISS)V";
+	nm[6].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/index/PagePoolProxy;Lcom/atteo/jello/space/SpaceManagerPolicy;IIII)V";
 	nm[6].fnPtr = (void*)init;
 
 	nm[7].name = "debug";

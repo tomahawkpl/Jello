@@ -9,12 +9,15 @@ public class NextFit implements SpaceManagerPolicy {
 	static {
 		System.loadLibrary("NextFit");
 	}
-
+	
+	private SpaceManager spaceManager;
+	
 	@Inject
 	public NextFit(NextFitHistogram nextFitHistogram, PagedFile pagedFile,
 			SpaceManager spaceManager, @Named("pageSize") short pageSize,
 			@Named("blockSize") short blockSize,
 			@Named("maxRecordSize") int maxRecordSize) {
+		this.spaceManager = spaceManager;
 		init(nextFitHistogram, pagedFile, spaceManager, pageSize, blockSize, maxRecordSize);
 	}
 
@@ -32,7 +35,15 @@ public class NextFit implements SpaceManagerPolicy {
 
 	public native void releaseRecord(Record record);
 
-	public native void create();
+	public void create() {
+		spaceManager.create();
+	}
 
-	public native boolean load();
+	public boolean load() {
+		return spaceManager.load();
+	}
+	
+	public void commit() {
+		spaceManager.commit();
+	}
 }

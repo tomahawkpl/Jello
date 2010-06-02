@@ -18,12 +18,23 @@ void BTreeElement::setParent(BTreeNode *node) {
 	parent = node;
 }
 
-short BTreeElement::getFreeSpace() {
+int BTreeElement::getFreeSpace() {
 	return freeSpace;
 }
 
 int BTreeElement::getCount() {
 	return count;
+}
+
+void BTreeElement::setCount(int count) {
+	this->count = count;
+}
+
+void BTreeElement::setMinId(int minId) {
+	this->minId = minId;
+}
+void BTreeElement::setFreeSpace(int freeSpace) {
+	this->freeSpace = freeSpace;
 }
 
 void BTreeElement::debug() {

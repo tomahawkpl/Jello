@@ -24,7 +24,7 @@ public class SpaceManagerPolicyMock implements SpaceManagerPolicy {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
+	
 	public boolean reacquireRecord(Record record, int length) {
 		// TODO Auto-generated method stub
 		return false;
@@ -38,6 +38,11 @@ public class SpaceManagerPolicyMock implements SpaceManagerPolicy {
 	public void releaseRecord(Record record) {
 		// TODO Auto-generated method stub
 
+	}
+
+	public void commit() {
+		// TODO Auto-generated method stub
+		
 	}
 
 }
