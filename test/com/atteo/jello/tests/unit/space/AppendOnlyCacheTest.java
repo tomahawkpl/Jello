@@ -13,24 +13,10 @@ public abstract class AppendOnlyCacheTest extends
 	@Inject
 	private AppendOnlyCache appendOnlyCache;
 
-	@Override
-	protected Class<AppendOnlyCache> interfaceUnderTest() {
-		return AppendOnlyCache.class;
-	}
-
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("appendOnlyCacheSize")).toInstance(
 				appendOnlyCacheSize);
-	}
-
-	@Override
-	protected void setUp() {
-		super.setUp();
-	}
-
-	@Override
-	protected void tearDown() {
 	}
 
 	public void testOverflow() {
@@ -88,6 +74,20 @@ public abstract class AppendOnlyCacheTest extends
 		appendOnlyCache.update(0, (short) 0);
 		appendOnlyCache.update(1, (short) 0);
 		assertTrue(appendOnlyCache.isEmpty());
+	}
+
+	@Override
+	protected Class<AppendOnlyCache> interfaceUnderTest() {
+		return AppendOnlyCache.class;
+	}
+
+	@Override
+	protected void setUp() {
+		super.setUp();
+	}
+
+	@Override
+	protected void tearDown() {
 	}
 
 }

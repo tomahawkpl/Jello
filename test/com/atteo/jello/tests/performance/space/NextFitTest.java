@@ -11,12 +11,7 @@ public class NextFitTest extends SpaceManagerPolicyTest {
 	private final int nextFitHistogramClasses = 8;
 
 	@Override
-	protected Class<? extends SpaceManagerPolicy> implementation() {
-		return NextFit.class;
-	}
-
-	@Override
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		super.configure(binder);
 
 		binder.bind(NextFitHistogram.class).to(NextFitHistogramNative.class);
@@ -24,6 +19,11 @@ public class NextFitTest extends SpaceManagerPolicyTest {
 				Names.named("nextFitHistogramClasses")).toInstance(
 				nextFitHistogramClasses);
 
+	}
+
+	@Override
+	protected Class<? extends SpaceManagerPolicy> implementation() {
+		return NextFit.class;
 	}
 
 }

@@ -5,22 +5,22 @@ import com.atteo.jello.transaction.TransactionManager;
 
 public class TransactionManagerMock implements TransactionManager {
 
-	public void performDeleteTransaction(Storable storable) {
+	public void performDeleteTransaction(final Storable storable) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public boolean performFindTransaction(Storable storable) {
+	public boolean performFindTransaction(final Storable storable) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public void performInsertTransaction(Storable storable) {
+	public void performInsertTransaction(final Storable storable) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void performUpdateTransaction(Storable storable) {
+	public void performUpdateTransaction(final Storable storable) {
 		// TODO Auto-generated method stub
 
 	}

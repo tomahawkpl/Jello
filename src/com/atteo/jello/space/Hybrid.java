@@ -15,30 +15,32 @@ public class Hybrid implements SpaceManagerPolicy {
 
 	@Inject
 	public Hybrid(
-			PagedFile pagedFile,
-			ListPage listPage,
-			@Named("pageSize") short pageSize,
-			@Named("blockSize") short blockSize,
-			@Named("maxRecordSize") int maxRecordSize,
-			@Named("freeSpaceInfosPerPage") short freeSpaceInfosPerPage,
-			@Named("freeSpaceInfoSize") short freeSpaceInfoSize,
-			@Named("freeSpaceInfoPageCapacity") short freeSpaceInfoPageCapacity,
-			@Named("freeSpaceInfoPageId") int pageFreeSpaceInfo,
-			@Named("nextFitHistogramClasses") int histogramClasses) {
+			final PagedFile pagedFile,
+			final ListPage listPage,
+			@Named("pageSize") final short pageSize,
+			@Named("blockSize") final short blockSize,
+			@Named("maxRecordSize") final int maxRecordSize,
+			@Named("freeSpaceInfosPerPage") final short freeSpaceInfosPerPage,
+			@Named("freeSpaceInfoSize") final short freeSpaceInfoSize,
+			@Named("freeSpaceInfoPageCapacity") final short freeSpaceInfoPageCapacity,
+			@Named("freeSpaceInfoPageId") final int pageFreeSpaceInfo,
+			@Named("nextFitHistogramClasses") final int histogramClasses) {
 		init(pagedFile, listPage, pageSize, blockSize, maxRecordSize,
 				freeSpaceInfosPerPage, freeSpaceInfoSize,
 				freeSpaceInfoPageCapacity, pageFreeSpaceInfo, histogramClasses);
 	}
 
-	private native void init(PagedFile pagedFile, ListPage listPage,
-			short pageSize, short blockSize, int maxRecordSize,
-			short freeSpaceInfosPerPage, short freeSpaceInfoSize,
-			short freeSpaceInfoPageCapacity, int pageFreeSpaceInfo,
-			int histogramClasses);
-
 	public native int acquirePage();
 
 	public native boolean acquireRecord(Record record, int length);
+
+	public native void commit();
+
+	public native void create();
+
+	public native boolean isPageUsed(int id);
+
+	public native boolean load();
 
 	public native boolean reacquireRecord(Record record, int length);
 
@@ -46,9 +48,11 @@ public class Hybrid implements SpaceManagerPolicy {
 
 	public native void releaseRecord(Record record);
 
-	public native void create();
+	public native void setPageUsed(int id, boolean used);
 
-	public native boolean load();
-	
-	public native void commit();
+	private native void init(PagedFile pagedFile, ListPage listPage,
+			short pageSize, short blockSize, int maxRecordSize,
+			short freeSpaceInfosPerPage, short freeSpaceInfoSize,
+			short freeSpaceInfoPageCapacity, int pageFreeSpaceInfo,
+			int histogramClasses);
 }

@@ -26,16 +26,11 @@ public abstract class SpaceManagerTest extends
 
 	@Inject
 	private SpaceManager spaceManager;
-	
+
 	@Inject
 	private PagedFile pagedFile;
 
-	@Override
-	protected Class<SpaceManager> interfaceUnderTest() {
-		return SpaceManager.class;
-	}
-
-	public void configure(final Binder binder) {		
+	public void configure(final Binder binder) {
 		binder.bind(PagedFile.class).to(PagedFileMock.class);
 
 		final HashMap<String, String> p = new HashMap<String, String>();
@@ -47,7 +42,6 @@ public abstract class SpaceManagerTest extends
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
 		p.put("freeSpaceInfoPageId", String.valueOf(freeSpaceInfoPageId));
 
-		
 		Names.bindProperties(binder, p);
 
 	}
@@ -60,7 +54,7 @@ public abstract class SpaceManagerTest extends
 
 		final ByteBuffer b = ByteBuffer.wrap(p.getData());
 
-		assertEquals(-1, b.getLong(0));
+		assertEquals(-1, b.getInt(0));
 	}
 
 	public void testFreeSpaceOnPage() {
@@ -90,19 +84,6 @@ public abstract class SpaceManagerTest extends
 		assertFalse(spaceManager.isPageUsed(2));
 		assertFalse(spaceManager.isPageUsed(3));
 		assertFalse(spaceManager.isPageUsed(4));
-
-		final Page p = new Page();
-
-		p.setId(freeSpaceInfoPageId);
-		pagedFile.readPage(p);
-
-		final ByteBuffer b = ByteBuffer.wrap(p.getData());
-
-		b.position(8);
-
-		for (int i = 0; i < 5; i++)
-			assertEquals(0, b.getInt());
-
 	}
 
 	public void testSetBlockUsed() {
@@ -144,6 +125,11 @@ public abstract class SpaceManagerTest extends
 		spaceManager.setPageUsed(1022, true);
 		assertTrue(spaceManager.isPageUsed(1022));
 
+	}
+
+	@Override
+	protected Class<SpaceManager> interfaceUnderTest() {
+		return SpaceManager.class;
 	}
 
 	@Override

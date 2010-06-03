@@ -31,6 +31,15 @@ public class PagedFileMock implements PagedFile {
 
 	}
 
+	public boolean create() {
+		pages = new ArrayList<Page>();
+		return true;
+	}
+
+	public boolean exists() {
+		return pages != null;
+	}
+
 	public long getFileLength() {
 		if (pages != null)
 			return pages.size() * pageSize;
@@ -58,6 +67,10 @@ public class PagedFileMock implements PagedFile {
 				0, pageSize);
 	}
 
+	public void remove() {
+		pages = null;
+	}
+
 	public void removePages(int count) {
 		if (count > pages.size())
 			count = pages.size();
@@ -77,19 +90,6 @@ public class PagedFileMock implements PagedFile {
 	public void writePage(final Page page) {
 		System.arraycopy(page.getData(), 0, pages.get(page.getId()).getData(),
 				0, pageSize);
-	}
-
-	public boolean create() {
-		pages = new ArrayList<Page>();
-		return true;
-	}
-
-	public void remove() {
-		pages = null;
-	}
-
-	public boolean exists() {
-		return pages != null;
 	}
 
 }

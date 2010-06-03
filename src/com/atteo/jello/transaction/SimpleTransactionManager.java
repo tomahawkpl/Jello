@@ -17,23 +17,22 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
 public class SimpleTransactionManager implements TransactionManager {
-	private StorableWriter storableWriter;
-	private SpaceManagerPolicy spaceManagerPolicy;
-	private KlassManager klassManager;
-	private PagedFile pagedFile;
-	private int freeSpaceInfoSize, blockSize;
-	private Pool<Page> pagePool;
-	private byte[] data;
+	private final StorableWriter storableWriter;
+	private final SpaceManagerPolicy spaceManagerPolicy;
+	private final KlassManager klassManager;
+	private final PagedFile pagedFile;
+	private final int freeSpaceInfoSize, blockSize;
+	private final Pool<Page> pagePool;
+	private final byte[] data;
 	Page page;
 
-	
 	@Inject
-	public SimpleTransactionManager(StorableWriter storableWriter,
-			SpaceManagerPolicy spaceManagerPolicy, KlassManager klassManager,
-			PagedFile pagedFile,
-			@Named("freeSpaceInfoSize") int freeSpaceInfoSize,
-			@Named("blockSize") int blockSize, Pool<Page> pagePool,
-			@Named("maxRecordSize") int maxRecordSize) {
+	public SimpleTransactionManager(final StorableWriter storableWriter,
+			final SpaceManagerPolicy spaceManagerPolicy,
+			final KlassManager klassManager, final PagedFile pagedFile,
+			@Named("freeSpaceInfoSize") final int freeSpaceInfoSize,
+			@Named("blockSize") final int blockSize, final Pool<Page> pagePool,
+			@Named("maxRecordSize") final int maxRecordSize) {
 		this.storableWriter = storableWriter;
 		this.spaceManagerPolicy = spaceManagerPolicy;
 		this.klassManager = klassManager;
@@ -41,120 +40,123 @@ public class SimpleTransactionManager implements TransactionManager {
 		this.freeSpaceInfoSize = freeSpaceInfoSize;
 		this.blockSize = blockSize;
 		this.pagePool = pagePool;
-		
-		this.data = new byte[maxRecordSize];
-		
+
+		data = new byte[maxRecordSize];
+
 		page = pagePool.acquire();
 	}
 
-	public void performDeleteTransaction(Storable storable) {
+	public void performDeleteTransaction(final Storable storable) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public boolean performFindTransaction(Storable storable) {
+	public boolean performFindTransaction(final Storable storable) {
 		if (!klassManager.isKlassManaged(storable.getClassName()))
 			return false;
 
-		Record record = storable.getRecord();
+		final Record record = storable.getRecord();
 
-		Index index = klassManager.getIndexFor(storable.getClassName());
+		final Index index = klassManager.getIndexFor(storable.getClassName());
 		if (!index.find(record))
 			return false;
 
 		readRecord(record, data);
 
-		SchemaManager schemaManager = klassManager.getSchemaManagerFor(storable.getClassName());
-		Schema schema = schemaManager.getSchema(record.getSchemaVersion());
+		final SchemaManager schemaManager = klassManager
+				.getSchemaManagerFor(storable.getClassName());
+		final Schema schema = schemaManager
+				.getSchema(record.getSchemaVersion());
 
 		storableWriter.readStorable(data, storable, schema);
 
 		return true;
 	}
 
-	public void performInsertTransaction(Storable storable) {
-		Schema schema = storable.getSchema();
-		int len = storableWriter.writeStorable(data, storable, schema);
+	public void performInsertTransaction(final Storable storable) {
+		final Schema schema = storable.getSchema();
+		final int len = storableWriter.writeStorable(data, storable, schema);
 
-		Record record = storable.getRecord();
+		final Record record = storable.getRecord();
 
 		spaceManagerPolicy.acquireRecord(record, len);
 
 		if (!klassManager.isKlassManaged(storable.getClassName()))
 			klassManager.addKlass(storable.getClassName());
 
-		SchemaManager schemaManager = klassManager.getSchemaManagerFor(storable.getClassName());
+		final SchemaManager schemaManager = klassManager
+				.getSchemaManagerFor(storable.getClassName());
 		record.setSchemaVersion(schemaManager.addSchema(schema));
 
 		record.setId(klassManager.getIdFor(storable.getClassName()));
 
-		Index index = klassManager.getIndexFor(storable.getClassName());
+		final Index index = klassManager.getIndexFor(storable.getClassName());
 		index.insert(record);
 
 		writeRecord(record, data);
 
 	}
 
-	public void performUpdateTransaction(Storable storable) {
-		Schema schema = storable.getSchema();
-		int len = storableWriter.writeStorable(data, storable, schema);
+	public void performUpdateTransaction(final Storable storable) {
+		final Schema schema = storable.getSchema();
+		final int len = storableWriter.writeStorable(data, storable, schema);
 
-		Record record = storable.getRecord();
+		final Record record = storable.getRecord();
 
 		spaceManagerPolicy.reacquireRecord(record, len);
 
-		SchemaManager schemaManager = klassManager.getSchemaManagerFor(storable.getClassName());
+		final SchemaManager schemaManager = klassManager
+				.getSchemaManagerFor(storable.getClassName());
 		record.setSchemaVersion(schemaManager.addSchema(schema));
 
 		record.setId(klassManager.getIdFor(storable.getClassName()));
 
-		Index index = klassManager.getIndexFor(storable.getClassName());
+		final Index index = klassManager.getIndexFor(storable.getClassName());
 		index.insert(record);
 
 		writeRecord(record, data);
 
 	}
 
-	private void readRecord(Record record, byte[] data) {
-		int u = record.getPagesUsed();
+	private void readRecord(final Record record, final byte[] data) {
+		final int u = record.getPagesUsed();
 		int position = 0;
 
-		Page page = pagePool.acquire();
+		final Page page = pagePool.acquire();
 
 		for (int i = 0; i < u; i++) {
-			PageUsage usage = record.getPageUsage(i);
+			final PageUsage usage = record.getPageUsage(i);
 			page.setId(usage.pageId);
 			pagedFile.readPage(page);
 
-			byte[] pageData = page.getData();
+			final byte[] pageData = page.getData();
 
-			for (int j = 0; j < freeSpaceInfoSize; j++) {
+			for (int j = 0; j < freeSpaceInfoSize; j++)
 				for (int k = 0; k < Byte.SIZE; k++)
 					if ((usage.usage[j] & 1 << k) != 0) {
 						System.arraycopy(pageData, (j * Byte.SIZE + k)
 								* blockSize, data, position, blockSize);
 						position += blockSize;
 					}
-			}
 		}
 
 		pagePool.release(page);
 
 	}
 
-	private void writeRecord(Record record, byte data[]) {
-		int u = record.getPagesUsed();
+	private void writeRecord(final Record record, final byte data[]) {
+		final int u = record.getPagesUsed();
 		int position = 0;
 
 		for (int i = 0; i < u; i++) {
-			PageUsage usage = record.getPageUsage(i);
+			final PageUsage usage = record.getPageUsage(i);
 
 			page.setId(usage.pageId);
 			pagedFile.readPage(page);
 
-			byte[] pageData = page.getData();
+			final byte[] pageData = page.getData();
 
-			for (int j = 0; j < freeSpaceInfoSize; j++) {
+			for (int j = 0; j < freeSpaceInfoSize; j++)
 				for (int k = 0; k < Byte.SIZE; k++)
 					if ((usage.usage[j] & 1 << k) != 0) {
 						System.arraycopy(data, position, pageData, (j
@@ -163,11 +165,10 @@ public class SimpleTransactionManager implements TransactionManager {
 
 						position += blockSize;
 					}
-			}
-			
+
 			pagedFile.writePage(page);
 
 		}
-		
+
 	}
 }

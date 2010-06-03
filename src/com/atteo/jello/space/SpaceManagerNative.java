@@ -1,6 +1,5 @@
 package com.atteo.jello.space;
 
-
 import com.atteo.jello.Record;
 import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.PagedFile;
@@ -17,19 +16,20 @@ public class SpaceManagerNative implements SpaceManager {
 
 	@Inject
 	public SpaceManagerNative(
-			PagedFile pagedFile,
-			ListPage listPage,
+			final PagedFile pagedFile,
+			final ListPage listPage,
 			@Named("freeSpaceInfoSize") final short freeSpaceInfoSize,
 			@Named("freeSpaceInfosPerPage") final short freeSpaceInfosPerPage,
 			@Named("freeSpaceInfoPageCapacity") final short freeSpaceInfoPageCapacity,
 			@Named("blockSize") final short blockSize,
-			@Named("freeSpaceInfoPageId") int freeSpaceInfoPageId) {
+			@Named("freeSpaceInfoPageId") final int freeSpaceInfoPageId) {
 
 		init(pagedFile, listPage, freeSpaceInfosPerPage, freeSpaceInfoSize,
-				freeSpaceInfoPageCapacity, freeSpaceInfoPageId,
-				blockSize);
+				freeSpaceInfoPageCapacity, freeSpaceInfoPageId, blockSize);
 
 	}
+
+	public native void commit();
 
 	public native void create();
 
@@ -50,11 +50,9 @@ public class SpaceManagerNative implements SpaceManager {
 
 	public native void setPageUsed(int id, boolean used);
 
+	public native void setRecordUsed(Record record, boolean used);
+
 	public native long totalFreeSpace();
 
 	public native void update();
-
-	public native void setRecordUsed(Record record, boolean used);
-
-	public native void commit();
 }

@@ -25,7 +25,8 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.FactoryProvider;
 import com.google.inject.name.Names;
 
-public abstract class KlassManagerTest extends JelloInterfaceTestCase<KlassManager> {
+public abstract class KlassManagerTest extends
+		JelloInterfaceTestCase<KlassManager> {
 
 	// ---- SETTINGS
 	private final short pageSize = 4096;
@@ -38,33 +39,33 @@ public abstract class KlassManagerTest extends JelloInterfaceTestCase<KlassManag
 	private final int maxRecordPages = 4;
 	private final int maxRecordSize = maxRecordPages * pageSize;
 	private final int nextFitHistogramClasses = 8;
-	
-	@Inject private PagedFile pagedFile;
-	@Inject private SpaceManagerPolicy policy;
-	@Inject private KlassManager klassManager;
-	
-	@Override
-	protected Class<KlassManager> interfaceUnderTest() {
-		return KlassManager.class;
-	}
 
-	public void configure(Binder binder) {
+	@Inject
+	private PagedFile pagedFile;
+	@Inject
+	private SpaceManagerPolicy policy;
+	@Inject
+	private KlassManager klassManager;
+
+	public void configure(final Binder binder) {
 		binder.requestStaticInjection(Record.class);
 		binder.requestStaticInjection(Page.class);
 		binder.requestStaticInjection(PageUsage.class);
-		
+
 		binder.bind(PagedFile.class).to(PagedFileMock.class);
 		binder.bind(SpaceManager.class).to(SpaceManagerNative.class);
 		binder.bind(NextFitHistogram.class).to(NextFitHistogramNative.class);
 		binder.bind(SpaceManagerPolicy.class).to(NextFit.class);
-		
-		binder.bind(IndexFactory.class).toProvider(
-			    FactoryProvider.newFactory(IndexFactory.class, IndexMock.class));
-		
+
+		binder.bind(IndexFactory.class)
+				.toProvider(
+						FactoryProvider.newFactory(IndexFactory.class,
+								IndexMock.class));
+
 		binder.bind(SchemaManagerFactory.class).toProvider(
-			    FactoryProvider.newFactory(SchemaManagerFactory.class, SchemaManagerMock.class));
-		
-		
+				FactoryProvider.newFactory(SchemaManagerFactory.class,
+						SchemaManagerMock.class));
+
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("blockSize", String.valueOf(blockSize));
 		p.put("pageSize", String.valueOf(pageSize));
@@ -76,17 +77,23 @@ public abstract class KlassManagerTest extends JelloInterfaceTestCase<KlassManag
 		p.put("klassManagerPageId", String.valueOf(klassManagerPageId));
 		p.put("maxRecordSize", String.valueOf(maxRecordSize));
 		p.put("maxRecordPages", String.valueOf(maxRecordPages));
-		p.put("nextFitHistogramClasses", String.valueOf(nextFitHistogramClasses));
-		
+		p.put("nextFitHistogramClasses", String
+				.valueOf(nextFitHistogramClasses));
+
 		Names.bindProperties(binder, p);
 	}
-	
+
 	public void testAddKlass() {
-		String className = new TestClass().getClassName();
+		final String className = new TestClass().getClassName();
 		klassManager.addKlass(className);
 		assertTrue(klassManager.isKlassManaged(className));
 	}
-	
+
+	@Override
+	protected Class<KlassManager> interfaceUnderTest() {
+		return KlassManager.class;
+	}
+
 	@Override
 	protected void setUp() {
 		super.setUp();
@@ -104,9 +111,9 @@ public abstract class KlassManagerTest extends JelloInterfaceTestCase<KlassManag
 		pagedFile.close();
 		pagedFile.remove();
 	}
-	
+
 	private class TestClass extends Storable {
-		
+
 	}
 
 }

@@ -22,12 +22,12 @@ public class SchemaModule implements Module {
 
 	}
 
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.bind(SchemaManagerFactory.class).toProvider(
 				FactoryProvider.newFactory(SchemaManagerFactory.class,
 						SimpleSchemaManager.class));
 		binder.bind(StorableWriter.class).to(VanillaStorableWriter.class);
-		
+
 		Names.bindProperties(binder, properties);
 	}
 

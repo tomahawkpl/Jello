@@ -19,19 +19,14 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	private PagedFile pagedFile;
 
 	private final short pageSize = 4096;
-	
+
 	@Inject
 	private Pool<Page> pagePool;
 
-	@Override
-	protected Class<PagedFile> interfaceUnderTest() {
-		return PagedFile.class;
-	}
-
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.requestStaticInjection(Page.class);
 
-		String path = getInstrumentation().getContext().getDatabasePath(
+		final String path = getInstrumentation().getContext().getDatabasePath(
 				"testfile").getAbsolutePath();
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("pageSize", String.valueOf(pageSize));
@@ -121,6 +116,11 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 			pagedFile.writePage(p);
 		}
 		pagePool.release(p);
+	}
+
+	@Override
+	protected Class<PagedFile> interfaceUnderTest() {
+		return PagedFile.class;
 	}
 
 	@Override

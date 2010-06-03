@@ -5,16 +5,17 @@ import com.google.inject.Binder;
 
 public class RecordTest extends JelloTestCase {
 
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 
 	}
-	
+
+	@Override
 	public void setUp() {
 		super.setUp();
 	}
-	
+
 	public void testSetChunkUsed() {
-		
+
 	}
 
 }

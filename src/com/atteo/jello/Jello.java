@@ -49,7 +49,7 @@ public class Jello {
 		dbFile = injector.getInstance(DatabaseFile.class);
 
 		dbFile.open();
-		
+
 		if (isNew)
 			if (dbFile.createStructure())
 				return Jello.OPEN_SUCCESS;
@@ -73,7 +73,7 @@ public class Jello {
 		return Jello.OPEN_SUCCESS;
 	}
 
-	public static void setInjector(Injector injector) {
+	public static void setInjector(final Injector injector) {
 		Jello.injector = injector;
 	}
 

@@ -29,7 +29,7 @@ public abstract class SpaceManagerPolicyTest extends
 	SpaceManager spaceManager;
 	@Inject
 	Pool<Record> recordPool;
-	
+
 	// ---- SETTINGS
 	private final short pageSize = 4096;
 	private final short blockSize = 32;
@@ -42,20 +42,15 @@ public abstract class SpaceManagerPolicyTest extends
 
 	// --------------
 
-	@Override
-	protected Class<SpaceManagerPolicy> interfaceUnderTest() {
-		return SpaceManagerPolicy.class;
-	}
-
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.requestStaticInjection(Page.class);
 		binder.requestStaticInjection(PageUsage.class);
 		binder.requestStaticInjection(Record.class);
-		
+
 		binder.bind(PagedFile.class).to(PagedFileNative.class);
 		binder.bind(SpaceManager.class).to(SpaceManagerNative.class);
 
-		String path = getInstrumentation().getContext().getDatabasePath(
+		final String path = getInstrumentation().getContext().getDatabasePath(
 				"testfile").getAbsolutePath();
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("pageSize", String.valueOf(pageSize));
@@ -72,6 +67,7 @@ public abstract class SpaceManagerPolicyTest extends
 		Names.bindProperties(binder, p);
 	}
 
+	@Override
 	public void setUp() {
 		super.setUp();
 
@@ -86,42 +82,40 @@ public abstract class SpaceManagerPolicyTest extends
 
 	}
 
+	@Override
 	public void tearDown() {
 		pagedFile.close();
 		pagedFile.remove();
 	}
 
-	public void testAcquirePage() {
-		int TESTSIZE = 100;
+	public void testAcquireBigRecords() {
+		final int TESTSIZE = 100;
+		final Record r = recordPool.acquire();
+
 		startPerformanceTest(true);
 
 		for (int i = 0; i < TESTSIZE; i++) {
-			policy.acquirePage();
+			policy.acquireRecord(r, maxRecordSize / 8 * (i % 8));
+			r.clearUsage();
 		}
 
 		endPerformanceTest();
 	}
 
-	public void testReleasePage() {
-		int TESTSIZE = 100;
-
-		for (int i = 0; i < TESTSIZE; i++) {
-			policy.acquirePage();
-		}
-
+	public void testAcquirePage() {
+		final int TESTSIZE = 100;
 		startPerformanceTest(true);
 
-		for (int i = 0; i < TESTSIZE; i++) {
-			policy.releasePage(TESTSIZE + 1 - i);
-		}
+		for (int i = 0; i < TESTSIZE; i++)
+			policy.acquirePage();
 
 		endPerformanceTest();
 	}
 
 	public void testAcquireSmallRecords() {
-		int TESTSIZE = 100;
-		Record r = recordPool.acquire();
-		
+		final int TESTSIZE = 100;
+		final Record r = recordPool.acquire();
+
 		startPerformanceTest(true);
 
 		for (int i = 0; i < TESTSIZE; i++) {
@@ -132,28 +126,14 @@ public abstract class SpaceManagerPolicyTest extends
 		endPerformanceTest();
 	}
 
-	public void testAcquireBigRecords() {
-		int TESTSIZE = 100;
-		Record r = recordPool.acquire();
-
-		startPerformanceTest(true);
-
-		for (int i = 0; i < TESTSIZE; i++) {
-			policy.acquireRecord(r, (maxRecordSize / 8) * (i % 8));
-			r.clearUsage();
-		}
-
-		endPerformanceTest();
-	}
-
 	public void testExtensive() {
-		int TESTSIZE = 100;
+		final int TESTSIZE = 100;
 
 		Record r1, r2;
 
 		r1 = recordPool.acquire();
 		r2 = recordPool.acquire();
-		
+
 		startPerformanceTest(true);
 
 		policy.acquireRecord(r1, (int) (Math.random() * pageSize));
@@ -163,16 +143,36 @@ public abstract class SpaceManagerPolicyTest extends
 			r2 = recordPool.acquire();
 			policy.acquireRecord(r1, (int) (Math.random() * (pageSize / 2)));
 			policy.acquireRecord(r2, (int) (Math.random() * pageSize));
-			
+
 			policy.releaseRecord(r1);
 			recordPool.release(r1);
 			r1 = r2;
 		}
 
 		endPerformanceTest();
-		
-		Log.i("jello","Average freespace: " + (spaceManager.totalFreeSpace() / pagedFile.getPageCount()));
 
+		Log.i("jello", "Average freespace: " + spaceManager.totalFreeSpace()
+				/ pagedFile.getPageCount());
+
+	}
+
+	public void testReleasePage() {
+		final int TESTSIZE = 100;
+
+		for (int i = 0; i < TESTSIZE; i++)
+			policy.acquirePage();
+
+		startPerformanceTest(true);
+
+		for (int i = 0; i < TESTSIZE; i++)
+			policy.releasePage(TESTSIZE + 1 - i);
+
+		endPerformanceTest();
+	}
+
+	@Override
+	protected Class<SpaceManagerPolicy> interfaceUnderTest() {
+		return SpaceManagerPolicy.class;
 	}
 
 }

@@ -10,5 +10,4 @@ public class PagedFileRAFTest extends PagedFileTest {
 		return PagedFileRAF.class;
 	}
 
-
 }

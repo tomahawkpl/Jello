@@ -21,13 +21,13 @@ public class DatabaseFile implements Module {
 	private KlassManager klassManager;
 	private final Injector injector;
 
-	private int headerPageId;
-	private int minimumPages;
+	private final int headerPageId;
+	private final int minimumPages;
 
 	@Inject
 	private DatabaseFile(final Injector injector, final PagedFile pagedFile,
-			@Named("headerPageId") int headerPageId,
-			@Named("minimumPages") int minimumPages) {
+			@Named("headerPageId") final int headerPageId,
+			@Named("minimumPages") final int minimumPages) {
 
 		this.injector = injector;
 		this.pagedFile = pagedFile;
@@ -37,6 +37,48 @@ public class DatabaseFile implements Module {
 
 	public void close() {
 		pagedFile.close();
+	}
+
+	public void configure(final Binder binder) {
+		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
+				.toInstance(headerPage.getPageSize());
+		binder.bind(Short.class).annotatedWith(Names.named("blockSize"))
+				.toInstance(headerPage.getBlockSize());
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("freeSpaceInfoPageId")).toInstance(
+				headerPage.getFreeSpaceInfoPageId());
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("klassManagerPageId")).toInstance(
+				headerPage.getKlassManagerPageId());
+		binder.bind(Integer.class).annotatedWith(
+				Names.named("fileFormatVersion")).toInstance(
+				headerPage.getFileFormatVersion());
+
+		int mp = headerPage.getFreeSpaceInfoPageId();
+		if (mp < headerPage.getKlassManagerPageId())
+			mp = headerPage.getKlassManagerPageId();
+		mp++;
+
+		binder.bind(Integer.class).annotatedWith(Names.named("minimumPages"))
+				.toInstance(mp);
+
+	}
+
+	public boolean createStructure() {
+		if (pagedFile.addPages(minimumPages) != minimumPages - 1)
+			return false;
+
+		headerPage = injector.getInstance(HeaderPage.class);
+		headerPage.setId(headerPageId);
+		pagedFile.writePage(headerPage);
+
+		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
+		spaceManagerPolicy.create();
+
+		klassManager = injector.getInstance(KlassManager.class);
+		klassManager.create();
+
+		return true;
 	}
 
 	public PagedFile getPagedFile() {
@@ -78,47 +120,5 @@ public class DatabaseFile implements Module {
 	 */
 	public int open() {
 		return pagedFile.open();
-	}
-
-	public boolean createStructure() {
-		if (pagedFile.addPages(minimumPages) != minimumPages - 1)
-			return false;
-
-		headerPage = injector.getInstance(HeaderPage.class);
-		headerPage.setId(headerPageId);
-		pagedFile.writePage(headerPage);
-
-		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
-		spaceManagerPolicy.create();
-
-		klassManager = injector.getInstance(KlassManager.class);
-		klassManager.create();
-
-		return true;
-	}
-
-	public void configure(Binder binder) {
-		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
-				.toInstance(headerPage.getPageSize());
-		binder.bind(Short.class).annotatedWith(Names.named("blockSize"))
-				.toInstance(headerPage.getBlockSize());
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("freeSpaceInfoPageId")).toInstance(
-				headerPage.getFreeSpaceInfoPageId());
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("klassManagerPageId")).toInstance(
-				headerPage.getKlassManagerPageId());
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("fileFormatVersion")).toInstance(
-				headerPage.getFileFormatVersion());
-		
-		int mp = headerPage.getFreeSpaceInfoPageId();
-		if (mp < headerPage.getKlassManagerPageId())
-			mp = headerPage.getKlassManagerPageId();
-		mp++;
-		
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("minimumPages")).toInstance(mp);
-
 	}
 }

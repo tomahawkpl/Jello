@@ -30,20 +30,8 @@ abstract public class SchemaManagerTest extends
 	private SchemaManagerFactory schemaManagerFactory;
 	@Inject
 	private PagedFile pagedFile;
-	
-	@Override
-	protected Class<SchemaManager> interfaceUnderTest() {
-		return SchemaManager.class;
-	}
 
-	@Override
-	protected void bindImplementation(Binder binder) {
-		binder.bind(SchemaManagerFactory.class).toProvider(
-				FactoryProvider.newFactory(SchemaManagerFactory.class,
-						implementation()));
-	}
-
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.requestStaticInjection(Page.class);
 
 		binder.bind(SpaceManagerPolicy.class).to(SpaceManagerPolicyMock.class);
@@ -56,13 +44,13 @@ abstract public class SchemaManagerTest extends
 
 	public void testAddSchema() {
 		assertNull(schemaManager.getSchema(1));
-		Schema schema = new Schema();
+		final Schema schema = new Schema();
 		schema.names = new String[1];
 		schema.fields = new int[1];
 		schema.names[0] = "testField";
 		schema.fields[0] = Schema.FIELD_INT;
 		schemaManager.addSchema(schema);
-		Schema read = schemaManager.getSchema(0);
+		final Schema read = schemaManager.getSchema(0);
 
 		assertNotNull(read);
 
@@ -74,29 +62,13 @@ abstract public class SchemaManagerTest extends
 		}
 	}
 
-	public void testRemoveSchema() {
-		assertNull(schemaManager.getSchema(1));
-		Schema schema = new Schema();
-		schema.version = 1;
-		schema.names = new String[1];
-		schema.fields = new int[1];
-		schema.names[0] = "testField";
-		schema.fields[0] = Schema.FIELD_INT;
-		schemaManager.addSchema(schema);
-		assertNotNull(schemaManager.getSchema(0));
-		schemaManager.removeSchema(1);
-		assertNotNull(schemaManager.getSchema(0));
-		schemaManager.removeSchema(0);
-		assertNull(schemaManager.getSchema(0));
-	}
-
 	public void testCreate() {
 		schemaManager.create();
 		schemaManager.load();
 
 		assertNull(schemaManager.getSchema(0));
 	}
-	
+
 	public void testEmptyCommit() {
 		schemaManager.create();
 		schemaManager.commit();
@@ -106,11 +78,11 @@ abstract public class SchemaManagerTest extends
 	}
 
 	public void testLoad() {
-		int TESTSIZE = 150;
+		final int TESTSIZE = 150;
 		schemaManager.create();
 		assertNull(schemaManager.getSchema(1));
 		for (int i = 0; i < TESTSIZE; i++) {
-			Schema schema = new Schema();
+			final Schema schema = new Schema();
 			schema.names = new String[2];
 			schema.fields = new int[2];
 			schema.names[0] = "intField_" + i;
@@ -127,7 +99,7 @@ abstract public class SchemaManagerTest extends
 		schemaManager.load();
 
 		for (int i = 0; i < TESTSIZE; i++) {
-			Schema schema = schemaManager.getSchema(i);
+			final Schema schema = schemaManager.getSchema(i);
 			assertNotNull(schema);
 			assertEquals(2, schema.fields.length);
 			assertEquals("intField_" + i, schema.names[0]);
@@ -135,20 +107,49 @@ abstract public class SchemaManagerTest extends
 			assertEquals("stringField_" + i, schema.names[1]);
 			assertEquals(Schema.FIELD_STRING, schema.fields[1]);
 		}
-		
+
 		assertNull(schemaManager.getSchema(TESTSIZE));
 	}
 
+	public void testRemoveSchema() {
+		assertNull(schemaManager.getSchema(1));
+		final Schema schema = new Schema();
+		schema.version = 1;
+		schema.names = new String[1];
+		schema.fields = new int[1];
+		schema.names[0] = "testField";
+		schema.fields[0] = Schema.FIELD_INT;
+		schemaManager.addSchema(schema);
+		assertNotNull(schemaManager.getSchema(0));
+		schemaManager.removeSchema(1);
+		assertNotNull(schemaManager.getSchema(0));
+		schemaManager.removeSchema(0);
+		assertNull(schemaManager.getSchema(0));
+	}
+
+	@Override
+	protected void bindImplementation(final Binder binder) {
+		binder.bind(SchemaManagerFactory.class).toProvider(
+				FactoryProvider.newFactory(SchemaManagerFactory.class,
+						implementation()));
+	}
+
+	@Override
+	protected Class<SchemaManager> interfaceUnderTest() {
+		return SchemaManager.class;
+	}
+
+	@Override
 	protected void setUp() {
 		super.setUp();
 
 		if (pagedFile.exists())
 			pagedFile.remove();
-		
+
 		pagedFile.create();
 		pagedFile.open();
 		pagedFile.addPages(klassSchemaManagerPageId + 1);
-		
+
 		schemaManager = schemaManagerFactory.create(klassSchemaManagerPageId);
 	}
 

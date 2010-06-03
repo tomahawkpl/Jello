@@ -17,14 +17,9 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 	Page page;
 
 	private final short pageSize = 4096;
-	
-	@Override
-	protected Class<PagedFile> interfaceUnderTest() {
-		return PagedFile.class;
-	}
 
-	public void configure(Binder binder) {
-		String path = getInstrumentation().getContext().getDatabasePath(
+	public void configure(final Binder binder) {
+		final String path = getInstrumentation().getContext().getDatabasePath(
 				"testfile").getAbsolutePath();
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("pageSize", String.valueOf(pageSize));
@@ -68,6 +63,11 @@ public abstract class PagedFileTest extends JelloInterfaceTestCase<PagedFile> {
 		}
 
 		endPerformanceTest();
+	}
+
+	@Override
+	protected Class<PagedFile> interfaceUnderTest() {
+		return PagedFile.class;
 	}
 
 	@Override

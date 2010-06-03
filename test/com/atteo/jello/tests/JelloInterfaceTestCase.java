@@ -5,6 +5,10 @@ import com.google.inject.Module;
 import com.google.inject.util.Modules;
 
 public abstract class JelloInterfaceTestCase<T> extends JelloTestCase {
+	protected void bindImplementation(final Binder binder) {
+		binder.bind(interfaceUnderTest()).to(implementation());
+	}
+
 	@Override
 	protected Module extraBindings() {
 		final Module s = super.extraBindings();
@@ -22,11 +26,8 @@ public abstract class JelloInterfaceTestCase<T> extends JelloTestCase {
 		return m;
 	}
 
-	protected abstract Class<T> interfaceUnderTest();
 	protected abstract Class<? extends T> implementation();
-	
-	protected void bindImplementation(Binder binder) {
-		binder.bind(interfaceUnderTest()).to(implementation());
-	}
+
+	protected abstract Class<T> interfaceUnderTest();
 
 }

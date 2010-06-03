@@ -12,12 +12,18 @@ public class Page implements Poolable<Page> {
 	protected int id;
 	protected byte data[] = null;
 	protected ByteBuffer byteBuffer;
-	protected @Inject @Named("pageSize") static short pageSize;
-	
+	protected @Inject
+	@Named("pageSize")
+	static short pageSize;
+
 	public Page() {
 		data = new byte[pageSize];
 		byteBuffer = ByteBuffer.wrap(data);
 		byteBuffer.position(headerSize());
+	}
+
+	public void advance(final int i) {
+		byteBuffer.position(byteBuffer.position() + i);
 	}
 
 	public short getCapacity() {
@@ -32,12 +38,38 @@ public class Page implements Poolable<Page> {
 		return id;
 	}
 
+	public int getInt() {
+		return byteBuffer.getInt();
+	}
+
 	public Page getNextPoolable() {
 		return nextPoolable;
 	}
 
+	public String getString(final int length) {
+		final String result = new String(data, byteBuffer.position(), length);
+		advance(length);
+		return result;
+	}
+
 	public short headerSize() {
 		return 0;
+	}
+
+	public void position(final int position) {
+		byteBuffer.position(headerSize() + position);
+	}
+
+	public void putInt(final int value) {
+		byteBuffer.putInt(value);
+	}
+
+	public void putString(final String string) {
+		byteBuffer.put(string.getBytes());
+	}
+
+	public void reset() {
+		byteBuffer.position(headerSize());
 	}
 
 	public void setId(final int id) {
@@ -46,36 +78,5 @@ public class Page implements Poolable<Page> {
 
 	public void setNextPoolable(final Page element) {
 		nextPoolable = element;
-	}
-	
-	public void reset() {
-		byteBuffer.position(headerSize());
-	}
-	
-	public void advance(int i) {
-		byteBuffer.position(byteBuffer.position() + i);
-	}
-	
-	public void position(int position) {
-		byteBuffer.position(headerSize() + position);
-	}
-	
-	public void putString(String string) {
-		byteBuffer.put(string.getBytes());
-	}
-
-	public String getString(int length) {
-		String result = new String(data, byteBuffer
-				.position(), length);
-		advance(length);
-		return result;
-	}
-	
-	public void putInt(int value) {
-		byteBuffer.putInt(value);
-	}
-	
-	public int getInt() {
-		return byteBuffer.getInt();
 	}
 }

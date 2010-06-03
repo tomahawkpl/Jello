@@ -8,12 +8,12 @@ public class PageSizeProvider implements Provider<Short> {
 		System.loadLibrary("PageSizeProvider");
 	}
 
-	native private short getPageSize();
-
 	public Short get() {
 		if (pageSize == -1)
 			pageSize = getPageSize();
 		return pageSize;
 	}
+
+	native private short getPageSize();
 
 }

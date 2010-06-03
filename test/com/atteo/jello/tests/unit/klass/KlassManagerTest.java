@@ -45,12 +45,7 @@ public abstract class KlassManagerTest extends
 	@Inject
 	private KlassManager klassManager;
 
-	@Override
-	protected Class<KlassManager> interfaceUnderTest() {
-		return KlassManager.class;
-	}
-
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.requestStaticInjection(Record.class);
 		binder.requestStaticInjection(Page.class);
 		binder.requestStaticInjection(PageUsage.class);
@@ -87,7 +82,7 @@ public abstract class KlassManagerTest extends
 	}
 
 	public void testAddKlass() {
-		String className = new TestClass().getClassName();
+		final String className = new TestClass().getClassName();
 		klassManager.addKlass(className);
 		assertTrue(klassManager.isKlassManaged(className));
 	}
@@ -96,30 +91,35 @@ public abstract class KlassManagerTest extends
 		klassManager.create();
 		klassManager.load();
 
-		String className = new TestClass().getClassName();
+		final String className = new TestClass().getClassName();
 		klassManager.addKlass(className);
 		assertTrue(klassManager.isKlassManaged(className));
 	}
 
 	public void testLoad() {
-		int TESTSIZE = 250;
+		final int TESTSIZE = 250;
 
 		klassManager.create();
 
 		for (int i = 0; i < TESTSIZE; i++) {
-			String name = String.valueOf(i);
+			final String name = String.valueOf(i);
 			assertFalse(klassManager.isKlassManaged(name));
 			klassManager.addKlass(name);
 			assertTrue(klassManager.isKlassManaged(name));
 		}
-		
+
 		klassManager.commit();
 		klassManager.load();
-		
-		for (int i=0;i<TESTSIZE;i++) {
-			String name = String.valueOf(i);
+
+		for (int i = 0; i < TESTSIZE; i++) {
+			final String name = String.valueOf(i);
 			assertTrue(klassManager.isKlassManaged(name));
 		}
+	}
+
+	@Override
+	protected Class<KlassManager> interfaceUnderTest() {
+		return KlassManager.class;
 	}
 
 	@Override

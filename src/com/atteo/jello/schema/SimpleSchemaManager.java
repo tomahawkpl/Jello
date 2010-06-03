@@ -9,28 +9,28 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 
 public class SimpleSchemaManager implements SchemaManager {
-	private ArrayList<Schema> schemas;
-	private ArrayList<Integer> pageIds;
-	private PagedFile pagedFile;
-	private ListPage listPage;
-	private SpaceManagerPolicy spaceManagerPolicy;
+	private final ArrayList<Schema> schemas;
+	private final ArrayList<Integer> pageIds;
+	private final PagedFile pagedFile;
+	private final ListPage listPage;
+	private final SpaceManagerPolicy spaceManagerPolicy;
 
 	@Inject
-	public SimpleSchemaManager(SpaceManagerPolicy spaceManagerPolicy,
-			ListPage listPage, PagedFile pagedFile,
-			@Assisted int klassSchemaPageId) {
+	public SimpleSchemaManager(final SpaceManagerPolicy spaceManagerPolicy,
+			final ListPage listPage, final PagedFile pagedFile,
+			@Assisted final int klassSchemaPageId) {
 		this.listPage = listPage;
 		this.pagedFile = pagedFile;
 		this.spaceManagerPolicy = spaceManagerPolicy;
-		
+
 		pageIds = new ArrayList<Integer>();
 		pageIds.add(klassSchemaPageId);
 
 		schemas = new ArrayList<Schema>();
 	}
 
-	public int addSchema(Schema schema) {
-		int l = schemas.size();
+	public int addSchema(final Schema schema) {
+		final int l = schemas.size();
 		for (int i = 0; i < l; i++)
 			if (schema.equals(schemas.get(i)))
 				return schemas.get(i).version;
@@ -43,17 +43,17 @@ public class SimpleSchemaManager implements SchemaManager {
 	public void commit() {
 		int schemasOnPage = 0;
 		int currentPage = 0;
-		int l = schemas.size();
+		final int l = schemas.size();
 
 		int free = listPage.getCapacity() - 4;
 		listPage.position(4);
 
 		for (int i = 0; i < l; i++) {
-			Schema schema = schemas.get(i);
-			int fieldsLength = schema.fields.length;
+			final Schema schema = schemas.get(i);
+			final int fieldsLength = schema.fields.length;
 			int required = 4;
-			String names[] = schema.names;
-			int fields[] = schema.fields;
+			final String names[] = schema.names;
+			final int fields[] = schema.fields;
 
 			for (int j = 0; j < fieldsLength; j++)
 				required += names[j].length() + 8;
@@ -72,7 +72,7 @@ public class SimpleSchemaManager implements SchemaManager {
 				listPage.position(4);
 
 			}
-			
+
 			free -= required;
 			schemasOnPage++;
 			listPage.putInt(fieldsLength);
@@ -104,7 +104,7 @@ public class SimpleSchemaManager implements SchemaManager {
 		pagedFile.writePage(listPage);
 	}
 
-	public Schema getSchema(int version) {
+	public Schema getSchema(final int version) {
 		if (version < schemas.size())
 			return schemas.get(version);
 		else
@@ -133,12 +133,19 @@ public class SimpleSchemaManager implements SchemaManager {
 
 	}
 
-	private void readSchemasFromPage(ListPage page) {
-		int schemasOnPage = page.getInt();
+	public void removeSchema(final int version) {
+		final int l = schemas.size();
+		for (int i = 0; i < l; i++)
+			if (version == schemas.get(i).version)
+				schemas.remove(i);
+	}
+
+	private void readSchemasFromPage(final ListPage page) {
+		final int schemasOnPage = page.getInt();
 		int l;
 		int nameLen;
 		for (int i = 0; i < schemasOnPage; i++) {
-			Schema schema = new Schema();
+			final Schema schema = new Schema();
 			l = page.getInt();
 			schema.fields = new int[l];
 			schema.names = new String[l];
@@ -150,14 +157,6 @@ public class SimpleSchemaManager implements SchemaManager {
 			}
 			schemas.add(schema);
 		}
-	}
-
-	public void removeSchema(int version) {
-		int l = schemas.size();
-		for (int i = 0; i < l; i++)
-			if (version == schemas.get(i).version) {
-				schemas.remove(i);
-			}
 	}
 
 }

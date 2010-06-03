@@ -30,9 +30,10 @@ public class StoreModule implements Module {
 
 	public void configure(final Binder binder) {
 		Names.bindProperties(binder, properties);
-		binder.bind(Short.class).annotatedWith(Names.named("pageSize")).toProvider(PageSizeProvider.class);
+		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
+				.toProvider(PageSizeProvider.class);
 		binder.bind(PagedFile.class).to(PagedFileNative.class);
-		
+
 		binder.requestStaticInjection(Page.class);
 
 	}
@@ -45,11 +46,11 @@ public class StoreModule implements Module {
 		return p;
 	}
 
-	@Provides @Singleton
+	@Provides
+	@Singleton
 	Pool<Page> pagePoolProvider(final PagePoolableManager manager,
 			@Named("pagePoolLimit") final int limit) {
 		return Pools.finitePool(manager, limit);
 	}
-
 
 }

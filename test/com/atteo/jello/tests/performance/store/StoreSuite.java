@@ -1,11 +1,10 @@
 package com.atteo.jello.tests.performance.store;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
 import android.test.suitebuilder.TestSuiteBuilder;
 
 import com.atteo.jello.tests.unit.UnitTests;
-
-import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class StoreSuite extends TestSuite {
 	public static Test suite() {

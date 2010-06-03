@@ -6,19 +6,19 @@ import com.atteo.jello.store.Page;
 import com.google.inject.Inject;
 
 public class PagePoolProxy {
-	
-	private Pool<Page> pagePool;
-	
+
+	private final Pool<Page> pagePool;
+
 	@Inject
-	PagePoolProxy(Pool<Page> pagePool) {
+	PagePoolProxy(final Pool<Page> pagePool) {
 		this.pagePool = pagePool;
 	}
-	
+
 	Page acquire() {
 		return pagePool.acquire();
 	}
-	
-	void release(Page page) {
+
+	void release(final Page page) {
 		pagePool.release(page);
 	}
 }

@@ -1,6 +1,5 @@
 package com.atteo.jello.store;
 
-
 /**
  * Page which can be organised into single linked lists
  * 
@@ -9,15 +8,14 @@ package com.atteo.jello.store;
 public class ListPage extends Page {
 	public static final int NO_MORE_PAGES = -1;
 
-	
 	public ListPage() {
 		super();
 	}
 
 	public int getNext() {
-		int pos = byteBuffer.position();
+		final int pos = byteBuffer.position();
 		byteBuffer.position(0);
-		int i = byteBuffer.getInt();
+		final int i = byteBuffer.getInt();
 		byteBuffer.position(pos);
 		return i;
 	}
@@ -28,7 +26,7 @@ public class ListPage extends Page {
 	}
 
 	public void setNext(final int id) {
-		int pos = byteBuffer.position();
+		final int pos = byteBuffer.position();
 		byteBuffer.position(0);
 		byteBuffer.putInt(id);
 		byteBuffer.position(pos);

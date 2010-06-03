@@ -3,6 +3,8 @@ package com.atteo.jello.space;
 import com.atteo.jello.Record;
 
 public interface SpaceManager {
+	void commit();
+
 	void create();
 
 	short freeSpaceOnPage(int id);
@@ -13,15 +15,13 @@ public interface SpaceManager {
 
 	boolean load();
 
-	void setRecordUsed(Record record, boolean used);
-	
 	void setBlockUsed(int id, short block, boolean used);
 
 	void setPageUsed(int id, boolean used);
 
+	void setRecordUsed(Record record, boolean used);
+
 	long totalFreeSpace();
 
 	void update();
-	
-	void commit();
 }

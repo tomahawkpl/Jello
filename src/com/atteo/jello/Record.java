@@ -13,21 +13,35 @@ public class Record implements Poolable<Record> {
 	private Record nextPoolable;
 	private int id;
 	private int schemaVersion;
-	private PageUsage[] pages;
+	private final PageUsage[] pages;
 	private int pagesUsed;
-	
-	@Inject static Injector injector;
-	@Inject static @Named("maxRecordPages") int maxRecordPages;
-	
+
+	@Inject
+	static Injector injector;
+	@Inject
+	static @Named("maxRecordPages")
+	int maxRecordPages;
+
 	Record() {
 		pages = new PageUsage[maxRecordPages];
 
 		for (int i = 0; i < maxRecordPages; i++)
 			pages[i] = new PageUsage();
-		
-		pagesUsed = 0;
-		
 
+		pagesUsed = 0;
+
+	}
+
+	public void clearUsage() {
+		pagesUsed = 0;
+		for (int i = 0; i < maxRecordPages; i++)
+			if (pages[i].pageId != -1) {
+				pages[i].pageId = -1;
+				final int len = pages[i].usage.length;
+				final byte[] u = pages[i].usage;
+				for (int j = 0; j < len; j++)
+					u[j] = 0;
+			}
 	}
 
 	public int getId() {
@@ -38,23 +52,29 @@ public class Record implements Poolable<Record> {
 		return nextPoolable;
 	}
 
+	public int getPagesUsed() {
+		return pagesUsed;
+	}
+
+	public PageUsage getPageUsage(final int page) {
+		int p = 0;
+		for (int i = 0; i < maxRecordPages; i++)
+			if (pages[i].pageId != -1) {
+				if (p == page)
+					return pages[i];
+				p++;
+			}
+
+		throw new IllegalArgumentException("Record doesn't use so many pages ("
+				+ page + ")");
+	}
+
 	public int getSchemaVersion() {
 		return schemaVersion;
 	}
 
-	public void setId(final int id) {
-		this.id = id;
-	}
-
-	public void setNextPoolable(final Record element) {
-		nextPoolable = element;
-	}
-
-	public void setSchemaVersion(final int schemaVersion) {
-		this.schemaVersion = schemaVersion;
-	}
-
-	public void setChunkUsed(int pageId, short start, short end, boolean used) {
+	public void setChunkUsed(final int pageId, final short start,
+			final short end, final boolean used) {
 		int index = -1;
 		int empty = -1;
 		for (int i = 0; i < maxRecordPages; i++) {
@@ -84,7 +104,7 @@ public class Record implements Poolable<Record> {
 		if (used) {
 			pages[index].blocksUsed += end - start;
 			for (int i = start; i < end; i++)
-				pages[index].usage[i / Byte.SIZE] |= 1 << (i % Byte.SIZE);
+				pages[index].usage[i / Byte.SIZE] |= 1 << i % Byte.SIZE;
 		} else {
 			pages[index].blocksUsed -= end - start;
 			if (pages[index].blocksUsed == 0) {
@@ -92,44 +112,27 @@ public class Record implements Poolable<Record> {
 				pagesUsed--;
 			}
 			for (int i = start; i < end; i++)
-				pages[index].usage[i / Byte.SIZE] &= ~(1 << (i % Byte.SIZE));
+				pages[index].usage[i / Byte.SIZE] &= ~(1 << i % Byte.SIZE);
 		}
 	}
 
-	public void clearUsage() {
-		pagesUsed = 0;
-		for (int i = 0; i < maxRecordPages; i++)
-			if (pages[i].pageId != -1) {
-				pages[i].pageId = -1;
-				int len = pages[i].usage.length;
-				byte[] u = pages[i].usage;
-				for (int j=0;j<len;j++)
-					u[j] = 0;
-			}
-	}
-	
-	public PageUsage getPageUsage(int page) {
-		int p = 0;
-		for (int i = 0; i < maxRecordPages; i++)
-			if (pages[i].pageId != -1) {
-				if (p == page)
-					return pages[i];
-				p++;
-			}
-
-		throw new IllegalArgumentException("Record doesn't use so many pages ("
-				+ page + ")");
+	public void setId(final int id) {
+		this.id = id;
 	}
 
-	public int getPagesUsed() {
-		return pagesUsed;
+	public void setNextPoolable(final Record element) {
+		nextPoolable = element;
 	}
-	
-	public void setPagesUsed(int pagesUsed) {
+
+	public void setPagesUsed(final int pagesUsed) {
 		clearUsage();
 		this.pagesUsed = pagesUsed;
-		for (int i=0;i<pagesUsed;i++)
+		for (int i = 0; i < pagesUsed; i++)
 			pages[i].pageId = 0;
+	}
+
+	public void setSchemaVersion(final int schemaVersion) {
+		this.schemaVersion = schemaVersion;
 	}
 
 }

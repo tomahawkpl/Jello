@@ -11,17 +11,17 @@ public class AppendOnlyTest extends SpaceManagerPolicyTest {
 	private final int appendOnlyCacheSize = 8;
 
 	@Override
-	protected Class<? extends SpaceManagerPolicy> implementation() {
-		return AppendOnly.class;
-	}
-
-	@Override
 	public void configure(final Binder binder) {
 		super.configure(binder);
 		binder.bind(AppendOnlyCache.class).to(AppendOnlyCacheNative.class);
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("appendOnlyCacheSize")).toInstance(
 				appendOnlyCacheSize);
+	}
+
+	@Override
+	protected Class<? extends SpaceManagerPolicy> implementation() {
+		return AppendOnly.class;
 	}
 
 }

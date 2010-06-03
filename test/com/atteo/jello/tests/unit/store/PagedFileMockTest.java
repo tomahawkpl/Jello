@@ -9,5 +9,4 @@ public class PagedFileMockTest extends PagedFileTest {
 		return PagedFileMock.class;
 	}
 
-
 }

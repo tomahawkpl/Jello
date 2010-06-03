@@ -9,14 +9,8 @@ public class HybridTest extends SpaceManagerPolicyTest {
 	private final int nextFitHistogramClasses = 8;
 	private final int appendOnlyCacheSize = 8;
 
-	
 	@Override
-	protected Class<? extends SpaceManagerPolicy> implementation() {
-		return Hybrid.class;
-	}
-	
-	@Override
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		super.configure(binder);
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("appendOnlyCacheSize")).toInstance(
@@ -24,8 +18,12 @@ public class HybridTest extends SpaceManagerPolicyTest {
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("nextFitHistogramClasses")).toInstance(
 				nextFitHistogramClasses);
-		
-		
+
+	}
+
+	@Override
+	protected Class<? extends SpaceManagerPolicy> implementation() {
+		return Hybrid.class;
 	}
 
 }

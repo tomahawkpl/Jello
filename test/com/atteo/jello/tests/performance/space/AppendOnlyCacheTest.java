@@ -10,18 +10,13 @@ import com.google.inject.name.Names;
 
 public abstract class AppendOnlyCacheTest extends
 		JelloInterfaceTestCase<AppendOnlyCache> {
-	
+
 	private final int appendOnlyCacheSize = 8;
-	
+
 	@Inject
 	private AppendOnlyCache appendOnlyCache;
 
-	@Override
-	protected Class<AppendOnlyCache> interfaceUnderTest() {
-		return AppendOnlyCache.class;
-	}
-
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("appendOnlyCacheSize")).toInstance(
 				appendOnlyCacheSize);
@@ -40,6 +35,11 @@ public abstract class AppendOnlyCacheTest extends
 		}
 
 		endPerformanceTest();
+	}
+
+	@Override
+	protected Class<AppendOnlyCache> interfaceUnderTest() {
+		return AppendOnlyCache.class;
 	}
 
 	@Override

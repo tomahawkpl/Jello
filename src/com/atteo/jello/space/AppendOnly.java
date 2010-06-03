@@ -12,14 +12,14 @@ public class AppendOnly implements SpaceManagerPolicy {
 		System.loadLibrary("AppendOnly");
 	}
 
-	private SpaceManager spaceManager;
+	private final SpaceManager spaceManager;
 
 	@Inject
-	public AppendOnly(AppendOnlyCache appendOnlyCache,
-			SpaceManager spaceManager, PagedFile pagedFile,
-			@Named("pageSize") short pageSize,
-			@Named("blockSize") short blockSize,
-			@Named("maxRecordSize") int maxRecordSize) {
+	public AppendOnly(final AppendOnlyCache appendOnlyCache,
+			final SpaceManager spaceManager, final PagedFile pagedFile,
+			@Named("pageSize") final short pageSize,
+			@Named("blockSize") final short blockSize,
+			@Named("maxRecordSize") final int maxRecordSize) {
 		init(appendOnlyCache, spaceManager, pagedFile, pageSize, blockSize,
 				maxRecordSize);
 
@@ -27,13 +27,25 @@ public class AppendOnly implements SpaceManagerPolicy {
 
 	}
 
-	private native void init(AppendOnlyCache appendOnlyCache,
-			SpaceManager spaceManager, PagedFile pagedFile, short pageSize,
-			short blockSize, int maxRecordSize);
-
 	public native int acquirePage();
 
 	public native boolean acquireRecord(Record record, int length);
+
+	public void commit() {
+		spaceManager.commit();
+	}
+
+	public void create() {
+		spaceManager.create();
+	}
+
+	public boolean isPageUsed(final int id) {
+		return spaceManager.isPageUsed(id);
+	}
+
+	public boolean load() {
+		return spaceManager.load();
+	}
 
 	public native boolean reacquireRecord(Record record, int length);
 
@@ -41,15 +53,11 @@ public class AppendOnly implements SpaceManagerPolicy {
 
 	public native void releaseRecord(Record record);
 
-	public void create() {
-		spaceManager.create();
+	public void setPageUsed(final int id, final boolean used) {
+		spaceManager.setPageUsed(id, used);
 	}
 
-	public boolean load() {
-		return spaceManager.load();
-	}
-	
-	public void commit() {
-		spaceManager.commit();
-	}
+	private native void init(AppendOnlyCache appendOnlyCache,
+			SpaceManager spaceManager, PagedFile pagedFile, short pageSize,
+			short blockSize, int maxRecordSize);
 }

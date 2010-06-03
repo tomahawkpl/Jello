@@ -10,27 +10,36 @@ import com.google.inject.Binder;
 
 public class SimpleJelloTest extends JelloTestCase {
 
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
+
+	}
+
+	@Override
+	public void setUp() {
+		final File file = getInstrumentation().getContext().getDatabasePath(
+				"testfile");
+		file.delete();
+	}
+
+	@Override
+	public void tearDown() {
 
 	}
 
 	public void testInsert() {
-		int TESTSIZE = 100;
-		
-		assertEquals(Jello.OPEN_SUCCESS, Jello.open(this.getInstrumentation()
+		final int TESTSIZE = 100;
+
+		assertEquals(Jello.OPEN_SUCCESS, Jello.open(getInstrumentation()
 				.getContext(), "testfile"));
-		
-		startPerformanceTest(true);
+
 		for (int i = 0; i < TESTSIZE; i++) {
-			TestObject object = new TestObject();
+			final TestObject object = new TestObject();
 			object.name = "person";
 			object.age = i;
 			object.save();
 		}
 
-		endPerformanceTest();
-		
-		TestObject read = new TestObject();
+		final TestObject read = new TestObject();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read.setId(i);
 			assertTrue(read.load());
@@ -46,16 +55,6 @@ public class SimpleJelloTest extends JelloTestCase {
 		String name;
 		@DatabaseField
 		int age;
-	}
-
-	public void setUp() {
-		final File file = this.getInstrumentation().getContext()
-				.getDatabasePath("testfile");
-		file.delete();
-	}
-
-	public void tearDown() {
-
 	}
 
 }

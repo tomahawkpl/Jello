@@ -5,7 +5,7 @@ import com.atteo.jello.schema.SchemaManager;
 
 public class SchemaManagerMock implements SchemaManager {
 
-	public int addSchema(Schema schema) {
+	public int addSchema(final Schema schema) {
 		// TODO Auto-generated method stub
 		return 0;
 	}
@@ -20,7 +20,7 @@ public class SchemaManagerMock implements SchemaManager {
 
 	}
 
-	public Schema getSchema(int version) {
+	public Schema getSchema(final int version) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -30,7 +30,7 @@ public class SchemaManagerMock implements SchemaManager {
 		return false;
 	}
 
-	public void removeSchema(int version) {
+	public void removeSchema(final int version) {
 		// TODO Auto-generated method stub
 
 	}

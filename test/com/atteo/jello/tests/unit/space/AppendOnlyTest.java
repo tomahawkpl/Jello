@@ -11,19 +11,19 @@ import com.google.inject.name.Names;
 
 public class AppendOnlyTest extends SpaceManagerPolicyTest {
 	private static final int appendOnlyCacheSize = 4;
-	
+
 	@Override
-	protected Class<? extends SpaceManagerPolicy> implementation() {
-		return AppendOnly.class;
-	}
-	
-	@Override
-	public void configure(Binder binder) {
+	public void configure(final Binder binder) {
 		super.configure(binder);
 		binder.bind(SpaceManager.class).to(SpaceManagerNative.class);
 		binder.bind(AppendOnlyCache.class).to(AppendOnlyCacheNative.class);
 		binder.bind(Integer.class).annotatedWith(
 				Names.named("appendOnlyCacheSize")).toInstance(
 				appendOnlyCacheSize);
+	}
+
+	@Override
+	protected Class<? extends SpaceManagerPolicy> implementation() {
+		return AppendOnly.class;
 	}
 }

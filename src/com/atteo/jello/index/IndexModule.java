@@ -18,22 +18,20 @@ public class IndexModule implements Module {
 
 	private final HashMap<String, String> properties;
 
-	
 	public IndexModule(final HashMap<String, String> properties) {
-		int pageSize = new PageSizeProvider().get();
+		final int pageSize = new PageSizeProvider().get();
 		bTreeLeafCapacity = (short) (pageSize - 16);
 		bTreeNodeCapacity = (short) (pageSize - 16);
-		
+
 		this.properties = getDefaultProperties();
 		if (properties != null)
 			this.properties.putAll(properties);
 	}
-	
-	public void configure(Binder binder) {
+
+	public void configure(final Binder binder) {
 		binder.bind(IndexFactory.class).toProvider(
-			    FactoryProvider.newFactory(IndexFactory.class, BTree.class));
-		
-		
+				FactoryProvider.newFactory(IndexFactory.class, BTree.class));
+
 		Names.bindProperties(binder, properties);
 	}
 
@@ -41,9 +39,9 @@ public class IndexModule implements Module {
 		final HashMap<String, String> p = new HashMap<String, String>();
 		p.put("bTreeNodeCapacity", String.valueOf(bTreeNodeCapacity));
 		p.put("bTreeLeafCapacity", String.valueOf(bTreeLeafCapacity));
-		
+
 		return p;
 
 	}
-	
+
 }

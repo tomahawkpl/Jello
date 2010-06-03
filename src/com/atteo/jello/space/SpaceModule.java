@@ -21,12 +21,12 @@ public class SpaceModule implements Module {
 	// --------------
 
 	private final short pageSize;
-	
+
 	private final HashMap<String, String> properties;
 
 	public SpaceModule(final HashMap<String, String> properties) {
 		pageSize = new PageSizeProvider().get();
-		
+
 		blocksPerPage = (short) (pageSize / blockSize);
 		freeSpaceInfoSize = (short) (blocksPerPage / (short) Byte.SIZE);
 		freeSpaceInfoPageCapacity = (short) (pageSize - 4);
@@ -35,7 +35,7 @@ public class SpaceModule implements Module {
 		this.properties = getDefaultProperties();
 		if (properties != null)
 			this.properties.putAll(properties);
-		
+
 	}
 
 	public void configure(final Binder binder) {
@@ -50,9 +50,10 @@ public class SpaceModule implements Module {
 		p.put("blockSize", String.valueOf(blockSize));
 		p.put("blockPerPage", String.valueOf(blocksPerPage));
 		p.put("freeSpaceInfoSize", String.valueOf(freeSpaceInfoSize));
-		p.put("freeSpaceInfoPageCapacity", String.valueOf(freeSpaceInfoPageCapacity));
+		p.put("freeSpaceInfoPageCapacity", String
+				.valueOf(freeSpaceInfoPageCapacity));
 		p.put("freeSpaceInfosPerPage", String.valueOf(freeSpaceInfosPerPage));
-		
+
 		return p;
 	}
 }

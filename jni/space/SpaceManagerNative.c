@@ -33,8 +33,8 @@ jobject pagedFile;
 
 jobject listPage;
 
-jfieldID fidListPageId, fidListPageAccessibleData;
-jmethodID midListPageSetNext, midPagedFileReadPage, midPagedFileWritePage;
+jfieldID fidListPageId, fidListPageData;
+jmethodID midListPageSetNext, midListPageGetNext, midPagedFileReadPage, midPagedFileWritePage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
 jmethodID midRecordGetPagesUsed, midRecordGetPageUsage;
 jfieldID fidPageUsageUsage, fidPageUsagePageId;
@@ -99,8 +99,20 @@ void initIDs(JNIEnv *env) {
 		return;
 
 	fidListPageId = (*env)->GetFieldID(env, klass, "id", "I");
-	fidListPageAccessibleData = (*env)->GetFieldID(env, klass, "accessibleData", "[B");
+	if (fidListPageId == NULL)
+		return;
+
+	fidListPageData = (*env)->GetFieldID(env, klass, "data", "[B");
+	if (fidListPageData== NULL)
+		return;
+
 	midListPageSetNext = (*env)->GetMethodID(env, klass, "setNext", "(I)V");
+	if (midListPageSetNext == NULL)
+		return;
+
+	midListPageGetNext = (*env)->GetMethodID(env, klass, "getNext", "()I");
+	if (midListPageGetNext == NULL)
+		return;
 
 	recordClass = (*env)->FindClass(env, "com/atteo/jello/Record");
 	if (recordClass == NULL)
@@ -145,6 +157,8 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 	pageFreeSpaceInfo = pageFreeSpaceInfoArg;
 	blockSize = blockSizeArg;
 
+	freeSpaceInfo = NULL;
+
 	listPage = (*env)->NewGlobalRef(env,listPageObject);
 	pagedFile = (*env)->NewGlobalRef(env, pagedFileObject);
 
@@ -152,7 +166,7 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileObject, jobject list
 }
 
 
-void addPages(JNIEnv *env, jclass dis, int count) {
+void addPages(JNIEnv *env, jclass dis, jint count) {
 	struct FreeSpaceInfo *newPage;
 	int i;
 	int lastNewPage;
@@ -181,7 +195,7 @@ void addPages(JNIEnv *env, jclass dis, int count) {
 		setPageUsed(env, dis, freeSpaceInfo[i].pageId, JNI_TRUE);
 }
 
-void JNICALL removePages(JNIEnv *env, jclass dis, jint count) {
+void removePages(JNIEnv *env, jclass dis, jint count) {
 	struct FreeSpaceInfo *page;
 	int i;
 	int lastNewPage;
@@ -279,8 +293,10 @@ void JNICALL commit(JNIEnv *env, jclass dis) {
 
 		(*env)->SetIntField(env, listPage, fidListPageId, freeSpaceInfo[i].pageId);
 
-		buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
+		buffer = (*env)->GetObjectField(env, listPage, fidListPageData);
 		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
+
+		bytes += 4;
 
 		memcpy((void*) bytes, (void*) freeSpaceInfo[i].data, freeSpaceInfoPageCapacity);
 
@@ -292,7 +308,6 @@ void JNICALL commit(JNIEnv *env, jclass dis) {
 
 		freeSpaceInfo[i].dirty = 0;
 	}
-
 }
 
 void JNICALL setPageUsed(JNIEnv *env, jclass dis, jint id, jboolean used) {
@@ -504,9 +519,6 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 
 	commit(env, dis);
 
-
-
-
 }
 
 
@@ -516,26 +528,37 @@ jboolean JNICALL load(JNIEnv *env, jclass dis) {
 	jbyteArray buffer;
 	jbyte *bytes;
 	jboolean isCopy;
-	pageCount = 0;
 	nextPageId = pageFreeSpaceInfo;
+
+	if (freeSpaceInfo != NULL) {
+		for (i=0; i<pageCount; i++)
+			free(freeSpaceInfo[i].data);
+		free(freeSpaceInfo);
+		freeSpaceInfo = NULL;
+	}
+
+	pageCount = 0;
 
 	i = 0;
 	while (nextPageId != -1) {
 		pageCount++;
 		freeSpaceInfo = realloc(freeSpaceInfo, pageCount);
+		freeSpaceInfo[i].pageId = nextPageId;
 		(*env)->SetIntField(env, listPage, fidListPageId, nextPageId);
 		(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
-		nextPageId = (*env)->GetIntField(env, listPage, fidListPageId);
+		nextPageId = (*env)->CallIntMethod(env, listPage, midListPageGetNext);
 
-		buffer = (*env)->GetObjectField(env, listPage, fidListPageAccessibleData);
+		buffer = (*env)->GetObjectField(env, listPage, fidListPageData);
 		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
-
+		bytes += 4;
+		freeSpaceInfo[i].data = malloc(freeSpaceInfoPageCapacity);
 		memcpy((void*) freeSpaceInfo[i].data, (void*) bytes, freeSpaceInfoPageCapacity);
 
 		(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
 
 		freeSpaceInfo[i].dirty = 0;
 		i++;
+
 	}
 
 

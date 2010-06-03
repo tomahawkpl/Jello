@@ -10,9 +10,14 @@ public class SpaceManagerPolicyMock implements SpaceManagerPolicy {
 		return 0;
 	}
 
-	public boolean acquireRecord(Record record, int length) {
+	public boolean acquireRecord(final Record record, final int length) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	public void commit() {
+		// TODO Auto-generated method stub
+
 	}
 
 	public void create() {
@@ -20,29 +25,34 @@ public class SpaceManagerPolicyMock implements SpaceManagerPolicy {
 
 	}
 
+	public boolean isPageUsed(final int id) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	public boolean load() {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
-	public boolean reacquireRecord(Record record, int length) {
+
+	public boolean reacquireRecord(final Record record, final int length) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public void releasePage(int id) {
+	public void releasePage(final int id) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void releaseRecord(Record record) {
+	public void releaseRecord(final Record record) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void commit() {
+	public void setPageUsed(final int id, final boolean used) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

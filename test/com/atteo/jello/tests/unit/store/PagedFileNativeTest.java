@@ -10,5 +10,4 @@ public class PagedFileNativeTest extends PagedFileTest {
 		return PagedFileNative.class;
 	}
 
-
 }

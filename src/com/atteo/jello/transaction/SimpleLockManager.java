@@ -13,9 +13,9 @@ public class SimpleLockManager implements LockManager {
 
 	@Inject
 	private SimpleLockManager() {
-		
+
 	}
-	
+
 	public native int acquirePageLock(int id, boolean exclusive);
 
 	public native int acquireRecordLock(Record record, boolean exclusive);

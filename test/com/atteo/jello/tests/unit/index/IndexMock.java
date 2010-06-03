@@ -5,17 +5,22 @@ import com.atteo.jello.index.Index;
 
 public class IndexMock implements Index {
 
+	public void commit() {
+		// TODO Auto-generated method stub
+
+	}
+
 	public void create() {
 		// TODO Auto-generated method stub
 
 	}
 
-	public boolean find(Record record) {
+	public boolean find(final Record record) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public void insert(Record record) {
+	public void insert(final Record record) {
 		// TODO Auto-generated method stub
 
 	}
@@ -25,19 +30,14 @@ public class IndexMock implements Index {
 		return false;
 	}
 
-	public void remove(int id) {
+	public void remove(final int id) {
 		// TODO Auto-generated method stub
 
 	}
 
-	public void update(Record record) {
+	public void update(final Record record) {
 		// TODO Auto-generated method stub
 
-	}
-
-	public void commit() {
-		// TODO Auto-generated method stub
-		
 	}
 
 }

@@ -25,13 +25,15 @@ public class CommonBindings implements Module {
 		Names.bindProperties(binder, p);
 	}
 
-	@Provides @Singleton
+	@Provides
+	@Singleton
 	Pool<Page> pagePoolProvider(final PagePoolableManager manager,
 			@Named("pagePoolLimit") final int limit) {
 		return Pools.finitePool(manager, limit);
 	}
 
-	@Provides @Singleton
+	@Provides
+	@Singleton
 	Pool<Record> recordPoolProvider(final RecordPoolableManager manager,
 			@Named("recordPoolLimit") final int limit) {
 		return Pools.finitePool(manager, limit);

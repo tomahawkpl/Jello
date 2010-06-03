@@ -45,7 +45,7 @@ jobject listPage;
 
 
 jfieldID fidListPageId, fidListPageData;
-jmethodID midListPageSetNext, midPagedFileReadPage, midPagedFileWritePage;
+jmethodID midListPageSetNext, midListPageGetNext, midPagedFileReadPage, midPagedFileWritePage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
 jmethodID midRecordGetPagesUsed, midRecordGetPageUsage;
 jfieldID fidPageUsageUsage, fidPageUsagePageId;
@@ -173,8 +173,20 @@ void initIDs(JNIEnv *env) {
 		return;
 
 	fidListPageId = (*env)->GetFieldID(env, listPageClass, "id", "I");
+	if (fidListPageId == NULL)
+		return;
+
 	fidListPageData = (*env)->GetFieldID(env, listPageClass, "data", "[B");
+	if (fidListPageData == NULL)
+		return;
+
 	midListPageSetNext = (*env)->GetMethodID(env, listPageClass, "setNext", "(I)V");
+	if (midListPageSetNext == NULL)
+		return;
+
+	midListPageGetNext = (*env)->GetMethodID(env, listPageClass, "getNext", "()I");
+	if (midListPageGetNext == NULL)
+		return;
 }
 
 void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileArg, jobject listPageArg, jshort pageSizeArg, 
@@ -222,7 +234,7 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFileArg, jobject listPag
 		counts[i] = 0;
 	}
 
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "init done");
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "init done");
 }
 
 //
@@ -314,6 +326,8 @@ short getFreeSpaceInfoOffset(int id) {
 	return id % freeSpaceInfosPerPage;
 }
 
+
+
 int isPageUsed(int id) {
 	int freeSpaceInfoPage;
 	short freeSpaceInfoOffset;
@@ -353,6 +367,8 @@ void freeSpaceInfoCommit(JNIEnv *env) {
 
 		buffer = (*env)->GetObjectField(env, listPage, fidListPageData);
 		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
+
+		bytes += 4;
 
 		memcpy((void*) bytes, (void*) freeSpaceInfo[i].data, freeSpaceInfoPageCapacity);
 
@@ -683,7 +699,6 @@ void JNICALL releasePage(JNIEnv *env, jclass dis, jint id) {
 
 	removeEmptyPages(env);
 
-	freeSpaceInfoCommit(env);
 }
 
 short reserveBlocks(JNIEnv *env, jobject record, int id, short length) {
@@ -732,22 +747,22 @@ int acquireRecordNF(JNIEnv *env, jobject record, jint length) {
 	if (length % pageSize > 0)
 		chunks++;
 	spaceToSpare = chunks * pageSize - length;
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "acquiring record: %d", length);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "acquiring record: %d", length);
 
-//	__android_log_print(ANDROID_LOG_INFO, "Jello",  "will use chunks: %d", chunks);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "will use chunks: %d", chunks);
 
 	for (i = 0; i < chunks; i++) {
 		id = getWitness(pageSize - spaceToSpare);
 
 		if (id == HistogramNoWitness) {
-//			__android_log_print(ANDROID_LOG_INFO, "Jello",  "*no witness");
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "*no witness");
 			for (j=0;j<pages;j++) {
 				checkedId = (j+lastAcquired) % pages;
 				freeSpace = freeSpaceOnPage(env, checkedId);
 
 				if (freeSpace >= (pageSize - spaceToSpare)) {
-//					__android_log_print(ANDROID_LOG_INFO, "Jello",  "found %d, freeSpace: %d",
-//							checkedId, freeSpace);
+					__android_log_print(ANDROID_LOG_INFO, "Jello",  "found %d, freeSpace: %d",
+							checkedId, freeSpace);
 					id = checkedId;
 					reservedOnThisPage = (leftToAcquire < freeSpace) ? (short) leftToAcquire
 						: freeSpace;
@@ -763,7 +778,7 @@ int acquireRecordNF(JNIEnv *env, jobject record, jint length) {
 			}
 
 		} else if (id == HistogramNoPage) {
-//			__android_log_print(ANDROID_LOG_INFO, "Jello",  "*no page");
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "*no page");
 			id = (*env)->CallIntMethod(env, pagedFile, midPagedFileAddPages, 1);
 
 			if (id == PagedFilePageAddFailed)
@@ -780,9 +795,9 @@ int acquireRecordNF(JNIEnv *env, jobject record, jint length) {
 			leftToAcquire -= reservedOnThisPage;
 
 		} else {
-//			__android_log_print(ANDROID_LOG_INFO, "Jello",  "*page from histogram: %d", id);
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "*page from histogram: %d", id);
 			freeSpace = freeSpaceOnPage(env, id);
-//			__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpace: %d", freeSpace);
+			__android_log_print(ANDROID_LOG_INFO, "Jello",  "freeSpace: %d", freeSpace);
 			reservedOnThisPage = (leftToAcquire < freeSpace) ? (short) leftToAcquire : freeSpace;
 
 			r = reserveBlocks(env, record, id, reservedOnThisPage);
@@ -797,7 +812,6 @@ int acquireRecordNF(JNIEnv *env, jobject record, jint length) {
 	}
 
 	setRecordUsed(env, record, 1);
-	freeSpaceInfoCommit(env);
 
 	return 1;
 
@@ -832,36 +846,49 @@ void JNICALL create(JNIEnv *env, jclass dis) {
 	freeSpaceInfoCommit(env);
 
 	initHistogram(env);
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "create done");
 
+}
+
+void JNICALL commit(JNIEnv *env, jclass dis) {
+	freeSpaceInfoCommit(env);
 }
 
 jboolean JNICALL load(JNIEnv *env, jclass dis) {
 	int i;
 	int nextPageId;
-	jboolean isCopy;
 	jbyteArray buffer;
 	jbyte *bytes;
-	freeSpaceInfoPageCount = 0;
+	jboolean isCopy;
 	nextPageId = pageFreeSpaceInfo;
+
+	if (freeSpaceInfo != NULL) {
+		for (i=0; i<freeSpaceInfoPageCount; i++)
+			free(freeSpaceInfo[i].data);
+		free(freeSpaceInfo);
+		freeSpaceInfo = NULL;
+	}
+
+	freeSpaceInfoPageCount = 0;
 
 	i = 0;
 	while (nextPageId != -1) {
 		freeSpaceInfoPageCount++;
 		freeSpaceInfo = realloc(freeSpaceInfo, freeSpaceInfoPageCount);
+		freeSpaceInfo[i].pageId = nextPageId;
 		(*env)->SetIntField(env, listPage, fidListPageId, nextPageId);
 		(*env)->CallVoidMethod(env, pagedFile, midPagedFileReadPage, listPage);
-		nextPageId = (*env)->GetIntField(env, listPage, fidListPageId);
+		nextPageId = (*env)->CallIntMethod(env, listPage, midListPageGetNext);
 
 		buffer = (*env)->GetObjectField(env, listPage, fidListPageData);
 		bytes = (*env)->GetByteArrayElements(env, buffer, &isCopy);
-
+		bytes += 4;
+		freeSpaceInfo[i].data = malloc(freeSpaceInfoPageCapacity);
 		memcpy((void*) freeSpaceInfo[i].data, (void*) bytes, freeSpaceInfoPageCapacity);
-
 		(*env)->ReleaseByteArrayElements(env, buffer, bytes, 0);
 
 		freeSpaceInfo[i].dirty = 0;
 		i++;
+
 	}
 
 	initHistogram(env);
@@ -870,7 +897,7 @@ jboolean JNICALL load(JNIEnv *env, jclass dis) {
 }
 
 void JNICALL releaseRecord(JNIEnv *env, jclass dis, jobject record) {
-	__android_log_print(ANDROID_LOG_INFO, "Jello",  "releasing");
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "releasing");
 	int recordPages = (*env)->CallIntMethod(env, record, midRecordGetPagesUsed);
 	short newSpace;
 	int pageId;
@@ -902,10 +929,28 @@ jboolean JNICALL reacquireRecord(JNIEnv *env, jclass dis, jobject record, jint l
 	return acquireRecord(env, dis, record, length);
 }
 
+	void JNICALL setPageUsedJNI(JNIEnv *env, jclass dis, jint id, jboolean used) {
+		if (used == JNI_TRUE)
+			if (!isPageUsed(id)) {
+				updateHistogram(id, pageSize, 0);
+				setPageUsed(env, id, 1);
+			}
+			else if (isPageUsed(id)) {
+				setPageUsed(env, id, 0);
+				updateHistogram(id, 0, pageSize);
+			}
+	}
+
+	jboolean JNICALL isPageUsedJNI(JNIEnv *env, jclass dis, jint id) {
+		if (isPageUsed(id))
+			return JNI_TRUE;
+		else
+			return JNI_FALSE;
+	}
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	JNIEnv* env;
-	JNINativeMethod nm[8];
+	JNINativeMethod nm[11];
 	jclass klass;
 
 	if ((*vm)->GetEnv(vm, (void**) &env, JNI_VERSION_1_4) != JNI_OK)
@@ -945,7 +990,19 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 	nm[7].signature = "()Z";
 	nm[7].fnPtr = load;
 
-	(*env)->RegisterNatives(env,klass,nm,8);
+	nm[8].name = "commit";
+	nm[8].signature = "()V";
+	nm[8].fnPtr = commit;
+
+	nm[9].name = "setPageUsed";
+	nm[9].signature = "(IZ)V";
+	nm[9].fnPtr = setPageUsedJNI;
+
+	nm[10].name = "isPageUsed";
+	nm[10].signature = "(I)Z";
+	nm[10].fnPtr = isPageUsedJNI;
+
+	(*env)->RegisterNatives(env,klass,nm,11);
 
 	(*env)->DeleteLocalRef(env, klass);
 

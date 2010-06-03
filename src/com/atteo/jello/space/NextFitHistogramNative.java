@@ -9,16 +9,16 @@ public class NextFitHistogramNative implements NextFitHistogram {
 	}
 
 	@Inject
-	public NextFitHistogramNative(@Named("pageSize") short pageSize,
-			@Named("nextFitHistogramClasses") int histogramClasses) {
+	public NextFitHistogramNative(@Named("pageSize") final short pageSize,
+			@Named("nextFitHistogramClasses") final int histogramClasses) {
 		init(pageSize, histogramClasses);
 	}
-
-	private native void init(short pageSize, int histogramClasses);
 
 	public native short getClassSize();
 
 	public native int getWitness(short freeSpace);
 
 	public native void update(int id, short previousFreeSpace, short freeSpace);
+
+	private native void init(short pageSize, int histogramClasses);
 }

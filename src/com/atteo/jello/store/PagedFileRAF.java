@@ -23,7 +23,7 @@ public class PagedFileRAF implements PagedFile {
 	PagedFileRAF(@Named("pageSize") final short pageSize,
 			@Named("fullpath") final String fullpath) {
 		this.pageSize = pageSize;
-		
+
 		file = new File(fullpath);
 	}
 
@@ -43,6 +43,24 @@ public class PagedFileRAF implements PagedFile {
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public boolean create() {
+		file.getParentFile().mkdirs();
+		if (!file.getParentFile().exists())
+			return false;
+		try {
+			file.createNewFile();
+		} catch (final IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
+
+	public boolean exists() {
+		return file.exists();
 	}
 
 	public long getFileLength() {
@@ -66,7 +84,7 @@ public class PagedFileRAF implements PagedFile {
 	public int open() {
 		if (!exists())
 			return Jello.OPEN_FAILED;
-		
+
 		if (!file.canRead())
 			return Jello.OPEN_FAILED;
 
@@ -110,6 +128,10 @@ public class PagedFileRAF implements PagedFile {
 
 	}
 
+	public void remove() {
+		file.delete();
+	}
+
 	public void removePages(final int count) {
 		pages -= count;
 		if (pages < 0)
@@ -137,28 +159,6 @@ public class PagedFileRAF implements PagedFile {
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public boolean create() {
-		file.getParentFile().mkdirs();
-		if (!file.getParentFile().exists())
-			return false;
-		try {
-			file.createNewFile();
-		} catch (IOException e) {
-			e.printStackTrace();
-			return false;
-		}
-		
-		return true;
-	}
-
-	public void remove() {
-		file.delete();
-	}
-
-	public boolean exists() {
-		return file.exists();
 	}
 
 }

@@ -13,7 +13,7 @@ int SpaceManagerPolicyAcquireFailed;
 
 jmethodID midAppendOnlyCacheUpdate, midAppendOnlyCacheGetBestId, midAppendOnlyCacheGetFreeSpace;
 jmethodID midSpaceManagerSetPageUsed, midSpaceManagerIsPageUsed, midSpaceManagerUpdate, midSpaceManagerIsBlockUsed,
-	midSpaceManagerSetRecordUsed, midSpaceManagerFreeSpaceOnPage, midSpaceManagerCommit;
+	midSpaceManagerSetRecordUsed, midSpaceManagerFreeSpaceOnPage;
 jmethodID midPagedFileAddPages, midPagedFileRemovePages, midPagedFileGetPageCount;
 jmethodID midRecordSetChunkUsed, midRecordGetPagesUsed, midRecordGetPageUsage, midRecordClearUsage;
 jfieldID fidPageUsagePageId;
@@ -98,11 +98,6 @@ void initIDs(JNIEnv *env) {
 	midSpaceManagerFreeSpaceOnPage = (*env)->GetMethodID(env, spaceManagerClass,
 			"freeSpaceOnPage", "(I)S");
 	if (midSpaceManagerFreeSpaceOnPage == NULL)
-		return;
-
-	midSpaceManagerCommit = (*env)->GetMethodID(env, spaceManagerClass,
-			"commit", "()V");
-	if (midSpaceManagerCommit == NULL)
 		return;
 
 	pagedFileClass = (*env)->FindClass(env, "com/atteo/jello/store/PagedFile");
@@ -194,8 +189,6 @@ jint JNICALL acquirePage(JNIEnv *env, jclass dis) {
 //		__android_log_print(ANDROID_LOG_INFO, "Jello",  "acquired new page: %d", id);
 	}
 
-	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
-
 	return id;
 
 }
@@ -223,7 +216,6 @@ void JNICALL releasePage(JNIEnv *env, jclass dis, jint id) {
 
 	removePages(env);
 
-	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
 }
 
 short reserveBlocks(JNIEnv *env, jobject record, int id, short length) {
@@ -305,7 +297,6 @@ jboolean JNICALL acquireRecord(JNIEnv *env, jclass dis, jobject record, jint len
 	}
 
 	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerSetRecordUsed, record, JNI_TRUE);
-	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
 	return JNI_TRUE;
 
 }
@@ -325,7 +316,6 @@ void JNICALL releaseRecord(JNIEnv *env, jclass dis, jobject record) {
 	}
 
 	removePages(env);
-	(*env)->CallVoidMethod(env, spaceManager, midSpaceManagerCommit);
 }
 
 jboolean JNICALL reacquireRecord(JNIEnv *env, jclass dis, jobject record, jint length) {
