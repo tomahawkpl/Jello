@@ -14,7 +14,6 @@
 jobject BTree::pagedFile;
 jobject BTree::pagePoolProxy;
 jobject BTree::spaceManagerPolicy;
-PageIds *BTree::pageIds;
 JNIEnv *BTree::env;
 jfieldID BTree::fidPageId;
 jfieldID BTree::fidPageData;
@@ -28,8 +27,8 @@ short BTree::leafCapacity, BTree::nodeCapacity;
 BTree::BTree(short leafCapacity, short nodeCapacity, jobject pagedFile, jobject pagePoolProxy, jobject spaceManagerPolicy,
 		JNIEnv *env, int klassIndexPageId) {
 	root = NULL;
-	pageIds = new PageIds(env, spaceManagerPolicy);
-	pageIds->add(klassIndexPageId);
+	this->pageIds = new PageIds(env, spaceManagerPolicy);
+	this->pageIds->add(klassIndexPageId);
 	this->leafCapacity = leafCapacity;
 	this->nodeCapacity = nodeCapacity;
 	this->pagedFile = env->NewGlobalRef(pagedFile);
@@ -90,7 +89,7 @@ void BTree::add(int id, RecordInfo *record) {
 		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "== BTree add id: %d", id);
 	if (root == NULL) {
 		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "new leaf as root: %d", leafCapacity);
-		root = new BTreeLeaf(leafCapacity);
+		root = new BTreeLeaf(this, leafCapacity);
 	}
 
 	BTreeElement *e = root;
@@ -105,7 +104,7 @@ void BTree::add(int id, RecordInfo *record) {
 
 	if (!leaf->add(id, record)) {
 		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "Not enough space in leaf");
-		BTreeLeaf *newLeaf = new BTreeLeaf(leafCapacity);
+		BTreeLeaf *newLeaf = new BTreeLeaf(this, leafCapacity);
 
 		int oldMinId = leaf->getMinId();
 		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "Splitting");
@@ -123,7 +122,7 @@ void BTree::add(int id, RecordInfo *record) {
 
 		if (leaf->getParent() == NULL) {
 			//__android_log_print(ANDROID_LOG_INFO, "Jello",  "This leaf's parent is NULL, creating new node");
-			BTreeNode *node = new BTreeNode(nodeCapacity);
+			BTreeNode *node = new BTreeNode(this, nodeCapacity);
 			node->addChild(leaf->getMinId(), leaf);
 			root = node;
 		}
@@ -137,7 +136,7 @@ void BTree::add(int id, RecordInfo *record) {
 void BTree::addToNode(BTreeNode *node, BTreeElement *child) {
 	if (!node->addChild(child->getMinId(), child)) {
 		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "Node is full");
-		BTreeNode *newNode = new BTreeNode(nodeCapacity);
+		BTreeNode *newNode = new BTreeNode(this, nodeCapacity);
 		int oldMinId = node->getMinId();
 		node->split(newNode);
 
@@ -154,7 +153,7 @@ void BTree::addToNode(BTreeNode *node, BTreeElement *child) {
 
 		if (node->getParent() == NULL) {
 		//	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "This node's parent is null");
-			BTreeNode *parent = new BTreeNode(nodeCapacity);
+			BTreeNode *parent = new BTreeNode(this, nodeCapacity);
 			parent->addChild(node->getMinId(), node);
 			root = parent;
 		}
@@ -180,7 +179,7 @@ void BTree::update(int id, RecordInfo *record) {
 
 	if (!leaf->update(id, record)) {
 		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "update failed, splitting node");
-		BTreeLeaf *newLeaf = new BTreeLeaf(leafCapacity);
+		BTreeLeaf *newLeaf = new BTreeLeaf(this, leafCapacity);
 		int oldMinId = leaf->getMinId();
 		leaf->split(newLeaf);
 		if (id < leaf->getMinId()) {
@@ -196,7 +195,7 @@ void BTree::update(int id, RecordInfo *record) {
 		}
 
 		if (leaf->getParent() == NULL) {
-			BTreeNode *node = new BTreeNode(nodeCapacity);
+			BTreeNode *node = new BTreeNode(this, nodeCapacity);
 			node->addChild(leaf->getMinId(), leaf);
 		}
 
@@ -372,9 +371,9 @@ bool BTree::load() {
 	root = NULL;
 
 	if (type == BTreeElement::ELEMENT_NODE)
-		root = BTreeNode::fromBytes(bytes, nodeCapacity);
+		root = BTreeNode::fromBytes(bytes, nodeCapacity, this);
 	else if (type == BTreeElement::ELEMENT_LEAF)
-		root = BTreeLeaf::fromBytes(bytes, leafCapacity);
+		root = BTreeLeaf::fromBytes(bytes, leafCapacity, this);
 
 	env->ReleaseByteArrayElements(buffer, (jbyte*)bytes, JNI_ABORT);
 
@@ -412,4 +411,8 @@ void BTree::commit() {
 	pageIds->iterationDone();
 	env->CallVoidMethod(pagePoolProxy, midPagePoolProxyRelease, page);
 
+}
+
+PageIds *BTree::getPageIds() {
+	return pageIds;
 }

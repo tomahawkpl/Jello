@@ -2,6 +2,10 @@
 
 #include <android/log.h>
 
+BTreeElement::BTreeElement(BTree *btree) {
+	this->btree = btree;
+}
+
 BTreeElement::~BTreeElement() {
 
 }

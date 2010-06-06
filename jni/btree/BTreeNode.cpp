@@ -12,10 +12,10 @@
 #include "misc.h"
 #include "PageIds.h"
 
-BTreeNode::BTreeNode(int nodeCapacity) {
+BTreeNode::BTreeNode(BTree *btree, int nodeCapacity) : BTreeElement (btree) {
 	type = BTreeElement::ELEMENT_NODE;
 	freeSpace = nodeCapacity - 16;
-	children = new AVLTree(new ChildInfoFactory());
+	children = new AVLTree(new ChildInfoFactory(btree));
 	parent = NULL;
 	minId = -1;
 	count = 0;
@@ -63,7 +63,7 @@ bool BTreeNode::addChild(int id, BTreeElement *child) {
 
 	child->setParent(this);
 
-	ChildInfo *info = new ChildInfo();
+	ChildInfo *info = new ChildInfo(btree);
 	info->child = child;
 	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "(%d) minId1: %d", this,  minId);
 	children->add(id, info);
@@ -180,14 +180,14 @@ void BTreeNode::split(BTreeNode *node) {
 }
 
 void BTreeNode::debug() {
-	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "== Node (%d), minId: %d, parent: %d, freeSpace %d",
-	//		this, minId, parent, freeSpace);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== Node (%d), minId: %d, parent: %d, freeSpace %d",
+			this, minId, parent, freeSpace);
 	children->debug(true);
 }
 
-BTreeNode *BTreeNode::fromBytes(uint8_t *bytes, int nodeCapacity) {
+BTreeNode *BTreeNode::fromBytes(uint8_t *bytes, int nodeCapacity, BTree *btree) {
 	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "node fromBytes");
-	BTreeNode *node = new BTreeNode(nodeCapacity);
+	BTreeNode *node = new BTreeNode(btree, nodeCapacity);
 	int  minId, freeSpace, count;
 	bytesToInt(minId, bytes + 4);
 	bytesToInt(freeSpace, bytes + 8);
@@ -207,7 +207,8 @@ BTreeNode *BTreeNode::fromBytes(uint8_t *bytes, int nodeCapacity) {
 
 int BTreeNode::commit() {
 	jobject page = BTree::env->CallObjectMethod(BTree::pagePoolProxy, BTree::midPagePoolProxyAcquire);
-	int pageId = BTree::pageIds->get();
+	PageIds *pageIds = btree->getPageIds();
+	int pageId = pageIds->get();
 
 	jboolean isCopy;
 	uint8_t *bytes;

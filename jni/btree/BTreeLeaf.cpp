@@ -10,11 +10,11 @@
 #include "RecordInfo.h"
 #include "RecordInfoFactory.h"
 
-BTreeLeaf::BTreeLeaf(short freeSpace) {
+BTreeLeaf::BTreeLeaf(BTree *btree, short freeSpace) : BTreeElement(btree) {
 	count = 0;
 	type = BTreeElement::ELEMENT_LEAF;
 	minId = -1;
-	records = new AVLTree(new RecordInfoFactory());
+	records = new AVLTree(new RecordInfoFactory(btree));
 	this->freeSpace = freeSpace - 16;
 	parent = NULL;
 }
@@ -135,17 +135,17 @@ AVLTree *BTreeLeaf::getAVLTree() {
 }
 
 void BTreeLeaf::debug() {
-	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "== Leaf (%d), minId: %d, parent: %d, freeSpace: %d",
-	//		this, minId, parent, freeSpace);
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "== Leaf (%d), minId: %d, parent: %d, freeSpace: %d",
+			this, minId, parent, freeSpace);
 	if (parent != NULL)
-		//__android_log_print(ANDROID_LOG_INFO, "Jello",  "   left: %d, right: %d",
-	//			parent->getAVLTree()->findLeft(minId), parent->getAVLTree()->findRight(minId));
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "   left: %d, right: %d",
+				parent->getAVLTree()->findLeft(minId), parent->getAVLTree()->findRight(minId));
 
 	records->debug(false);
 }
 
-BTreeLeaf *BTreeLeaf::fromBytes(uint8_t *bytes, int leafCapacity) {
-	BTreeLeaf *leaf = new BTreeLeaf(leafCapacity);
+BTreeLeaf *BTreeLeaf::fromBytes(uint8_t *bytes, int leafCapacity, BTree *btree) {
+	BTreeLeaf *leaf = new BTreeLeaf(btree, leafCapacity);
 	int  minId, freeSpace, count;
 	bytesToInt(minId, bytes + 4);
 	bytesToInt(freeSpace, bytes + 8);
@@ -164,7 +164,8 @@ BTreeLeaf *BTreeLeaf::fromBytes(uint8_t *bytes, int leafCapacity) {
 
 int BTreeLeaf::commit() {
 	jobject page = BTree::env->CallObjectMethod(BTree::pagePoolProxy, BTree::midPagePoolProxyAcquire);
-	int pageId = BTree::pageIds->get();
+	PageIds *pageIds = btree->getPageIds();
+	int pageId = pageIds->get();
 
 	jboolean isCopy;
 	uint8_t *bytes;

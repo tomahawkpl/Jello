@@ -1,19 +1,18 @@
 package com.atteo.jello;
 
+import java.util.HashMap;
+
 import com.atteo.jello.klass.KlassManager;
 import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.HeaderPage;
 import com.atteo.jello.store.PagedFile;
-import com.google.inject.Binder;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Module;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.google.inject.name.Names;
 
 @Singleton
-public class DatabaseFile implements Module {
+public class DatabaseFile {
 	private final PagedFile pagedFile;
 	private HeaderPage headerPage;
 	private SpaceManagerPolicy spaceManagerPolicy;
@@ -39,29 +38,21 @@ public class DatabaseFile implements Module {
 		pagedFile.close();
 	}
 
-	public void configure(final Binder binder) {
-		binder.bind(Short.class).annotatedWith(Names.named("pageSize"))
-				.toInstance(headerPage.getPageSize());
-		binder.bind(Short.class).annotatedWith(Names.named("blockSize"))
-				.toInstance(headerPage.getBlockSize());
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("freeSpaceInfoPageId")).toInstance(
-				headerPage.getFreeSpaceInfoPageId());
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("klassManagerPageId")).toInstance(
-				headerPage.getKlassManagerPageId());
-		binder.bind(Integer.class).annotatedWith(
-				Names.named("fileFormatVersion")).toInstance(
-				headerPage.getFileFormatVersion());
-
+	public HashMap<String, String> getReadProperties() {
 		int mp = headerPage.getFreeSpaceInfoPageId();
 		if (mp < headerPage.getKlassManagerPageId())
 			mp = headerPage.getKlassManagerPageId();
 		mp++;
 
-		binder.bind(Integer.class).annotatedWith(Names.named("minimumPages"))
-				.toInstance(mp);
+		HashMap<String, String> properties = new HashMap<String, String>();
+		properties.put("pageSize", String.valueOf(headerPage.getPageSize()));
+		properties.put("blockSize", String.valueOf(headerPage.getBlockSize()));
+		properties.put("freeSpaceInfoPageId", String.valueOf(headerPage.getFreeSpaceInfoPageId()));
+		properties.put("klassManagerPageId", String.valueOf(headerPage.getKlassManagerPageId()));
+		properties.put("fileFormatVersion", String.valueOf(headerPage.getFileFormatVersion()));
+		properties.put("minimumPages", String.valueOf(mp));
 
+		return properties;
 	}
 
 	public boolean createStructure() {
@@ -74,7 +65,9 @@ public class DatabaseFile implements Module {
 
 		spaceManagerPolicy = injector.getInstance(SpaceManagerPolicy.class);
 		spaceManagerPolicy.create();
-
+		for (int i = 0; i < minimumPages; i++)
+			spaceManagerPolicy.setPageUsed(i, true);
+		
 		klassManager = injector.getInstance(KlassManager.class);
 		klassManager.create();
 
@@ -92,6 +85,8 @@ public class DatabaseFile implements Module {
 	public boolean loadHeader() {
 		if (pagedFile.getPageCount() < minimumPages)
 			return false;
+
+		headerPage = injector.getInstance(HeaderPage.class);
 
 		headerPage.setId(headerPageId);
 		pagedFile.readPage(headerPage);

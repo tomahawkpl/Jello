@@ -1,5 +1,6 @@
 package com.atteo.jello.schema;
 
+
 public interface SchemaManager {
 	public int addSchema(Schema schema);
 

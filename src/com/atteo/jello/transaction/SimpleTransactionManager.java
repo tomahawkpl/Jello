@@ -5,6 +5,7 @@ import android.util.Pool;
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
 import com.atteo.jello.Storable;
+import com.atteo.jello.index.BTree;
 import com.atteo.jello.index.Index;
 import com.atteo.jello.klass.KlassManager;
 import com.atteo.jello.schema.Schema;
@@ -14,8 +15,10 @@ import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.Page;
 import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
+@Singleton
 public class SimpleTransactionManager implements TransactionManager {
 	private final StorableWriter storableWriter;
 	private final SpaceManagerPolicy spaceManagerPolicy;
@@ -47,8 +50,20 @@ public class SimpleTransactionManager implements TransactionManager {
 	}
 
 	public void performDeleteTransaction(final Storable storable) {
-		// TODO Auto-generated method stub
+		if (!klassManager.isKlassManaged(storable.getClassName()))
+			return;
+		
+		final Record record = storable.getRecord();
 
+		final Index index = klassManager.getIndexFor(storable.getClassName());
+		if (!index.find(record))
+			return;
+
+		spaceManagerPolicy.releaseRecord(record);
+		index.remove(record.getId());
+		((BTree)index).debug();
+		spaceManagerPolicy.commit();
+		index.commit();
 	}
 
 	public boolean performFindTransaction(final Storable storable) {
@@ -58,6 +73,7 @@ public class SimpleTransactionManager implements TransactionManager {
 		final Record record = storable.getRecord();
 
 		final Index index = klassManager.getIndexFor(storable.getClassName());
+
 		if (!index.find(record))
 			return false;
 
@@ -81,8 +97,10 @@ public class SimpleTransactionManager implements TransactionManager {
 
 		spaceManagerPolicy.acquireRecord(record, len);
 
-		if (!klassManager.isKlassManaged(storable.getClassName()))
+		if (!klassManager.isKlassManaged(storable.getClassName())) {
 			klassManager.addKlass(storable.getClassName());
+			klassManager.commit();
+		}
 
 		final SchemaManager schemaManager = klassManager
 				.getSchemaManagerFor(storable.getClassName());
@@ -94,10 +112,16 @@ public class SimpleTransactionManager implements TransactionManager {
 		index.insert(record);
 
 		writeRecord(record, data);
-
+		
+		spaceManagerPolicy.commit();
+		klassManager.commit();
+		index.commit();
+		schemaManager.commit();
 	}
 
 	public void performUpdateTransaction(final Storable storable) {
+		if (!klassManager.isKlassManaged(storable.getClassName()))
+			return;
 		final Schema schema = storable.getSchema();
 		final int len = storableWriter.writeStorable(data, storable, schema);
 
@@ -109,13 +133,14 @@ public class SimpleTransactionManager implements TransactionManager {
 				.getSchemaManagerFor(storable.getClassName());
 		record.setSchemaVersion(schemaManager.addSchema(schema));
 
-		record.setId(klassManager.getIdFor(storable.getClassName()));
-
 		final Index index = klassManager.getIndexFor(storable.getClassName());
-		index.insert(record);
+		index.update(record);
 
 		writeRecord(record, data);
 
+		spaceManagerPolicy.commit();
+		index.commit();
+		schemaManager.commit();
 	}
 
 	private void readRecord(final Record record, final byte[] data) {

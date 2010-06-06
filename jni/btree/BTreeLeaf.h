@@ -6,6 +6,7 @@
 
 struct RecordInfo;
 class AVLTree;
+class PageIds;
 
 class BTreeLeaf : public BTreeElement {
 	private:
@@ -13,7 +14,7 @@ class BTreeLeaf : public BTreeElement {
 		AVLTree *records;
 
 	public:
-		BTreeLeaf(short freeSpace);
+		BTreeLeaf(BTree *btree, short freeSpace);
 		~BTreeLeaf();
 		AVLTree *getAVLTree();
 		bool add(int id, RecordInfo *record);
@@ -25,7 +26,7 @@ class BTreeLeaf : public BTreeElement {
 		void setLeft(BTreeLeaf *leaf);
 		void debug();
 
-		static BTreeLeaf *fromBytes(uint8_t *bytes, int leafCapacity);
+		static BTreeLeaf *fromBytes(uint8_t *bytes, int leafCapacity, BTree *btree);
 		int commit();
 
 };

@@ -7,12 +7,14 @@
 struct ChildInfo;
 class BTreeElement;
 class AVLTree;
+class PageIds;
+class BTree;
 
 class BTreeNode : public BTreeElement {
 	private:
 		AVLTree *children;
 	public:
-		BTreeNode(int nodeCapacity);
+		BTreeNode(BTree *btree, int nodeCapacity);
 		~BTreeNode();
 		BTreeElement *getSubNodeFor(int id);
 		AVLTree *getAVLTree();
@@ -24,7 +26,7 @@ class BTreeNode : public BTreeElement {
 		void join(BTreeElement *node);
 		void debug();
 
-		static BTreeNode *fromBytes(uint8_t *bytes, int bTreeNodeCapacity);
+		static BTreeNode *fromBytes(uint8_t *bytes, int bTreeNodeCapacity, BTree *btree);
 		int commit();
 		
 };

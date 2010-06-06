@@ -2,6 +2,8 @@ package com.atteo.jello.klass;
 
 import java.util.ArrayList;
 
+import android.util.Log;
+
 import com.atteo.jello.index.Index;
 import com.atteo.jello.index.IndexFactory;
 import com.atteo.jello.schema.SchemaManager;
@@ -10,8 +12,10 @@ import com.atteo.jello.space.SpaceManagerPolicy;
 import com.atteo.jello.store.ListPage;
 import com.atteo.jello.store.PagedFile;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
+@Singleton
 public class SimpleKlassManager implements KlassManager {
 	private final ArrayList<Integer> pageIds;
 	private final ArrayList<KlassInfo> klasses;
@@ -136,7 +140,7 @@ public class SimpleKlassManager implements KlassManager {
 			if (klassName.equals(klasses.get(i).name)) {
 				if (klasses.get(i).schemaManager == null)
 					klasses.get(i).schemaManager = schemaManagerFactory
-							.create(klasses.get(i).indexPageId);
+							.create(klasses.get(i).schemaManagerPageId);
 				return klasses.get(i).schemaManager;
 			}
 
@@ -167,7 +171,7 @@ public class SimpleKlassManager implements KlassManager {
 
 		}
 
-		return false;
+		return true;
 	}
 
 	public void removeKlass(final String klassName) {
@@ -190,6 +194,12 @@ public class SimpleKlassManager implements KlassManager {
 			info.schemaManagerPageId = page.getInt();
 			info.indexPageId = page.getInt();
 			info.nextId = page.getInt();
+			info.schemaManager = schemaManagerFactory
+					.create(info.schemaManagerPageId);
+			info.schemaManager.load();
+			info.index = indexFactory.create(info.indexPageId);
+			Log.i("Jello", "loading index for class " + info.name);
+			info.index.load();
 			klasses.add(info);
 		}
 	}

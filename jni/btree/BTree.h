@@ -13,6 +13,7 @@ class BTree {
 		void mergeNode(BTreeElement *node);
 		void removeNode(BTreeElement *node);
 		void addToNode(BTreeNode *node, BTreeElement *child);
+		PageIds *pageIds;
 		int klassIndexPageId;
 	public:
 		BTree(short leafCapacity, short nodeCapacity, jobject pagedFile, jobject bTreePage,
@@ -26,9 +27,9 @@ class BTree {
 		void debug();
 		bool load();
 		void commit();
+		PageIds *getPageIds();
 
 		static short leafCapacity, nodeCapacity;
-		static PageIds *pageIds;
 		static JNIEnv *env;
 		static jobject pagedFile, spaceManagerPolicy, pagePoolProxy;
 		static jfieldID fidPageId, fidPageData;

@@ -1,5 +1,8 @@
 #include "RecordInfo.h"
 
+RecordInfo::RecordInfo(BTree *btree) : NodeContent(btree) {
+}
+
 int RecordInfo::getLength() {
 	return length;
 }

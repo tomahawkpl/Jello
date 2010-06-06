@@ -64,8 +64,18 @@ public class JelloModule implements Module {
 	}
 
 	public void configure(final Binder binder) {
-		binder.install(new StoreModule(fullpath, null));
-		binder.install(new SpaceModule(null));
+		HashMap<String, String> p = new HashMap<String, String>();
+		if (properties.containsKey("pageSize")) {
+			p.put("pageSize", properties.get("pageSize"));
+			properties.remove("pageSize");
+		}
+		binder.install(new StoreModule(fullpath, p));
+		p = new HashMap<String, String>();
+		if (properties.containsKey("blockSize")) {
+			p.put("blockSize", properties.get("blockSize"));
+			properties.remove("blockSize");
+		}
+		binder.install(new SpaceModule(p));
 		binder.install(new IndexModule(null));
 		binder.install(new SchemaModule(null));
 		binder.install(new TransactionModule(null));
@@ -73,7 +83,7 @@ public class JelloModule implements Module {
 		binder.bind(KlassManager.class).to(SimpleKlassManager.class);
 
 		Names.bindProperties(binder, properties);
-
+		
 		binder.requestStaticInjection(Record.class);
 		binder.requestStaticInjection(PageUsage.class);
 		binder.requestStaticInjection(Storable.class);

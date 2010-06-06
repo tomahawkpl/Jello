@@ -9,6 +9,9 @@
 #include "PageIds.h"
 #include <stdlib.h>
 
+ChildInfo::ChildInfo(BTree *btree) : NodeContent(btree) {
+}
+
 ChildInfo::~ChildInfo() {
 	//delete child;
 }
@@ -27,7 +30,8 @@ void ChildInfo::fromBytes(uint8_t *bytes, int length, BTreeElement *node) {
 	int pageId;
 	bytesToInt(pageId, bytes);
 	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "%d", pageId);
-	BTree::pageIds->add(pageId);
+	PageIds *pageIds = btree->getPageIds();
+	pageIds->add(pageId);
 
 	jboolean isCopy;
 	uint8_t *bytes2;
@@ -45,9 +49,9 @@ void ChildInfo::fromBytes(uint8_t *bytes, int length, BTreeElement *node) {
 
 
 	if (type == BTreeElement::ELEMENT_NODE)
-		child = BTreeNode::fromBytes(bytes2, BTree::nodeCapacity);
+		child = BTreeNode::fromBytes(bytes2, BTree::nodeCapacity, btree);
 	else if (type == BTreeElement::ELEMENT_LEAF)
-		child = BTreeLeaf::fromBytes(bytes2, BTree::leafCapacity);
+		child = BTreeLeaf::fromBytes(bytes2, BTree::leafCapacity, btree);
 
 	child->setParent((BTreeNode*)node);
 

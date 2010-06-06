@@ -3,6 +3,7 @@
 
 class BTreeNode;
 class BTreeLeaf;
+class BTree;
 
 class BTreeElement {
 	protected:
@@ -10,9 +11,11 @@ class BTreeElement {
 		int minId;
 		int freeSpace;
 		int count;
+		BTree *btree;
 //		BTreeElement *left;
 //		BTreeElement *right;
 	public:
+		BTreeElement(BTree *btree);
 		virtual ~BTreeElement();
 		static const int ELEMENT_NODE = 1;
 		static const int ELEMENT_LEAF = 2;

@@ -16,13 +16,15 @@ public class HeaderPage extends Page {
 	private final byte[] magic;
 
 	@Inject
-	private HeaderPage(@Named("blockSize") final short blockSize,
+	private HeaderPage(@Named("pageSize") final short pageSize,
+			@Named("blockSize") final short blockSize,
 			@Named("freeSpaceInfoPageId") final int freeSpaceInfoPageId,
 			@Named("klassManagerPageId") final int klassManagerPageId,
 			@Named("fileFormatVersion") final int fileFormatVersion,
 			@Named("magic") final String magic) {
 		super();
 
+		this.pageSize = pageSize;
 		this.blockSize = blockSize;
 		this.freeSpaceInfoPageId = freeSpaceInfoPageId;
 		this.klassManagerPageId = klassManagerPageId;
@@ -59,6 +61,7 @@ public class HeaderPage extends Page {
 
 	public boolean load() {
 		final byte[] readMagic = new byte[magic.length];
+		byteBuffer.position(0);
 		byteBuffer.get(readMagic);
 		if (!Arrays.equals(readMagic, magic))
 			return false;

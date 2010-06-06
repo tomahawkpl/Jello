@@ -16,10 +16,13 @@ public class Jello {
 	private static DatabaseFile dbFile;
 	private static String fullpath;
 
+	private static boolean isOpened = false;
+	
 	static Injector injector;
 
 	public static void close() {
 		dbFile.close();
+		isOpened = false;
 	}
 
 	public static String getFullpath() {
@@ -59,7 +62,7 @@ public class Jello {
 		if (!dbFile.loadHeader())
 			return Jello.OPEN_FAILED;
 
-		injector = injector.createChildInjector(dbFile);
+		injector = Guice.createInjector(new JelloModule(fullpath, dbFile.getReadProperties()));
 
 		// recreate dbFile in case pageSize or other basic settings
 		// read from the file have values different that the defaults
@@ -70,19 +73,27 @@ public class Jello {
 		if (!dbFile.loadStructure())
 			return Jello.OPEN_FAILED;
 
+		isOpened = true;
 		return Jello.OPEN_SUCCESS;
+	}
+	
+	public static boolean isOpened() {
+		return isOpened;
 	}
 
 	public static void setInjector(final Injector injector) {
 		Jello.injector = injector;
 	}
 
+	public static Injector getInjector() {
+		return injector;
+	}
+	
 	private static Injector createGuiceInjector() {
 		return Guice.createInjector(new JelloModule(fullpath, null));
 	}
 
 	private static void loadEnvironment() {
 		injector = createGuiceInjector();
-
 	}
 }

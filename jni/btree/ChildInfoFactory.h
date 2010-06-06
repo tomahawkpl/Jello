@@ -3,8 +3,14 @@
 
 #include "NodeContentFactory.h"
 
+class BTree;
+
 class ChildInfoFactory : public NodeContentFactory {
-	NodeContent *create();
+	private:
+		BTree* btree;
+	public:
+		ChildInfoFactory(BTree *btree);
+		NodeContent *create();
 };
 
 #endif

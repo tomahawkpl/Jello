@@ -3,6 +3,7 @@ package com.atteo.jello.klass;
 import com.atteo.jello.index.Index;
 import com.atteo.jello.schema.SchemaManager;
 
+
 public interface KlassManager {
 	public void addKlass(String klassName);
 

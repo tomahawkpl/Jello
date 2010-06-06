@@ -7,8 +7,6 @@
 
 #include "misc.h"
 
-BTree *tree;
-
 int freeSpaceInfoSize;
 
 jfieldID fidRecordId, fidRecordPagesUsed, fidRecordSchemaVersion;
@@ -123,7 +121,7 @@ void initIDs(JNIEnv *env) {
 
 }
 
-void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFile, jobject pagePoolProxy, jobject spaceManagerPolicy,
+jint JNICALL init(JNIEnv *env, jclass dis, jobject pagedFile, jobject pagePoolProxy, jobject spaceManagerPolicy,
 		int freeSpaceInfoSizeArg, int bTreeLeafCapacityArg, int bTreeNodeCapacityArg, int klassIndexPageId) {
 	initIDs(env);
 	freeSpaceInfoSize = freeSpaceInfoSizeArg;
@@ -131,34 +129,37 @@ void JNICALL init(JNIEnv *env, jclass dis, jobject pagedFile, jobject pagePoolPr
 	bTreeLeafCapacity = bTreeLeafCapacityArg;
 	bTreeNodeCapacity = bTreeNodeCapacityArg;
 
-	tree = new BTree(bTreeLeafCapacity, bTreeNodeCapacity, pagedFile, pagePoolProxy, spaceManagerPolicy, env,
+	return (int)new BTree(bTreeLeafCapacity, bTreeNodeCapacity, pagedFile, pagePoolProxy, spaceManagerPolicy, env,
 			klassIndexPageId);
+
 }
 
-jboolean JNICALL load(JNIEnv *env, jclass dis) {
-	return tree->load();
+
+jboolean JNICALL load(JNIEnv *env, jclass dis, jint tree) {
+	__android_log_print(ANDROID_LOG_INFO, "Jello",  "using btree %d ", tree);
+	return ((BTree*)tree)->load();
 }
 
-void JNICALL commit(JNIEnv *env, jclass dis) {
-	tree->commit();
+void JNICALL commit(JNIEnv *env, jclass dis, jint tree) {
+	((BTree*)tree)->commit();
 }
 
-void JNICALL remove(JNIEnv *env, jclass dis, jint id) {
-	tree->remove(id);
+void JNICALL remove(JNIEnv *env, jclass dis, jint tree, jint id) {
+	((BTree*)tree)->remove(id);
 }
 
-void JNICALL insert(JNIEnv *env, jclass dis, jobject record) {
-	RecordInfo *recordInfo = new RecordInfo();
+void JNICALL insert(JNIEnv *env, jclass dis, jint tree, jobject record) {
+	RecordInfo *recordInfo = new RecordInfo((BTree*)tree);
 
 	int id = env->GetIntField(record, fidRecordId);
 	convertRecordToRecordInfo(env, record, recordInfo);
 
-	tree->add(id, recordInfo);
+	((BTree*)tree)->add(id, recordInfo);
 }
 
-jboolean JNICALL find(JNIEnv *env, jclass dis, jobject record) {
+jboolean JNICALL find(JNIEnv *env, jclass dis, jint tree, jobject record) {
 	int id = env->GetIntField(record, fidRecordId);
-	RecordInfo *recordInfo = tree->find(id);
+	RecordInfo *recordInfo = ((BTree*)tree)->find(id);
 	if (recordInfo == NULL)
 		return JNI_FALSE;
 
@@ -167,17 +168,17 @@ jboolean JNICALL find(JNIEnv *env, jclass dis, jobject record) {
 	return JNI_TRUE;
 }
 
-void JNICALL update(JNIEnv *env, jclass dis, jobject record) {
-	RecordInfo *recordInfo = new RecordInfo();
+void JNICALL update(JNIEnv *env, jclass dis, jint tree, jobject record) {
+	RecordInfo *recordInfo = new RecordInfo((BTree*)tree);
 
 	int id = env->GetIntField(record, fidRecordId);
 	convertRecordToRecordInfo(env, record, recordInfo);
 
-	tree->update(id, recordInfo);
+	((BTree*)tree)->update(id, recordInfo);
 }
 
-void JNICALL debug(JNIEnv *env, jclass dis) {
-	tree->debug();
+void JNICALL debug(JNIEnv *env, jclass dis, jint tree) {
+	((BTree*)tree)->debug();
 }
 
 
@@ -193,36 +194,36 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	klass = env->FindClass("com/atteo/jello/index/BTree");
 	/* register methods with (*env)->RegisterNatives */
 
-	nm[0].name = "load";
-	nm[0].signature = "()Z";
+	nm[0].name = "loadNative";
+	nm[0].signature = "(I)Z";
 	nm[0].fnPtr = (void*)load;
 
-	nm[1].name = "commit";
-	nm[1].signature = "()V";
+	nm[1].name = "commitNative";
+	nm[1].signature = "(I)V";
 	nm[1].fnPtr = (void*)commit;
 
-	nm[2].name = "remove";
-	nm[2].signature = "(I)V";
+	nm[2].name = "removeNative";
+	nm[2].signature = "(II)V";
 	nm[2].fnPtr = (void*)remove;
 
-	nm[3].name = "insert";
-	nm[3].signature = "(Lcom/atteo/jello/Record;)V";
+	nm[3].name = "insertNative";
+	nm[3].signature = "(ILcom/atteo/jello/Record;)V";
 	nm[3].fnPtr = (void*)insert;
 
-	nm[4].name = "find";
-	nm[4].signature = "(Lcom/atteo/jello/Record;)Z";
+	nm[4].name = "findNative";
+	nm[4].signature = "(ILcom/atteo/jello/Record;)Z";
 	nm[4].fnPtr = (void*)find;
 
-	nm[5].name = "update";
-	nm[5].signature = "(Lcom/atteo/jello/Record;)V";
+	nm[5].name = "updateNative";
+	nm[5].signature = "(ILcom/atteo/jello/Record;)V";
 	nm[5].fnPtr = (void*)update;
 
 	nm[6].name = "init";
-	nm[6].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/index/PagePoolProxy;Lcom/atteo/jello/space/SpaceManagerPolicy;IIII)V";
+	nm[6].signature = "(Lcom/atteo/jello/store/PagedFile;Lcom/atteo/jello/index/PagePoolProxy;Lcom/atteo/jello/space/SpaceManagerPolicy;IIII)I";
 	nm[6].fnPtr = (void*)init;
 
-	nm[7].name = "debug";
-	nm[7].signature = "()V";
+	nm[7].name = "debugNative";
+	nm[7].signature = "(I)V";
 	nm[7].fnPtr = (void*)debug;
 
 	env->RegisterNatives(klass,nm,8);

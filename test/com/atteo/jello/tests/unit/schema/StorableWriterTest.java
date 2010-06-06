@@ -1,5 +1,7 @@
 package com.atteo.jello.tests.unit.schema;
 
+import java.util.Date;
+
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
 import com.atteo.jello.Storable;
@@ -28,6 +30,9 @@ public abstract class StorableWriterTest extends
 		binder.bind(Short.class)
 				.annotatedWith(Names.named("freeSpaceInfoSize")).toInstance(
 						(short) 4);
+		binder.bind(Short.class)
+		.annotatedWith(Names.named("pageSize")).toInstance(
+				(short) 4096);
 	}
 
 	@Override
@@ -37,10 +42,17 @@ public abstract class StorableWriterTest extends
 
 	public void testWriteRead() {
 		final TestClass tc = new TestClass();
-		tc.field1 = 1;
-		tc.field2 = -1;
-		tc.field3 = "test1";
-		tc.field4 = "testfield2";
+		tc.fieldInt = 1;
+		tc.fieldShort = 2;
+		tc.fieldLong = 3;
+		tc.fieldByte = 4;
+		tc.fieldBoolean = true;
+		tc.fieldFloat = (float)5.26;
+		tc.fieldDouble = (double)5;
+		tc.fieldChar = 'T';
+		tc.fieldDate = new Date();
+		tc.fieldString = "test1";
+		tc.fieldBelongs = new TestClassParent(7);
 
 		final byte data[] = new byte[16384];
 
@@ -49,10 +61,17 @@ public abstract class StorableWriterTest extends
 		final TestClass tc2 = new TestClass();
 		writer.readStorable(data, tc2, tc2.getSchema());
 
-		assertEquals(tc.field1, tc2.field1);
-		assertEquals(tc.field2, tc2.field2);
-		assertEquals(tc.field3, tc2.field3);
-		assertEquals(tc.field4, tc2.field4);
+		assertEquals(tc.fieldInt, tc2.fieldInt);
+		assertEquals(tc.fieldShort, tc2.fieldShort);
+		assertEquals(tc.fieldString, tc2.fieldString);
+		assertEquals(tc.fieldLong, tc2.fieldLong);
+		assertEquals(tc.fieldFloat, tc2.fieldFloat);
+		assertEquals(tc.fieldDouble, tc2.fieldDouble);
+		assertEquals(tc.fieldChar, tc2.fieldChar);
+		assertEquals(tc.fieldBoolean, tc2.fieldBoolean);
+		assertEquals(tc.fieldByte, tc2.fieldByte);
+		assertEquals(tc.fieldDate.getTime(), tc2.fieldDate.getTime());
+		assertEquals(tc.fieldBelongs.getId(), tc2.fieldBelongs.getId());
 	}
 
 	@Override

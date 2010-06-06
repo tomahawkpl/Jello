@@ -454,7 +454,6 @@ void AVLTree::rotateRight(AVLTreeNode *&node) {
 }
 
 void AVLTree::rotateRightTwice(AVLTreeNode *&node) {
-	debug(false);
 	rotateLeft(node->left);
 	rotateRight(node);
 }
@@ -471,6 +470,8 @@ int AVLTree::nodeToBytes(uint8_t *bytes, AVLTreeNode *node) {
 	intToBytes(node->height, bytes + 4);
 	intToBytes(node->balance, bytes + 8);
 	intToBytes(node->content->getLength(), bytes + 12);
+	//__android_log_print(ANDROID_LOG_INFO, "Jello",  "content->getLength(): %d", node->content->getLength());
+	                                  
 	node->content->toBytes(bytes + 16);
 
 	len += 16 + node->content->getLength();

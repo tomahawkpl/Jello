@@ -2,12 +2,14 @@
 #define _CHILDINFO_H
 
 class BTreeElement;
+class BTree;
 
 #include <stdlib.h>
 #include "NodeContent.h"
 
 class ChildInfo : public NodeContent {
 	public:
+		ChildInfo(BTree *btree);
 		BTreeElement *child;
 		~ChildInfo();
 

@@ -5,9 +5,13 @@
 #include "NodeContent.h"
 
 class BTreeElement;
+class BTree;
 
 class RecordInfo : public NodeContent {
+	private:
+		BTree *btree;
 	public:
+		RecordInfo(BTree* btree);
 		uint8_t *data;
 		int length;
 

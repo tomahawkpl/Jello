@@ -16,6 +16,8 @@ public class BTree implements Index {
 	private final PagedFile pagedFile;
 	private final PagePoolProxy proxy;
 
+	private int btree;
+	
 	@Inject
 	public BTree(final PagedFile pagedFile, final PagePoolProxy proxy,
 			final SpaceManagerPolicy spaceManagerPolicy,
@@ -27,11 +29,9 @@ public class BTree implements Index {
 		this.klassIndexPageId = klassIndexPageId;
 		this.proxy = proxy;
 
-		init(pagedFile, proxy, spaceManagerPolicy, freeSpaceInfoSize,
+		btree = init(pagedFile, proxy, spaceManagerPolicy, freeSpaceInfoSize,
 				bTreeLeafCapacity, bTreeNodeCapacity, klassIndexPageId);
 	}
-
-	public native void commit();
 
 	public void create() {
 		final Page bTreePage = proxy.acquire();
@@ -41,19 +41,50 @@ public class BTree implements Index {
 		pagedFile.writePage(bTreePage);
 	}
 
-	public native void debug();
+	public native void commitNative(int btree);
+	
+	public native void debugNative(int btree);
 
-	public native boolean find(Record record);
+	public native boolean findNative(int btree, Record record);
 
-	public native void insert(Record record);
+	public native void insertNative(int btree, Record record);
 
-	public native boolean load();
+	public native boolean loadNative(int btree);
 
-	public native void remove(int id);
+	public native void removeNative(int btree, int id);
 
-	public native void update(Record record);
+	public native void updateNative(int btree, Record record);
 
-	private native void init(PagedFile pagedFile, PagePoolProxy proxy,
+	
+	public void commit() {
+		commitNative(btree);
+	}
+	
+	public void debug() {
+		debugNative(btree);
+	}
+
+	public boolean find(Record record) {
+		return findNative(btree, record);
+	}
+
+	public void insert(Record record) {
+		insertNative(btree, record);
+	}
+
+	public boolean load() {
+		return loadNative(btree);
+	}
+
+	public void remove(int id) {
+		removeNative(btree, id);
+	}
+
+	public void update(Record record) {
+		updateNative(btree, record);
+	}
+
+	private native int init(PagedFile pagedFile, PagePoolProxy proxy,
 			SpaceManagerPolicy spaceManagerPolicy, int freeSpaceInfoSize,
 			int bTreeLeafCapacity, int bTreeNodeCapacity, int klassIndexPageId);
 }
