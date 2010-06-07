@@ -46,6 +46,7 @@ class AVLTree {
 		AVLTreeNode *findNode(int recordId);
 		AVLTreeNode *getSmallest();
 		AVLTreeNode *extractSmallest();
+		AVLTreeNode *findRightNode(int recordId);
 		NodeContent *find(int recordId);
 		NodeContent *findHigher(int recordId);
 		NodeContent *findRight(int recordId);

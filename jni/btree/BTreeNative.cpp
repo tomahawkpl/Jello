@@ -181,11 +181,19 @@ void JNICALL debug(JNIEnv *env, jclass dis, jint tree) {
 	((BTree*)tree)->debug();
 }
 
+void JNICALL iterate(JNIEnv *env, jclass dis, jint tree) {
+	((BTree*)tree)->iterate();
+}
+
+jint JNICALL nextId(JNIEnv *env, jclass dis, jint tree) {
+	((BTree*)tree)->getNextId();
+}
+
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
 	JNIEnv* env;
-	JNINativeMethod nm[9];
+	JNINativeMethod nm[10];
 	jclass klass;
 	if (vm->GetEnv((void**) &env, JNI_VERSION_1_4) != JNI_OK)
 		return -1;
@@ -226,7 +234,15 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 	nm[7].signature = "(I)V";
 	nm[7].fnPtr = (void*)debug;
 
-	env->RegisterNatives(klass,nm,8);
+	nm[8].name = "iterateNative";
+	nm[8].signature = "(I)V";
+	nm[8].fnPtr = (void*)iterate;
+
+	nm[9].name = "nextIdNative";
+	nm[9].signature = "(I)I";
+	nm[9].fnPtr = (void*)nextId;
+
+	env->RegisterNatives(klass,nm,10);
 
 	return JNI_VERSION_1_4;
 }

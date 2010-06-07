@@ -25,6 +25,8 @@ class BTreeNode : public BTreeElement {
 		void split(BTreeNode *node);
 		void join(BTreeElement *node);
 		void debug();
+		BTreeElement *getRight(int id);
+		BTreeElement *getFirst();
 
 		static BTreeNode *fromBytes(uint8_t *bytes, int bTreeNodeCapacity, BTree *btree);
 		int commit();

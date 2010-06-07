@@ -7,6 +7,8 @@ import com.atteo.jello.Record;
 import com.atteo.jello.Storable;
 import com.atteo.jello.schema.StorableWriter;
 import com.atteo.jello.tests.JelloInterfaceTestCase;
+import com.atteo.jello.tests.unit.TestClass;
+import com.atteo.jello.tests.unit.TestClassParent;
 import com.atteo.jello.tests.unit.transaction.TransactionManagerMock;
 import com.atteo.jello.transaction.TransactionManager;
 import com.google.inject.Binder;

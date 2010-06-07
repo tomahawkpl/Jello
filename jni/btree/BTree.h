@@ -15,6 +15,8 @@ class BTree {
 		void addToNode(BTreeNode *node, BTreeElement *child);
 		PageIds *pageIds;
 		int klassIndexPageId;
+		int nextId;
+		BTreeLeaf *nextIdLeaf;
 	public:
 		BTree(short leafCapacity, short nodeCapacity, jobject pagedFile, jobject bTreePage,
 				jobject spaceManagerPolicy, JNIEnv *env, int klassIndexPageId);
@@ -27,6 +29,8 @@ class BTree {
 		void debug();
 		bool load();
 		void commit();
+		void iterate();
+		int getNextId();
 		PageIds *getPageIds();
 
 		static short leafCapacity, nodeCapacity;

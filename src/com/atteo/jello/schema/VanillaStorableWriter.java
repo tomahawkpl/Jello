@@ -172,10 +172,14 @@ public class VanillaStorableWriter implements StorableWriter {
 	}
 
 	private Date milisToDate(final long millis) {
+		if (millis == -1)
+			return null;
 		return new Date(millis);
 	}
 
 	private long dateToMilis(final Date date) {
+		if (date == null)
+			return -1;
 		return date.getTime();
 	}
 

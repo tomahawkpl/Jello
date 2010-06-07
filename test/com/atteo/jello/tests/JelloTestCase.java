@@ -69,14 +69,16 @@ abstract public class JelloTestCase extends InstrumentationTestCase implements
 		 * };
 		 */
 
-		Module m = null, extra;
+		Module extra;
 		extra = extraBindings();
 
-		if (extra != null)
-			m = extra;
+		Injector injector;
 
-		final Injector injector = Guice.createInjector(new CommonBindings(), m,
-				this);
+		if (extra != null)
+			injector = Guice.createInjector(new CommonBindings(), extra, this);
+		else
+			injector = Guice.createInjector(new CommonBindings(), this);
+		
 		injector.injectMembers(this);
 
 		Jello.setInjector(injector);

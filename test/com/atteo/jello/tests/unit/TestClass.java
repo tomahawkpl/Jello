@@ -1,4 +1,4 @@
-package com.atteo.jello.tests.unit.schema;
+package com.atteo.jello.tests.unit;
 
 import java.util.Date;
 
@@ -7,26 +7,26 @@ import com.atteo.jello.associations.BelongsTo;
 import com.atteo.jello.associations.DatabaseField;
 
 public class TestClass extends Storable {
-	@DatabaseField
+	public @DatabaseField
 	int fieldInt;
-	@DatabaseField
+	public @DatabaseField
 	short fieldShort;
-	@DatabaseField
+	public @DatabaseField
 	long fieldLong;
-	@DatabaseField
+	public @DatabaseField
 	byte fieldByte;
-	@DatabaseField
+	public @DatabaseField
 	char fieldChar;
-	@DatabaseField
+	public @DatabaseField
 	float fieldFloat;
-	@DatabaseField
+	public @DatabaseField
 	double fieldDouble;
-	@DatabaseField
+	public @DatabaseField
 	boolean fieldBoolean;
-	@DatabaseField
+	public @DatabaseField
 	Date fieldDate;
-	@DatabaseField
+	public @DatabaseField
 	String fieldString;
-	@BelongsTo
+	public @BelongsTo
 	TestClassParent fieldBelongs = null;
 }

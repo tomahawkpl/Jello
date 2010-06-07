@@ -6,6 +6,7 @@
 
 struct RecordInfo;
 class AVLTree;
+class AVLTreeNode;
 class PageIds;
 
 class BTreeLeaf : public BTreeElement {
@@ -23,8 +24,9 @@ class BTreeLeaf : public BTreeElement {
 		RecordInfo *get(int id);
 		void split(BTreeLeaf *leaf);
 		void join(BTreeElement *leaf);
-		void setLeft(BTreeLeaf *leaf);
 		void debug();
+		AVLTreeNode *getNext(int id);
+		AVLTreeNode *getFirst();
 
 		static BTreeLeaf *fromBytes(uint8_t *bytes, int leafCapacity, BTree *btree);
 		int commit();

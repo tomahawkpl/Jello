@@ -32,16 +32,18 @@ abstract public class Storable {
 	@Inject
 	static protected Pool<Record> recordPool;
 	@Inject
-	static protected @Named("maxRecordPages") int maxRecordPages;
+	static protected @Named("maxRecordPages")
+	int maxRecordPages;
 	@Inject
-	static protected @Named("pageSize") short pageSize;
-	
+	static protected @Named("pageSize")
+	short pageSize;
+
 	protected Record record;
 
 	private boolean isInDatabase;
-	
-	private byte bundleData[];
-	
+
+	static private byte bundleData[];
+
 	protected Storable() {
 		initClass();
 	}
@@ -63,14 +65,13 @@ abstract public class Storable {
 		if (belongsToFields == null)
 			belongsToFields = StorableInfo.getBelongsToFields(thisClass, this);
 
-		
 		if (schema == null)
 			schema = StorableInfo.getClassSchema(thisClass, this);
-		
+
 		record = recordPool.acquire();
 		klassName = thisClass.getCanonicalName();
-		
-		bundleData = new byte[maxRecordPages * pageSize];
+		if (bundleData == null)
+			bundleData = new byte[maxRecordPages * pageSize];
 	}
 
 	public String getClassName() {
@@ -102,7 +103,7 @@ abstract public class Storable {
 			isInDatabase = false;
 			return null;
 		}
-		
+
 	}
 
 	public void save() {
@@ -154,13 +155,11 @@ abstract public class Storable {
 			schema.fields[i] = Schema.getFieldType(dbFields[i].getType());
 			schema.names[i] = dbFields[i].getName();
 		}
-		
-		for (int i=0;i<b;i++) {
+
+		for (int i = 0; i < b; i++) {
 			schema.fields[i + l] = Schema.FIELD_STORABLE;
 			schema.names[i + l] = belongsToFields[i].getName();
 		}
-		
-		
 
 		return schema;
 	}
@@ -182,10 +181,23 @@ abstract public class Storable {
 		}
 		Field[] f = fields.toArray(new Field[fields.size()]);
 		Arrays.sort(f, comparator);
-		
+
 		return f;
 	}
-	
+
+	Object getDbFieldValue(String name) {
+		Field f = getDbField(name);
+		try {
+			return f.get(this);
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
 	Field[] extractBelongsToFields() {
 		final ArrayList<Field> fields = new ArrayList<Field>();
 		Class<?> k = thisClass;
@@ -203,7 +215,7 @@ abstract public class Storable {
 		}
 		Field[] f = fields.toArray(new Field[fields.size()]);
 		Arrays.sort(f, comparator);
-		
+
 		return f;
 	}
 
@@ -227,11 +239,11 @@ abstract public class Storable {
 		return fields[(right + left) / 2];
 
 	}
-	
+
 	public Field getDbField(String name) {
 		Field f = findField(dbFields, name);
 		if (f == null)
-			f = findField(belongsToFields,name);
+			f = findField(belongsToFields, name);
 		return f;
 	}
 
@@ -253,12 +265,12 @@ abstract public class Storable {
 			throw new NullPointerException("Provided bundle is null");
 
 		bundleData = bundle.getByteArray("content");
-		
+
 		if (bundleData == null)
 			return false;
-		
+
 		storableWriter.readStorable(bundleData, this, schema);
-		
+
 		afterLoadBundle();
 		return true;
 	}
@@ -269,7 +281,7 @@ abstract public class Storable {
 		final Bundle result = new Bundle();
 		storableWriter.writeStorable(bundleData, this, schema);
 		result.putByteArray("content", bundleData);
-		
+
 		afterSaveToBundle();
 		return result;
 	}

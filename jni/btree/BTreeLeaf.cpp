@@ -189,3 +189,11 @@ int BTreeLeaf::commit() {
 	return pageId;
 }
 
+AVLTreeNode *BTreeLeaf::getNext(int id) {
+	return records->findRightNode(id);
+}
+
+AVLTreeNode *BTreeLeaf::getFirst() {
+	return records->getSmallest();
+}
+

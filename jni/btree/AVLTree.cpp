@@ -343,6 +343,24 @@ NodeContent *AVLTree::findLeft(int recordId) {
 		return NULL;
 }
 
+AVLTreeNode *AVLTree::findRightNode(int recordId) {
+	AVLTreeNode *prev = NULL, *node = root;
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	while(node != NULL) {
+		if (node->recordId > recordId) {
+			prev = node;
+			node = node->left;
+		} else
+			node = node->right;
+	}
+
+	return prev;
+}
+
 NodeContent *AVLTree::findRight(int recordId) {
 	AVLTreeNode *prev = NULL, *node = root;
 

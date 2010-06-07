@@ -4,6 +4,7 @@
 #include "BTreeLeaf.h"
 #include "RecordInfo.h"
 #include "ChildInfo.h"
+#include "AVLTree.h"
 #include "PageIds.h"
 #include "misc.h"
 
@@ -415,4 +416,65 @@ void BTree::commit() {
 
 PageIds *BTree::getPageIds() {
 	return pageIds;
+}
+
+void BTree::iterate() {
+	nextId = -1;
+}
+
+int BTree::getNextId() {
+	BTreeElement *node = root;
+	if (nextId == -1) {
+		node = root;
+		if (node == NULL)
+			return -1;
+		while (node->type == BTreeElement::ELEMENT_NODE)
+			node = ((BTreeNode*)node)->getFirst();
+
+		nextIdLeaf = (BTreeLeaf*)node;
+
+		nextId = nextIdLeaf->getFirst()->recordId;
+		return nextId;
+		
+	} else {
+		AVLTreeNode *a = nextIdLeaf->getNext(nextId);
+		int newNextId;
+
+		if (a != NULL)
+			newNextId = a->recordId;
+		else
+			newNextId = -1;
+
+		if (newNextId != -1) {
+			return nextId = newNextId;
+		}
+
+		BTreeElement *n = nextIdLeaf;
+
+		node = NULL;
+
+		while (n->getParent() != NULL) {
+			BTreeElement *right = n->getParent()->getRight(nextId);
+			if (right != NULL) {
+				node = right;
+				break;
+			} else
+				n = n->getParent();
+		}
+
+		if (node == NULL) {
+			nextId = -1;
+			return nextId;
+		}
+
+
+		while (node->type == BTreeElement::ELEMENT_NODE)
+			node = ((BTreeNode*)node)->getFirst();
+
+		nextIdLeaf = (BTreeLeaf*)node;
+
+		nextId = nextIdLeaf->getFirst()->recordId;
+		return nextId;
+
+	}
 }

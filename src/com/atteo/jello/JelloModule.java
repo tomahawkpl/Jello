@@ -87,6 +87,7 @@ public class JelloModule implements Module {
 		binder.requestStaticInjection(Record.class);
 		binder.requestStaticInjection(PageUsage.class);
 		binder.requestStaticInjection(Storable.class);
+		binder.requestStaticInjection(StorableCollection.class);
 	}
 
 	private HashMap<String, String> getDefaultProperties() {

@@ -231,3 +231,26 @@ int BTreeNode::commit() {
 	return pageId;
 
 }
+
+BTreeElement *BTreeNode::getRight(int id) {
+	NodeContent *n = children->findRight(id);
+	
+	if (n == NULL)
+		return NULL;
+
+	return ((ChildInfo*)n)->child;
+}
+
+BTreeElement *BTreeNode::getFirst() {
+	AVLTreeNode *n = children->getSmallest();
+	if (n != NULL)
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "node first is %d", n->recordId);
+	else
+		__android_log_print(ANDROID_LOG_INFO, "Jello",  "node first is NULL");
+
+	if (n == NULL)
+		return NULL;
+
+	return ((ChildInfo*)n->content)->child;
+
+}

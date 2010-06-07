@@ -7,6 +7,7 @@ import android.util.Pool;
 
 import com.atteo.jello.PageUsage;
 import com.atteo.jello.Record;
+import com.atteo.jello.index.BTree;
 import com.atteo.jello.index.Index;
 import com.atteo.jello.index.IndexFactory;
 import com.atteo.jello.space.Hybrid;
@@ -401,6 +402,26 @@ public abstract class IndexTest extends JelloInterfaceTestCase<Index> {
 		}
 	}
 
+	public void testIterate() {
+		final int TESTSIZE = 3000;
+		final Record record = recordPool.acquire();
+		record.setChunkUsed(100, (short) 2, (short) 4, true);
+		for (int i = 0; i < TESTSIZE; i++) {
+			record.setId(i);
+			record.setSchemaVersion(i);
+			index.insert(record);
+		}
+
+		((BTree)index).debug();
+		
+		index.iterate();
+		
+		for (int i=0;i<TESTSIZE;i++)
+			assertEquals(i, index.nextId());
+		
+		assertEquals(-1, index.nextId());
+	}
+	
 	@Override
 	protected void bindImplementation(final Binder binder) {
 		binder.bind(IndexFactory.class).toProvider(

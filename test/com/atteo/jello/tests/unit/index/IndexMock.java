@@ -40,4 +40,14 @@ public class IndexMock implements Index {
 
 	}
 
+	public void iterate() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public int nextId() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
 }

@@ -1,10 +1,11 @@
 package com.atteo.jello.tests.unit;
 
 import java.io.File;
+import java.util.ArrayList;
 
+import com.atteo.jello.Expression;
 import com.atteo.jello.Jello;
-import com.atteo.jello.Storable;
-import com.atteo.jello.associations.DatabaseField;
+import com.atteo.jello.StorableCollection;
 import com.atteo.jello.index.BTree;
 import com.atteo.jello.index.Index;
 import com.atteo.jello.klass.KlassManager;
@@ -12,7 +13,7 @@ import com.atteo.jello.tests.JelloTestCase;
 import com.google.inject.Binder;
 
 public class SimpleJelloTest extends JelloTestCase {
-		
+
 	public void configure(final Binder binder) {
 
 	}
@@ -36,68 +37,70 @@ public class SimpleJelloTest extends JelloTestCase {
 				.getContext(), "testfile"));
 
 		for (int i = 0; i < TESTSIZE; i++) {
-			final TestObject object = new TestObject();
-			object.name = "person";
-			object.age = i;
-			object.save();
-		}
-		
-		KlassManager klassManager = Jello.getInjector().getInstance(KlassManager.class);
-		Index index = klassManager.getIndexFor(TestObject.class.getCanonicalName());
-		((BTree)index).debug();
-		
-		TestObject read = new TestObject();
-		for (int i = 0; i < TESTSIZE; i++) {
-			read.setId(i);
-			assertNotNull(read.load());
-			assertEquals("person", read.name);
-			assertEquals(i, read.age);
-		}
-		
-		for (int i = 0; i < TESTSIZE; i++) {
-			final TestObject2 object = new TestObject2();
-			object.name = "car" + i;
-			object.speed = i;
-			object.type = i * 3;
+			final TestClass object = new TestClass();
+			object.fieldString = "person";
+			object.fieldInt = i;
 			object.save();
 		}
 
-		index = klassManager.getIndexFor(TestObject2.class.getCanonicalName());
-		((BTree)index).debug();
-		
-		TestObject2 read2 = new TestObject2();
+		KlassManager klassManager = Jello.getInjector().getInstance(
+				KlassManager.class);
+		Index index = klassManager.getIndexFor(TestClass.class
+				.getCanonicalName());
+		((BTree) index).debug();
+
+		TestClass read = new TestClass();
+		for (int i = 0; i < TESTSIZE; i++) {
+			read.setId(i);
+			assertNotNull(read.load());
+			assertEquals("person", read.fieldString);
+			assertEquals(i, read.fieldInt);
+		}
+
+		for (int i = 0; i < TESTSIZE; i++) {
+			final TestClassParent object = new TestClassParent();
+			object.fieldString = "car" + i;
+			object.fieldInt = i;
+			object.fieldShort = (short)(i * 3);
+			object.save();
+		}
+
+		index = klassManager.getIndexFor(TestClassParent.class.getCanonicalName());
+		((BTree) index).debug();
+
+		TestClassParent read2 = new TestClassParent();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read2.setId(i);
 			assertNotNull(read2.load());
-			assertEquals("car" + i, read2.name);
-			assertEquals(i, read2.speed);
-			assertEquals(i * 3, read2.type);
+			assertEquals("car" + i, read2.fieldString);
+			assertEquals(i, read2.fieldInt);
+			assertEquals(i * 3, read2.fieldShort);
 		}
 
 		Jello.close();
-		
+
 		assertEquals(Jello.OPEN_SUCCESS, Jello.open(getInstrumentation()
 				.getContext(), "testfile"));
-		
-		read = new TestObject();
+
+		read = new TestClass();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read.setId(i);
 			assertNotNull(read.load());
-			assertEquals("person", read.name);
-			assertEquals(i, read.age);
+			assertEquals("person", read.fieldString);
+			assertEquals(i, read.fieldInt);
 		}
-		
-		read2 = new TestObject2();
+
+		read2 = new TestClassParent();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read2.setId(i);
 			assertNotNull(read2.load());
-			assertEquals("car" + i, read2.name);
-			assertEquals(i, read2.speed);
-			assertEquals(i * 3, read2.type);
+			assertEquals("car" + i, read2.fieldString);
+			assertEquals(i, read2.fieldInt);
+			assertEquals(i * 3, read2.fieldShort);
 		}
-		
+
 	}
-	
+
 	public void testDelete() {
 		final int TESTSIZE = 10;
 
@@ -105,67 +108,82 @@ public class SimpleJelloTest extends JelloTestCase {
 				.getContext(), "testfile"));
 
 		for (int i = 0; i < TESTSIZE; i++) {
-			final TestObject object = new TestObject();
-			object.name = "person";
-			object.age = i;
+			final TestClass object = new TestClass();
+			object.fieldString = "person";
+			object.fieldInt = i;
 			object.save();
 		}
-		
+
 		for (int i = 0; i < TESTSIZE; i++) {
-			final TestObject2 object = new TestObject2();
-			object.name = "car";
-			object.speed = i;
-			object.type = i * 3;
+			final TestClassParent object = new TestClassParent();
+			object.fieldString = "car";
+			object.fieldInt = i;
+			object.fieldShort = (short) (i * 3);
 			object.save();
 		}
-	
-		TestObject read = new TestObject();
+
+		TestClass read = new TestClass();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read.setId(i);
 			read.remove();
 		}
-		
-		read = new TestObject();
-		for (int i = 0; i < TESTSIZE; i++) {
-			read.setId(i);
-			assertNull(read.load());
-		}
-		
-		Jello.close();
-		
-		assertEquals(Jello.OPEN_SUCCESS, Jello.open(getInstrumentation()
-				.getContext(), "testfile"));
-		
-		read = new TestObject();
+
+		read = new TestClass();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read.setId(i);
 			assertNull(read.load());
 		}
 
-		TestObject2 read2 = new TestObject2();
+		Jello.close();
+
+		assertEquals(Jello.OPEN_SUCCESS, Jello.open(getInstrumentation()
+				.getContext(), "testfile"));
+
+		read = new TestClass();
+		for (int i = 0; i < TESTSIZE; i++) {
+			read.setId(i);
+			assertNull(read.load());
+		}
+
+		TestClassParent read2 = new TestClassParent();
 		for (int i = 0; i < TESTSIZE; i++) {
 			read2.setId(i);
 			assertNotNull(read2.load());
-			assertEquals("car", read2.name);
-			assertEquals(i, read2.speed);
-			assertEquals(i * 3, read2.type);
+			assertEquals("car", read2.fieldString);
+			assertEquals(i, read.fieldInt);
+			assertEquals(i * 3, read2.fieldShort);
 		}
 	}
 
-	private class TestObject extends Storable {
-		@DatabaseField
-		String name;
-		@DatabaseField
-		int age;
+	public void testStorableCollection() {
+		final int TESTSIZE = 100;
+
+		assertEquals(Jello.OPEN_SUCCESS, Jello.open(getInstrumentation()
+				.getContext(), "testfile"));
+
+		for (int i = 0; i < TESTSIZE; i++) {
+			final TestClass object = new TestClass();
+			object.fieldString = "person";
+			object.fieldInt = i;
+			object.save();
+		}
+
+		StorableCollection<TestClass> collection = new StorableCollection<TestClass>(
+				TestClass.class);
+
+		assertEquals(TESTSIZE, collection.getCount());
+
+		collection.where(new Expression(".fieldInt",
+				Expression.OPERATOR_GREATER_EQUAL, TESTSIZE / 2));
+
+		ArrayList<TestClass> array = collection.toArrayList();
+
+		int l = array.size();
+		assertEquals(TESTSIZE / 2, l);
+		for (int i = 0; i < l; i++)
+			assertTrue(array.get(i).fieldInt >= TESTSIZE / 2);
+
 	}
-	
-	private class TestObject2 extends Storable {
-		@DatabaseField
-		String name;
-		@DatabaseField
-		int type;
-		@DatabaseField
-		int speed;
-	}
+
 
 }

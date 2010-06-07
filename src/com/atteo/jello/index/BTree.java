@@ -55,6 +55,10 @@ public class BTree implements Index {
 
 	public native void updateNative(int btree, Record record);
 
+	public native void iterateNative(int btree);
+	
+	public native int nextIdNative(int btree);
+	
 	
 	public void commit() {
 		commitNative(btree);
@@ -84,6 +88,14 @@ public class BTree implements Index {
 		updateNative(btree, record);
 	}
 
+	public void iterate() {
+		iterateNative(btree);
+	}
+	
+	public int nextId() {
+		return nextIdNative(btree);
+	}
+	
 	private native int init(PagedFile pagedFile, PagePoolProxy proxy,
 			SpaceManagerPolicy spaceManagerPolicy, int freeSpaceInfoSize,
 			int bTreeLeafCapacity, int bTreeNodeCapacity, int klassIndexPageId);

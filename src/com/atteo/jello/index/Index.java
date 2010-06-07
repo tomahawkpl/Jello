@@ -16,4 +16,7 @@ public interface Index {
 	public void remove(int id);
 
 	public void update(Record record);
+	
+	public void iterate();
+	public int nextId();
 }
